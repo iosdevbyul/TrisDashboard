@@ -34,3 +34,24 @@ def test_future_payment_not_counted_as_confirmed(tmp_path):
 def test_unconfigured(monkeypatch):
     monkeypatch.delenv("TRIS_DIVIDENDS_FILE", raising=False)
     assert dividends()["configured"] is False
+
+
+def test_six_month_payment_history_is_currency_separated(tmp_path):
+    source = snapshot(tmp_path, [
+        {"symbol": "JEPQ", "paid_on": "2026-11-04", "currency": "USD", "amount": "50.25"},
+        {"symbol": "QQQI", "paid_on": "2026-11-05", "currency": "USD", "amount": "15.75"},
+        {"symbol": "KRETF", "paid_on": "2026-10-06", "currency": "KRW", "amount": "2000"},
+        {"symbol": "OLD", "paid_on": "2026-04-10", "currency": "USD", "amount": "500"},
+    ])
+    data = load_dividends(source, today=date(2026, 11, 8))
+    history = data["history"]
+    assert len(history) == 6
+    assert history[0]["month"] == "2026-06"
+    assert history[-1] == {"month": "2026-11", "totals": {"USD": "66.00"}}
+    assert history[-2] == {"month": "2026-10", "totals": {"KRW": "2000"}}
+
+
+def test_six_month_history_crosses_new_year(tmp_path):
+    data = load_dividends(snapshot(tmp_path, []), today=date(2026, 2, 4))
+    assert [item["month"] for item in data["history"]] == [
+        "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02"]

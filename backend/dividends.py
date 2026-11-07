@@ -16,6 +16,11 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     reference = today or date.today()
     totals = {}
     month = reference.strftime("%Y-%m")
+    months = []
+    for offset in range(5, -1, -1):
+        index = reference.year * 12 + (reference.month - 1) - offset
+        months.append(f"{(index // 12):04d}-{(index % 12) + 1:02d}")
+    history = {month_key: {} for month_key in months}
     recent = []
     for entry in entries:
         if not isinstance(entry, dict):
@@ -29,12 +34,18 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         amount = nonnegative(entry.get("amount"), "amount")
         if paid_on > reference:
             raise ValueError("Only recorded past or current payments allowed")
-        if paid_on.strftime("%Y-%m") == month:
+        paid_month = paid_on.strftime("%Y-%m")
+        if paid_month == month:
             totals[currency] = totals.get(currency, Decimal("0")) + amount
+        if paid_month in history:
+            monthly = history[paid_month]
+            monthly[currency] = monthly.get(currency, Decimal("0")) + amount
         recent.append({"symbol": ticker, "currency": currency, "paid_on": paid_on.isoformat(), "amount": str(amount)})
     recent.sort(key=lambda item: item["paid_on"], reverse=True)
     return {"available": True, "configured": True, "source": "manual_confirmed_payments",
             "month": month, "monthly_totals": {key: str(value) for key, value in sorted(totals.items())},
+            "history": [{"month": key, "totals": {currency: str(amount) for currency, amount in sorted(history[key].items())}}
+                        for key in months],
             "record_count": len(entries), "recent": recent[:5], "stale": False}
 
 def dividends() -> dict:
