@@ -145,3 +145,8 @@ Copy `examples/agenda.example.json` to a private MacBook file and set `TRIS_AGEN
 ## GitHub per-repository health and PR previews
 
 Each configured public repository has its own availability status. If one repo fails, other working repositories still show their PR counts and latest workflow status; total PR count is marked as **known** when incomplete. Up to three open PR titles are linked to GitHub per repository, and URLs are only rendered when they use the expected GitHub HTTPS prefix. Provider exception details are never passed to the browser. Rate-limit and private-repository constraints remain.
+
+
+## Browser response safety and version refresh
+
+The local server sets response headers to prevent MIME sniffing, iframe embedding and referrer leakage, plus a restrictive same-origin Content Security Policy. The dashboard HTML, API and health probe use `Cache-Control: no-store`; local static CSS and JS require revalidation so browser reloads can pick up deployed changes. Interactive API documentation and OpenAPI generation are disabled to reduce unnecessary LAN endpoints. These measures reduce accidental exposure but **do not provide authentication or HTTPS**. Any device allowed onto the trusted home LAN and able to reach the service can view the configured content; do not forward the port to the internet. CI additionally checks Python module compilation.
