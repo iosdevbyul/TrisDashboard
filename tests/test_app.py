@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from backend.app import app
+from backend import app as app_module
 
 client = TestClient(app)
 
@@ -16,7 +17,7 @@ def test_dashboard_served():
     assert "TRIS DASHBOARD" in response.text
     assert "apple-mobile-web-app-capable" in response.text
     assert 'id="offline-banner"' in response.text
-    assert "Coming soon" in response.text
+    assert 'id="weather-temp"' in response.text
 
 
 def test_static_assets():
@@ -33,6 +34,9 @@ def test_legacy_js_avoids_unsupported_syntax():
     assert "XMLHttpRequest" in script
 
 
-def test_no_store_health_probe():
-    response = client.get("/healthz")
+def test_overview_endpoint(monkeypatch):
+    monkeypatch.setattr(app_module, "overview", lambda: {"weather": {"available": False}, "github": {"available": False}})
+    response = client.get("/api/overview")
     assert response.status_code == 200
+    assert response.json()["weather"]["available"] is False
+    assert response.headers["cache-control"] == "no-store"

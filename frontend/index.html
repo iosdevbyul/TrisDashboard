@@ -26,15 +26,24 @@
   </header>
   <div class="offline-banner" id="offline-banner" aria-live="polite" hidden>
     MacBook server is unreachable. Showing the last loaded dashboard.
-    <span id="retry-countdown"></span>
   </div>
   <section class="cards" aria-label="Dashboard modules">
     <article class="card"><h2>Portfolio</h2><p>Coming soon</p><small>Investments &amp; dividends</small></article>
-    <article class="card"><h2>Development</h2><p>Coming soon</p><small>GitHub &amp; CI</small></article>
-    <article class="card"><h2>Weather</h2><p>Coming soon</p><small>Local forecast</small></article>
+    <article class="card">
+      <h2>GitHub development</h2>
+      <p id="github-summary">Loading</p>
+      <div id="github-list" class="details">Connecting to GitHub</div>
+      <small id="github-updated">Live data via MacBook</small>
+    </article>
+    <article class="card">
+      <h2>Weather</h2>
+      <p id="weather-temp">Loading</p>
+      <div id="weather-details" class="details">Current weather</div>
+      <small id="weather-updated">Live data via MacBook</small>
+    </article>
     <article class="card"><h2>Fitness</h2><p>Coming soon</p><small>Workout summary</small></article>
   </section>
-  <footer>Local network &middot; TrisDashboard</footer>
+  <footer>Local network &middot; TrisDashboard &middot; Data refreshes every 3 minutes</footer>
 </main>
 <script src="/static/dashboard.js"></script>
 </body>
