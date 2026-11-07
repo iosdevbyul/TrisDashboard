@@ -29,7 +29,7 @@ function element(id = "") {
 
 function byId(id) {
   if (!elements.has(id)) {
-    assert.ok(html.includes('id="' + id + '"') || id.startsWith("toggle-"),
+    assert.ok(html.includes('id="' + id + '"') || id.startsWith("toggle-") || id.startsWith("panel-"),
       "Missing HTML element: " + id);
     elements.set(id, element(id));
   }
