@@ -16,6 +16,10 @@ def request_local(path: str):
         return response.status, dict(response.headers.items()), response.read()
 
 
+def header(headers: dict, name: str) -> str | None:
+    return next((value for key, value in headers.items() if key.lower() == name.lower()), None)
+
+
 def check_deployment(fetch=request_local) -> dict:
     report = {"health": False, "homepage": False, "assets": False, "overview": False,
               "headers": False, "sources_ready": 0, "sources_stale": 0,
@@ -23,14 +27,14 @@ def check_deployment(fetch=request_local) -> dict:
     try:
         status, headers, body = fetch("/healthz")
         report["health"] = status == 200 and json.loads(body) == {"status": "ok"}
-        report["headers"] = (headers.get("Cache-Control") == "no-store"
-                             and headers.get("X-Content-Type-Options") == "nosniff"
-                             and headers.get("X-Frame-Options") == "DENY")
+        report["headers"] = (header(headers, "Cache-Control") == "no-store"
+                             and header(headers, "X-Content-Type-Options") == "nosniff"
+                             and header(headers, "X-Frame-Options") == "DENY")
         status, headers, body = fetch("/")
         report["homepage"] = status == 200 and b"TRIS DASHBOARD" in body
-        report["headers"] = report["headers"] and headers.get("Cache-Control") == "no-store"
+        report["headers"] = report["headers"] and header(headers, "Cache-Control") == "no-store"
         report["assets"] = all(
-            status == 200 and bool(data) and asset_headers.get("Cache-Control") == "no-cache, max-age=0, must-revalidate"
+            status == 200 and bool(data) and asset_header(headers, "Cache-Control") == "no-cache, max-age=0, must-revalidate"
             for status, asset_headers, data in (fetch(path) for path in ASSETS)
         )
         status, headers, body = fetch("/api/overview")
@@ -39,7 +43,7 @@ def check_deployment(fetch=request_local) -> dict:
                               and all(name in overview for name in SOURCE_NAMES)
                               and isinstance(overview.get("server"), dict)
                               and overview["server"].get("available") is True)
-        report["headers"] = report["headers"] and headers.get("Cache-Control") == "no-store"
+        report["headers"] = report["headers"] and header(headers, "Cache-Control") == "no-store"
         if report["overview"]:
             for name in SOURCE_NAMES:
                 source = overview[name]
