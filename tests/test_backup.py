@@ -1,0 +1,66 @@
+import json
+import os
+from datetime import datetime, timezone, timedelta
+
+import pytest
+
+from macos.backup import backup, restore, validate_backup
+
+
+def fixture_files(tmp_path):
+    private = tmp_path / "private"
+    private.mkdir()
+    holdings = private / "portfolio.json"
+    holdings.write_text(json.dumps({
+        "as_of": (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(),
+        "positions": [{"symbol": "JEPQ", "currency": "USD", "quantity": 2}],
+    }))
+    agenda = private / "agenda.json"
+    agenda.write_text(json.dumps({"events": [{"date": "2026-11-08", "title": "A private event"}]}))
+    settings = tmp_path / "settings.json"
+    settings.write_text(json.dumps({"TRIS_PORTFOLIO_FILE": str(holdings),
+                                    "TRIS_AGENDA_FILE": str(agenda)}))
+    return settings, holdings, agenda
+
+
+def test_backup_creates_private_verified_snapshot(tmp_path):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    output = tmp_path / "snapshots" / "backup-001"
+    result = backup(settings, output)
+    assert result == {"backed_up": 2, "created": True}
+    assert len(validate_backup(output)) == 2
+    assert output.stat().st_mode & 0o077 == 0
+    assert (output / "portfolio.json").stat().st_mode & 0o077 == 0
+    assert "JEPQ" not in (output / "manifest.json").read_text()
+    with pytest.raises(ValueError, match="already exists"):
+        backup(settings, output)
+
+
+def test_restore_dry_run_and_explicit_restore(tmp_path):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    output = tmp_path / "backup"
+    original = holdings.read_bytes()
+    backup(settings, output)
+    holdings.write_text('{"as_of": "invalid", "positions": []}')
+    assert restore(settings, output) == {"validated": 2, "restored": 0}
+    assert holdings.read_text().startswith('{"as_of": "invalid"')
+    assert restore(settings, output, force=True) == {"validated": 2, "restored": 2}
+    assert holdings.read_bytes() == original
+
+
+def test_corrupted_backup_never_overwrites(tmp_path):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    output = tmp_path / "backup"
+    backup(settings, output)
+    original = holdings.read_bytes()
+    (output / "portfolio.json").write_text('{"positions": []}')
+    with pytest.raises(ValueError, match="checksum"):
+        restore(settings, output, force=True)
+    assert holdings.read_bytes() == original
+
+
+def test_backup_missing_configuration_rejected(tmp_path):
+    settings = tmp_path / "settings.json"
+    settings.write_text("{}")
+    with pytest.raises(ValueError, match="No private"):
+        backup(settings, tmp_path / "backup")
