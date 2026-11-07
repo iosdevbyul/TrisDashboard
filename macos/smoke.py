@@ -34,7 +34,7 @@ def check_deployment(fetch=request_local) -> dict:
         report["homepage"] = status == 200 and b"TRIS DASHBOARD" in body
         report["headers"] = report["headers"] and header(headers, "Cache-Control") == "no-store"
         report["assets"] = all(
-            status == 200 and bool(data) and asset_header(headers, "Cache-Control") == "no-cache, max-age=0, must-revalidate"
+            status == 200 and bool(data) and header(asset_headers, "Cache-Control") == "no-cache, max-age=0, must-revalidate"
             for status, asset_headers, data in (fetch(path) for path in ASSETS)
         )
         status, headers, body = fetch("/api/overview")
