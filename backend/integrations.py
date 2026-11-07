@@ -32,8 +32,11 @@ def _future_for(name, loader):
         return future
 
 
-def get_json(url: str) -> dict:
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "TrisDashboard/1.0"})
+def get_json(url: str, headers: dict | None = None) -> dict:
+    request_headers = {"Accept": "application/json", "User-Agent": "TrisDashboard/1.0"}
+    if headers:
+        request_headers.update(headers)
+    request = Request(url, headers=request_headers)
     with urlopen(request, timeout=5) as response:
         return json.load(response)
 
@@ -90,6 +93,13 @@ def weather() -> dict:
 
 def github() -> dict:
     raw = os.environ.get("TRIS_GITHUB_REPOS", "iosdevbyul/TrisDashboard")
+    token = os.environ.get("TRIS_GITHUB_TOKEN", "").strip()
+    auth_headers = {"Authorization": "Bearer " + token} if token else None
+
+    def fetch_github(url):
+        if auth_headers:
+            return get_json(url, headers=auth_headers)
+        return get_json(url)
     repositories = []
     for name in raw.split(","):
         name = name.strip()
@@ -105,10 +115,10 @@ def github() -> dict:
         for repo in repositories:
             encoded = "/".join(quote(part, safe="") for part in repo.split("/"))
             try:
-                pulls = get_json("https://api.github.com/repos/" + encoded + "/pulls?state=open&per_page=20")
+                pulls = fetch_github("https://api.github.com/repos/" + encoded + "/pulls?state=open&per_page=20")
                 if not isinstance(pulls, list):
                     raise ValueError("Unexpected GitHub response")
-                runs_payload = get_json("https://api.github.com/repos/" + encoded + "/actions/runs?per_page=1")
+                runs_payload = fetch_github("https://api.github.com/repos/" + encoded + "/actions/runs?per_page=1")
                 runs = runs_payload["workflow_runs"]
                 if not isinstance(runs, list):
                     raise ValueError("Unexpected workflow response")
@@ -132,7 +142,8 @@ def github() -> dict:
         if not successful and repositories:
             raise ValueError("No repositories could be checked")
         return {"available": True, "repositories": results, "partial": successful < len(repositories)}
-    return cached("github:" + ",".join(repositories), load, ttl=900)
+    token_scope = hashlib.sha256(token.encode("utf-8")).hexdigest() if token else "public"
+    return cached("github:" + ",".join(repositories) + ":" + token_scope, load, ttl=900)
 
 
 def trello() -> dict:
