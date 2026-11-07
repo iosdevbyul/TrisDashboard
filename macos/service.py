@@ -19,7 +19,7 @@ def agent_path(home: Path) -> Path:
     return home / "Library" / "LaunchAgents" / (LABEL + ".plist")
 
 
-ALLOWED_SETTINGS = ("TRIS_LATITUDE", "TRIS_LONGITUDE", "TRIS_LOCATION_NAME", "TRIS_GITHUB_REPOS", "TRIS_PORTFOLIO_FILE", "TRIS_FITNESS_FILE", "TRIS_DIVIDENDS_FILE", "TRIS_AGENDA_FILE", "TRIS_ALLOWED_CLIENT_IPS", "TRIS_TRELLO_BOARD_ID")
+ALLOWED_SETTINGS = ("TRIS_LATITUDE", "TRIS_LONGITUDE", "TRIS_LOCATION_NAME", "TRIS_GITHUB_REPOS", "TRIS_PORTFOLIO_FILE", "TRIS_FITNESS_FILE", "TRIS_DIVIDENDS_FILE", "TRIS_AGENDA_FILE", "TRIS_ALLOWED_CLIENT_IPS", "TRIS_TRELLO_BOARD_ID", "TRIS_QUOTE_SYMBOLS")
 
 
 def read_public_settings(path: Path) -> dict[str, str]:
@@ -60,6 +60,9 @@ def read_public_settings(path: Path) -> dict[str, str]:
         agenda_path = Path(settings["TRIS_AGENDA_FILE"])
         if not agenda_path.is_absolute() or agenda_path.suffix.lower() != ".json":
             raise ValueError("TRIS_AGENDA_FILE must be an absolute JSON path")
+    if "TRIS_QUOTE_SYMBOLS" in settings:
+        from backend.quotes import quote_symbols
+        settings["TRIS_QUOTE_SYMBOLS"] = ",".join(quote_symbols(settings["TRIS_QUOTE_SYMBOLS"]))
     if "TRIS_ALLOWED_CLIENT_IPS" in settings:
         settings["TRIS_ALLOWED_CLIENT_IPS"] = validate_allowlist(settings["TRIS_ALLOWED_CLIENT_IPS"])
     return settings

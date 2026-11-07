@@ -13,11 +13,12 @@ from backend.portfolio import portfolio
 from backend.fitness import fitness
 from backend.dividends import dividends
 from backend.agenda import agenda
+from backend.quotes import quote_symbols, load_quotes
 
 _cache = {}
 _lock = threading.Lock()
 TTL_SECONDS = 300
-_PROVIDER_EXECUTOR = ThreadPoolExecutor(max_workers=3, thread_name_prefix="dashboard-provider")
+_PROVIDER_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="dashboard-provider")
 _PROVIDER_INFLIGHT = {}
 _PROVIDER_LOCK = threading.Lock()
 
@@ -186,9 +187,24 @@ def trello() -> dict:
     return cached("trello:" + board + ":" + credential_scope, load, ttl=600)
 
 
+def quotes() -> dict:
+    """Read at most two opt-in provider quotes, with long cache to conserve API credits."""
+    raw = os.environ.get("TRIS_QUOTE_SYMBOLS", "").strip()
+    token = os.environ.get("TRIS_TWELVEDATA_API_KEY", "").strip()
+    if not raw or not token:
+        return {"available": False, "configured": False, "stale": False}
+    try:
+        symbols = quote_symbols(raw)
+    except ValueError:
+        return {"available": False, "configured": True, "stale": True}
+    scope = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    key = "quotes:" + ",".join(symbols) + ":" + scope
+    return cached(key, lambda: load_quotes(symbols, token, get_json), ttl=1800)
+
+
 def overview(timeout_seconds: float = 4.0) -> dict:
     """Collect slow upstreams concurrently without delaying the whole dashboard indefinitely."""
-    providers = {"weather": weather, "github": github, "trello": trello}
+    providers = {"weather": weather, "github": github, "trello": trello, "quotes": quotes}
     futures = {name: _future_for(name, loader) for name, loader in providers.items()}
     completed, pending = wait(set(futures.values()), timeout=max(0, timeout_seconds))
     result = {}
