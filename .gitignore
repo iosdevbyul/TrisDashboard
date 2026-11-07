@@ -5,3 +5,7 @@ __pycache__/
 .env
 *.db
 .DS_Store
+
+portfolio.json
+holdings.json
+private/

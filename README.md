@@ -89,3 +89,15 @@ The MacBook server's `/api/overview` includes local process uptime and UTC serve
 Weather additionally shows apparent temperature, today's high/low and maximum precipitation probability when provided by Open-Meteo. If optional forecast fields are missing, basic current temperature and humidity still render.
 
 Keep the tablet's Safari page visible while using the desk display. Device-specific checks are intentionally deferred to the final acceptance phase.
+
+
+## Manual investment dashboard (no brokerage connection)
+
+The portfolio panel reads an optional JSON snapshot **from the MacBook only**. Copy `examples/portfolio.example.json` outside this repository (e.g. `~/tris-private/portfolio.json`), replace demo holdings and timestamp with your own data, and set `TRIS_PORTFOLIO_FILE` to its absolute path before launching the server.
+
+- Quantity and optional price are manually entered. No market quote provider, automated price refresh, realized gains, dividends, brokerage API, or account authentication is provided yet.
+- `as_of` is a timezone-aware ISO-8601 snapshot timestamp. Values are explicitly marked as **manual snapshots**, never live prices.
+- Valuations are calculated within each currency independently, with no implied FX conversion.
+- Missing prices display "price unavailable" rather than inventing valuation.
+- Keep your personal holdings file outside the public GitHub repository and outside the `frontend/` directory. Anyone on the trusted LAN who can reach the dashboard can view the displayed holdings.
+- If the file cannot be read, the card shows an unavailable state. Restart the launchd service to apply a new `TRIS_PORTFOLIO_FILE` environment variable once configured via a secure deployment workflow.
