@@ -14,6 +14,7 @@ from backend.fitness import fitness
 from backend.dividends import dividends
 from backend.agenda import agenda
 from backend.quotes import quote_symbols, load_quotes
+from backend.valuation import quote_valuation
 
 _cache = {}
 _lock = threading.Lock()
@@ -218,6 +219,7 @@ def overview(timeout_seconds: float = 4.0) -> dict:
             # Never expose provider credentials or provider error text.
             result[name] = {"available": False, "configured": True, "stale": True}
     result["portfolio"] = portfolio()
+    result["valuation"] = quote_valuation(result["portfolio"], result["quotes"])
     result["fitness"] = fitness()
     result["dividends"] = dividends()
     result["agenda"] = agenda()
