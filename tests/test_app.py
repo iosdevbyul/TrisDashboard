@@ -51,3 +51,15 @@ def test_overview_includes_server_uptime(monkeypatch):
     assert server["uptime_seconds"] >= 0
     assert server["server_time_utc"].endswith("+00:00")
     assert response.headers["cache-control"] == "no-store"
+
+
+def test_display_settings_and_legacy_preferences_script():
+    html = client.get("/").text
+    assert 'id="display-settings"' in html
+    assert 'data-panel="portfolio"' in html
+    assert 'data-panel="fitness"' in html
+    script = client.get("/static/preferences.js")
+    assert script.status_code == 200
+    assert "localStorage" in script.text
+    for forbidden in ("const ", "let ", "=>", "?.", "??", "fetch("):
+        assert forbidden not in script.text

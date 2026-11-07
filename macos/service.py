@@ -18,7 +18,7 @@ def agent_path(home: Path) -> Path:
     return home / "Library" / "LaunchAgents" / (LABEL + ".plist")
 
 
-ALLOWED_SETTINGS = ("TRIS_LATITUDE", "TRIS_LONGITUDE", "TRIS_LOCATION_NAME", "TRIS_GITHUB_REPOS")
+ALLOWED_SETTINGS = ("TRIS_LATITUDE", "TRIS_LONGITUDE", "TRIS_LOCATION_NAME", "TRIS_GITHUB_REPOS", "TRIS_PORTFOLIO_FILE")
 
 
 def read_public_settings(path: Path) -> dict[str, str]:
@@ -43,6 +43,10 @@ def read_public_settings(path: Path) -> dict[str, str]:
                 raise ValueError("Invalid coordinate") from error
             if not minimum <= number <= maximum:
                 raise ValueError("Invalid coordinate")
+    if "TRIS_PORTFOLIO_FILE" in settings:
+        portfolio_path = Path(settings["TRIS_PORTFOLIO_FILE"])
+        if not portfolio_path.is_absolute() or portfolio_path.suffix.lower() != ".json":
+            raise ValueError("TRIS_PORTFOLIO_FILE must be an absolute JSON path")
     return settings
 
 
