@@ -290,7 +290,8 @@
       total += columns[i].count;
       var row = document.createElement("div");
       row.className = "repo-row";
-      row.textContent = columns[i].name + " · " + columns[i].count + " cards";
+      row.textContent = columns[i].name + " · " + columns[i].count +
+        (columns[i].count_truncated ? "+ cards (limit reached)" : " cards");
       list.appendChild(row);
       var names = columns[i].cards || [];
       if (names.length) {
@@ -300,7 +301,11 @@
         list.appendChild(preview);
       }
     }
-    text("trello-summary", total + " cards");
+    var anyTruncated = false;
+    for (var t = 0; t < columns.length; t++) {
+      if (columns[t].count_truncated) { anyTruncated = true; }
+    }
+    text("trello-summary", total + (anyTruncated ? "+ known cards" : " cards"));
     text("trello-updated", statusText(info));
   }
 

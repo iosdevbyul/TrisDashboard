@@ -181,3 +181,7 @@ The command returns non-zero when settings or a referenced local data file is in
 ## Source overview accuracy
 
 The at-a-glance status strip counts all seven external/local data sources (weather, GitHub, Trello, portfolio, workout, dividend, agenda). It flags outdated manual portfolio snapshots in the stale count, includes configured sources that are temporarily unavailable, and never counts the MacBook status as an external data source. Unconfigured optional sources remain excluded from unavailable counts.
+
+## Trello count limits and credential rotation
+
+The Trello overview requests at most 100 open cards per list. When that boundary is reached, the UI labels it **100+ / known cards**, rather than falsely claiming an exact count. Switching Trello key/token invalidates the cached board view, using a one-way digest as the in-process cache scope; raw credentials are never stored as cache keys or returned to clients. It remains a read-only optional integration; the Mac must provide its Trello credentials separately.
