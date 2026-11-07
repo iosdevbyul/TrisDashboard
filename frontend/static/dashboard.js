@@ -45,6 +45,7 @@
     if (online) {
       offlineBanner.hidden = true;
       connection.textContent = "Server online";
+      text("glance-connection", "Online");
       indicator.className = "indicator online";
       lastCheck.textContent = "Checked " + pad(new Date().getHours()) + ":" + pad(new Date().getMinutes());
       if (wasOffline) {
@@ -55,6 +56,7 @@
       wasOffline = true;
       offlineBanner.hidden = false;
       connection.textContent = "Server offline";
+      text("glance-connection", "Offline");
       indicator.className = "indicator offline";
       lastCheck.textContent = "Reconnect automatically every 15 seconds";
     }
@@ -74,6 +76,27 @@
   function statusText(info) {
     if (!info || !info.available) { return "Unavailable"; }
     return info.stale ? "Last known data (stale)" : "Updated " + (info.updated_at ? info.updated_at.replace("T", " ").slice(0, 16) + " UTC" : "recently");
+  }
+
+  function showSummary(payload) {
+    var names = ["weather", "github", "trello", "portfolio", "fitness"];
+    var active = 0;
+    var unavailable = 0;
+    var stale = 0;
+    for (var i = 0; i < names.length; i++) {
+      var info = payload[names[i]];
+      if (info && info.available) {
+        active++;
+        if (info.stale) { stale++; }
+      } else if (info && info.configured) {
+        unavailable++;
+      }
+    }
+    text("glance-sources", active + "/5 ready" +
+      (stale ? " · " + stale + " stale" : "") +
+      (unavailable ? " · " + unavailable + " unavailable" : ""));
+    var now = new Date();
+    text("glance-updated", pad(now.getHours()) + ":" + pad(now.getMinutes()));
   }
 
   function showPortfolio(info) {
@@ -242,6 +265,7 @@
         showServer(payload.server);
         showPortfolio(payload.portfolio);
         showFitness(payload.fitness);
+        showSummary(payload);
       } catch (error) {
         text("weather-updated", "Invalid server response");
         text("github-updated", "Invalid server response");
