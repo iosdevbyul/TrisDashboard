@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="TrisDashboard">
+  <meta name="theme-color" content="#111822">
   <title>TrisDashboard</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -19,8 +21,13 @@
     <div class="server-status" role="status" aria-live="polite">
       <span id="indicator" class="indicator"></span>
       <span id="connection">Connecting</span>
+      <div class="last-check" id="last-check">Waiting for server</div>
     </div>
   </header>
+  <div class="offline-banner" id="offline-banner" aria-live="polite" hidden>
+    MacBook server is unreachable. Showing the last loaded dashboard.
+    <span id="retry-countdown"></span>
+  </div>
   <section class="cards" aria-label="Dashboard modules">
     <article class="card"><h2>Portfolio</h2><p>Coming soon</p><small>Investments &amp; dividends</small></article>
     <article class="card"><h2>Development</h2><p>Coming soon</p><small>GitHub &amp; CI</small></article>
