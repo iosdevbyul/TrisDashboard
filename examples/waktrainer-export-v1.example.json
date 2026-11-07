@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "sessions": [
+    {
+      "started_at": "2026-11-08T08:10:00+09:00",
+      "activity_type": "running",
+      "duration_seconds": 2700,
+      "distance_meters": 7250
+    }
+  ]
+}
