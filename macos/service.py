@@ -3,6 +3,7 @@
 This tool never changes power settings or opens firewall/router ports.
 """
 import argparse
+import json
 import os
 import plistlib
 import subprocess
@@ -17,10 +18,38 @@ def agent_path(home: Path) -> Path:
     return home / "Library" / "LaunchAgents" / (LABEL + ".plist")
 
 
-def service_config(project: Path, home: Path, lan: bool = False) -> dict:
+ALLOWED_SETTINGS = ("TRIS_LATITUDE", "TRIS_LONGITUDE", "TRIS_LOCATION_NAME", "TRIS_GITHUB_REPOS")
+
+
+def read_public_settings(path: Path) -> dict[str, str]:
+    """Explicitly allow public display settings only; never load secrets into launchd plist."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("Settings must be a JSON object")
+    if any(key not in ALLOWED_SETTINGS for key in data):
+        raise ValueError("Unsupported settings key")
+    settings = {}
+    for key, value in data.items():
+        if not isinstance(value, (str, int, float)) or isinstance(value, bool):
+            raise ValueError("Settings values must be strings or numbers")
+        settings[key] = str(value)
+        if not settings[key] or len(settings[key]) > 300:
+            raise ValueError("Settings value outside supported length")
+    for key, minimum, maximum in (("TRIS_LATITUDE", -90, 90), ("TRIS_LONGITUDE", -180, 180)):
+        if key in settings:
+            try:
+                number = float(settings[key])
+            except ValueError as error:
+                raise ValueError("Invalid coordinate") from error
+            if not minimum <= number <= maximum:
+                raise ValueError("Invalid coordinate")
+    return settings
+
+
+def service_config(project: Path, home: Path, lan: bool = False, settings: dict | None = None) -> dict:
     python = project / ".venv" / "bin" / "python"
     log_dir = home / "Library" / "Logs" / "TrisDashboard"
-    return {
+    config = {
         "Label": LABEL,
         "ProgramArguments": [
             str(python), "-m", "uvicorn", "backend.app:app",
@@ -33,6 +62,9 @@ def service_config(project: Path, home: Path, lan: bool = False) -> dict:
         "StandardOutPath": str(log_dir / "server.log"),
         "StandardErrorPath": str(log_dir / "error.log"),
     }
+    if settings:
+        config["EnvironmentVariables"] = dict(settings)
+    return config
 
 
 def run_launchctl(*arguments: str) -> None:
@@ -46,7 +78,7 @@ def require_macos() -> None:
         raise RuntimeError("Run as your regular macOS user, not sudo")
 
 
-def install(project: Path, home: Path, lan: bool) -> None:
+def install(project: Path, home: Path, lan: bool, settings_path: Path | None = None) -> None:
     require_macos()
     python = project / ".venv" / "bin" / "python"
     if not python.is_file():
@@ -56,7 +88,8 @@ def install(project: Path, home: Path, lan: bool) -> None:
         raise RuntimeError("Already installed. Run uninstall before reinstalling.")
     path.parent.mkdir(parents=True, exist_ok=True)
     (home / "Library" / "Logs" / "TrisDashboard").mkdir(parents=True, exist_ok=True)
-    path.write_bytes(plistlib.dumps(service_config(project, home, lan)))
+    settings = read_public_settings(settings_path) if settings_path else {}
+    path.write_bytes(plistlib.dumps(service_config(project, home, lan, settings)))
     try:
         run_launchctl("bootstrap", "gui/" + str(os.getuid()), str(path))
     except Exception:
@@ -85,19 +118,20 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Manage TrisDashboard as a macOS user agent")
     parser.add_argument("command", choices=("install", "uninstall", "status"))
     parser.add_argument("--lan", action="store_true", help="Explicitly expose port 8080 to trusted Wi-Fi")
+    parser.add_argument("--settings", type=Path, help="JSON file with public weather/GitHub configuration")
     args = parser.parse_args()
     project = Path(__file__).resolve().parent.parent
     home = Path.home()
-    if args.lan and args.command != "install":
-        parser.error("--lan is only valid during install")
+    if (args.lan or args.settings) and args.command != "install":
+        parser.error("--lan and --settings are only valid during install")
     try:
         if args.command == "install":
-            install(project, home, args.lan)
+            install(project, home, args.lan, args.settings)
         elif args.command == "uninstall":
             uninstall(home)
         else:
             status()
-    except (RuntimeError, OSError, subprocess.CalledProcessError) as error:
+    except (RuntimeError, OSError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, "Error: " + str(error) + "\n")
 
 

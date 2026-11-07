@@ -101,7 +101,15 @@
       total += repos[i].open_pr_count;
       var row = document.createElement("div");
       row.className = "repo-row";
-      row.textContent = repos[i].repository + " · " + repos[i].open_pr_count + " open PRs";
+      var ci = repos[i].latest_ci;
+      var ciText = "CI unknown";
+      if (ci) {
+        ciText = ci.status === "completed" ? "CI " + (ci.conclusion || "unknown") : "CI " + ci.status;
+      } else {
+        ciText = "No workflow runs";
+      }
+      row.textContent = repos[i].repository + " · " + repos[i].open_pr_count +
+        (repos[i].open_pr_count_truncated ? "+ open PRs" : " open PRs") + " · " + ciText;
       list.appendChild(row);
     }
     text("github-summary", total + " open PRs");

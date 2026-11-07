@@ -25,3 +25,28 @@ def test_lan_service_requires_explicit_opt_in(tmp_path: Path):
 def test_agent_is_installed_for_current_user(tmp_path: Path):
     path = agent_path(tmp_path)
     assert path == tmp_path / "Library" / "LaunchAgents" / (LABEL + ".plist")
+
+
+def test_public_settings_for_launchd(tmp_path: Path):
+    import json
+    from macos.service import read_public_settings
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({
+        "TRIS_LATITUDE": 37.5,
+        "TRIS_LONGITUDE": 127.0,
+        "TRIS_LOCATION_NAME": "Seoul",
+        "TRIS_GITHUB_REPOS": "iosdevbyul/TrisDashboard"
+    }))
+    settings = read_public_settings(path)
+    config = service_config(tmp_path / "project", tmp_path / "home", lan=True, settings=settings)
+    assert config["EnvironmentVariables"]["TRIS_LATITUDE"] == "37.5"
+    assert plistlib.loads(plistlib.dumps(config)) == config
+
+
+def test_secrets_not_allowed_in_launchd_settings(tmp_path: Path):
+    import pytest
+    from macos.service import read_public_settings
+    path = tmp_path / "settings.json"
+    path.write_text('{"GITHUB_TOKEN": "secret"}')
+    with pytest.raises(ValueError, match="Unsupported"):
+        read_public_settings(path)
