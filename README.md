@@ -256,3 +256,7 @@ Back up the local JSON files configured in your Mac's allowlisted settings (port
 ```
 
 A new backup directory is created with owner-only file permissions and SHA-256 checksums. Existing backup directories are never silently overwritten; the manifest never contains personal file contents or original paths. Restore defaults to **validation only** and needs explicit `--force` before replacing any configured data file. The tool validates checksums and data schemas before writing. It backs up **only** explicitly configured local JSON files, not credentials or Keychain entries. Copies are plaintext, not encrypted: store on a protected Mac volume and do not place them in a public/synced directory. This is not a remote/cloud backup service. Stop background import jobs when restoring to avoid concurrent writes.
+
+## Restore failure recovery
+
+Restore validation now checks **both** backup file checksums and the dashboard data schemas, even without `--force`. During an explicit restore, prior versions of every destination are staged first. If a later file replacement fails, the command attempts to roll back files already replaced. A multi-file restore cannot be fully atomic across separate destinations or power loss; the rollback is best effort, and concurrent workout imports must be stopped before recovery. If rollback cannot complete, the command exits unsuccessfully; retain the original backup for manual recovery.
