@@ -118,3 +118,8 @@ Fitness reads an optional MacBook-only JSON workout export, without requesting H
 ## At-a-glance desk mode
 
 The top strip reports the number of ready configured or public data sources, stale/unavailable counts and time of the last successfully parsed overview response. The source count covers weather, GitHub, Trello, portfolio and fitness (five possible panels); sources without configuration are not counted as available. Glance mode compresses card layout and clips lengthy details for desk viewing. The preference is stored separately on each browser and remains optional. It is **not** a substitute for real-device visual acceptance.
+
+
+## Provider timeout isolation
+
+Weather, GitHub and Trello are collected concurrently by the MacBook server. The overview waits at most four seconds for remote results, so one stuck provider does not prevent local fitness/portfolio and other completed providers from rendering. Slow or failed services appear unavailable/stale without returning exception text or credentials. Unfinished provider requests are reused until finished instead of adding an unlimited queue. Browser overview timeout is 10 seconds and stale/out-of-order responses are ignored. Polling remains conservative and provider result caching still applies.
