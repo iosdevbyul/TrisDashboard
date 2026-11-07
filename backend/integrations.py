@@ -1,5 +1,6 @@
 """Server-only read-only integrations with bounded HTTP calls and stale caching."""
 import json
+from concurrent.futures import ThreadPoolExecutor, wait
 import os
 import threading
 import time
@@ -13,6 +14,19 @@ from backend.fitness import fitness
 _cache = {}
 _lock = threading.Lock()
 TTL_SECONDS = 300
+_PROVIDER_EXECUTOR = ThreadPoolExecutor(max_workers=3, thread_name_prefix="dashboard-provider")
+_PROVIDER_INFLIGHT = {}
+_PROVIDER_LOCK = threading.Lock()
+
+
+def _future_for(name, loader):
+    # Reuse unfinished requests during upstream outages, avoiding an unbounded job queue.
+    with _PROVIDER_LOCK:
+        future = _PROVIDER_INFLIGHT.get(name)
+        if future is None or future.done():
+            future = _PROVIDER_EXECUTOR.submit(loader)
+            _PROVIDER_INFLIGHT[name] = future
+        return future
 
 
 def get_json(url: str) -> dict:
@@ -145,5 +159,21 @@ def trello() -> dict:
     return cached("trello:" + board, load, ttl=600)
 
 
-def overview() -> dict:
-    return {"weather": weather(), "github": github(), "trello": trello(), "portfolio": portfolio(), "fitness": fitness()}
+def overview(timeout_seconds: float = 4.0) -> dict:
+    """Collect slow upstreams concurrently without delaying the whole dashboard indefinitely."""
+    providers = {"weather": weather, "github": github, "trello": trello}
+    futures = {name: _future_for(name, loader) for name, loader in providers.items()}
+    completed, pending = wait(set(futures.values()), timeout=max(0, timeout_seconds))
+    result = {}
+    for name, future in futures.items():
+        if future not in completed:
+            result[name] = {"available": False, "configured": True, "stale": True}
+            continue
+        try:
+            result[name] = future.result()
+        except Exception:
+            # Never expose provider credentials or provider error text.
+            result[name] = {"available": False, "configured": True, "stale": True}
+    result["portfolio"] = portfolio()
+    result["fitness"] = fitness()
+    return result

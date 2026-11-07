@@ -12,6 +12,7 @@
   var lastRequestStarted = 0;
   var lastDataStarted = 0;
   var requestSequence = 0;
+  var overviewSequence = 0;
 
   function pad(number) { return number < 10 ? "0" + number : String(number); }
   function text(id, value) { document.getElementById(id).textContent = String(value); }
@@ -22,10 +23,10 @@
     date.textContent = now.getFullYear() + "." + pad(now.getMonth() + 1) + "." + pad(now.getDate());
   }
 
-  function get(url, callback) {
+  function get(url, callback, timeout) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url + (url.indexOf("?") === -1 ? "?" : "&") + "t=" + new Date().getTime(), true);
-    xhr.timeout = 6000;
+    xhr.timeout = timeout || 6000;
     var completed = false;
     function finish(online) {
       if (completed) { return; }
@@ -254,9 +255,10 @@
     var now = new Date().getTime();
     if (!force && now - lastDataStarted < 30000) { return; }
     lastDataStarted = now;
+    var sequence = ++overviewSequence;
     if (overviewRequest && overviewRequest.readyState !== 4) { overviewRequest.abort(); }
     overviewRequest = get("/api/overview", function (ok, xhr) {
-      if (!ok) { return; }
+      if (sequence !== overviewSequence || !ok) { return; }
       try {
         var payload = JSON.parse(xhr.responseText);
         showGithub(payload.github);
@@ -270,7 +272,7 @@
         text("weather-updated", "Invalid server response");
         text("github-updated", "Invalid server response");
       }
-    });
+    }, 10000);
   }
 
   tick();
