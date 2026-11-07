@@ -224,3 +224,7 @@ The MacBook can now convert CSV exports to private JSON without brokerage login 
 ```
 
 Conversions validate against the dashboard's original JSON parsers, write private files atomically, and require `--force` to replace an existing output. The portfolio's import time is recorded as `as_of` by default; this is **not the market quotation timestamp** and does not imply live prices. If you know the actual reference timestamp, pass the ISO 8601 `--as-of` value. Only record dividends actually received. Data remains local to the MacBook; external CSV schemas must be adapted before import.
+
+## WakTrainer JSON export bridge (contract v1)
+
+A versioned, opt-in JSON bridge is available as `.venv/bin/python -m macos.import_waktrainer --input ~/Downloads/waktrainer-export.json --output ~/tris-private/fitness.json --dry-run`. Remove `--dry-run` to write; use `--force` only to replace a previous output. It accepts a strictly validated, timezone-aware workout export and converts seconds/meters to minutes/kilometers. See `docs/WAKTRAINER_EXPORT_CONTRACT.md` and the example file. **The current WakTrainer app has not been verified to produce this export.** This is preparation for a future WakTrainer-side exporter, not a claim of automatic synchronization.
