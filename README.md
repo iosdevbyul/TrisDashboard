@@ -73,3 +73,10 @@ CI checks Python 3.11, 3.12, and 3.13. Tests mock external providers and require
 2. Verify current weather and GitHub open PRs update; temporarily cut Mac internet to test stale weather display.
 3. Stop the Mac server and confirm offline banner; restart and check connection recovery.
 4. Add to iPad Home Screen if desired. Validate auto-lock, charging heat and long-running rendering on the physical iPad.
+
+
+## Optional Trello board (read-only)
+
+Trello integration is optional. Supply `TRIS_TRELLO_BOARD_ID`, `TRIS_TRELLO_KEY`, and `TRIS_TRELLO_TOKEN` as **MacBook server environment variables** to show counts and a few card names from lists named Next, In Progress, and Done. It does not create, update, or move Trello cards. Provider results are cached for 10 minutes.
+
+Do not put these credentials in frontend files, GitHub commits, or the public launchd settings JSON. For a login-start service, provide secrets through a separately managed secure launcher/keychain workflow in a future release; the current public settings installer intentionally rejects tokens. If no credentials are supplied, the Trello panel shows Not configured.

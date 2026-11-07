@@ -47,3 +47,47 @@ def test_unavailable_no_credentials_or_errors_leaked(monkeypatch):
     monkeypatch.setattr(integrations, "get_json", lambda url: (_ for _ in ()).throw(OSError("secret details")))
     result = integrations.weather()
     assert result == {"available": False, "stale": True, "error": "temporarily unavailable"}
+
+
+def test_trello_not_configured(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.delenv("TRIS_TRELLO_BOARD_ID", raising=False)
+    assert integrations.trello() == {"available": False, "configured": False, "stale": False}
+
+
+def test_trello_board_lists_and_private_credentials(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_TRELLO_BOARD_ID", "abc123")
+    monkeypatch.setenv("TRIS_TRELLO_KEY", "privatekey")
+    monkeypatch.setenv("TRIS_TRELLO_TOKEN", "privatetoken")
+    calls = []
+    def fake_get(url):
+        calls.append(url)
+        return [
+            {"name": "Next", "cards": [{"name": "Feature A"}, {"name": "Feature B"}]},
+            {"name": "In Progress", "cards": [{"name": "Feature C"}]},
+            {"name": "Done", "cards": []},
+            {"name": "Other", "cards": [{"name": "Ignore"}]},
+        ]
+    monkeypatch.setattr(integrations, "get_json", fake_get)
+    data = integrations.trello()
+    assert data["available"] and data["configured"]
+    assert [value["count"] for value in data["lists"]] == [2, 1, 0]
+    assert "privatetoken" in calls[0]
+    assert "privatetoken" not in str(data)
+    assert "privatetoken" not in str(integrations._cache)
+    assert integrations.trello() == data
+    assert len(calls) == 1
+
+
+def test_trello_stale_if_provider_unavailable(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_TRELLO_BOARD_ID", "abc123")
+    monkeypatch.setenv("TRIS_TRELLO_KEY", "key")
+    monkeypatch.setenv("TRIS_TRELLO_TOKEN", "token")
+    monkeypatch.setattr(integrations, "get_json", lambda url: [{"name": "Next", "cards": []}])
+    assert integrations.trello()["available"]
+    for item in integrations._cache.values():
+        item["time"] = -999999
+    monkeypatch.setattr(integrations, "get_json", lambda url: (_ for _ in ()).throw(OSError("offline")))
+    assert integrations.trello()["stale"]

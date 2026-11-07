@@ -101,5 +101,41 @@ def github() -> dict:
     return cached("github:" + ",".join(repositories), load, ttl=900)
 
 
+def trello() -> dict:
+    """Read-only personal board summary; credentials never reach the browser."""
+    board = os.environ.get("TRIS_TRELLO_BOARD_ID", "").strip()
+    key = os.environ.get("TRIS_TRELLO_KEY", "").strip()
+    token = os.environ.get("TRIS_TRELLO_TOKEN", "").strip()
+    if not (board and key and token):
+        return {"available": False, "configured": False, "stale": False}
+    if not board.isalnum() or len(board) > 64:
+        return {"available": False, "configured": False, "stale": False}
+
+    def load():
+        query = urlencode({
+            "key": key, "token": token, "fields": "name",
+            "cards": "open", "card_fields": "name,idList",
+            "card_limit": "100",
+        })
+        url = "https://api.trello.com/1/boards/" + quote(board, safe="") + "/lists?" + query
+        lists = get_json(url)
+        if not isinstance(lists, list):
+            raise ValueError("Invalid Trello data")
+        result = []
+        for entry in lists:
+            name = entry.get("name", "")
+            if name.lower().strip() not in ("next", "in progress", "done"):
+                continue
+            cards = entry.get("cards", [])
+            if not isinstance(cards, list):
+                raise ValueError("Invalid Trello cards")
+            result.append({"name": name, "count": len(cards),
+                           "cards": [str(card.get("name", ""))[:90] for card in cards[:3]]})
+        return {"available": True, "configured": True, "lists": result}
+
+    # The cache key must never contain access tokens.
+    return cached("trello:" + board, load, ttl=600)
+
+
 def overview() -> dict:
-    return {"weather": weather(), "github": github()}
+    return {"weather": weather(), "github": github(), "trello": trello()}
