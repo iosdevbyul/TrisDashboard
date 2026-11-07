@@ -130,11 +130,14 @@
       (info.stale ? " · Cached stale" : ""));
   }
 
-  function showPortfolio(info) {
+  function showPortfolio(info, valuation) {
     var list = document.getElementById("portfolio-list");
     while (list.firstChild) { list.removeChild(list.firstChild); }
+    var quotePanel = document.getElementById("portfolio-quote-values");
+    while (quotePanel.firstChild) { quotePanel.removeChild(quotePanel.firstChild); }
     if (!info || !info.available) {
       text("portfolio-summary", "Not available");
+      quotePanel.textContent = "Quote-based valuation unavailable";
       text("portfolio-updated", info && info.configured ? "Check MacBook snapshot" : "Configure on MacBook");
       return;
     }
@@ -157,6 +160,20 @@
       for (var j = 0; j < keys.length; j++) { parts.push(keys[j] + " " + totals[keys[j]]); }
       total.textContent = "Values: " + parts.join(" / ") + (info.valuation_complete ? "" : " (partial)");
       list.appendChild(total);
+    }
+    if (valuation && valuation.available) {
+      var totalsLabel = [];
+      var quoteKeys = Object.keys(valuation.totals || {});
+      for (var v = 0; v < quoteKeys.length; v++) {
+        totalsLabel.push(quoteKeys[v] + " " + valuation.totals[quoteKeys[v]]);
+      }
+      quotePanel.textContent = "Source-stamped quote value (" +
+        valuation.matched_count + "/" + valuation.position_count + " holdings)" +
+        (valuation.partial ? " · PARTIAL" : "") +
+        (valuation.stale ? " · Cached stale" : "") +
+        ": " + totalsLabel.join(" / ") + " · Not guaranteed live";
+    } else {
+      quotePanel.textContent = "Quote-based valuation unavailable (manual snapshot unchanged)";
     }
     var quality = info.quality || {};
     text("portfolio-updated", "Manual prices · Snapshot " + info.as_of.replace("T", " ").slice(0, 16) +
@@ -409,7 +426,7 @@
         showWeather(payload.weather);
         showTrello(payload.trello);
         showServer(payload.server);
-        showPortfolio(payload.portfolio);
+        showPortfolio(payload.portfolio, payload.valuation);
         showQuotes(payload.quotes);
         showFitness(payload.fitness);
         showDividends(payload.dividends);
