@@ -5,7 +5,10 @@ import pytest
 from backend.portfolio import load_portfolio, portfolio
 
 
-def write_snapshot(tmp_path, positions, as_of="2026-11-08T09:00:00+09:00"):
+def write_snapshot(tmp_path, positions, as_of=None):
+    if as_of is None:
+        from datetime import datetime, timezone, timedelta
+        as_of = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
     path = tmp_path / "holdings.json"
     path.write_text(json.dumps({"as_of": as_of, "positions": positions}))
     return path
