@@ -24,44 +24,56 @@
       <div class="last-check" id="last-check">Waiting for server</div>
     </div>
   </header>
+  <div class="toolbar">
+    <button type="button" id="refresh-button">Refresh now</button>
+    <button type="button" id="settings-button" aria-expanded="false" aria-controls="display-settings">Display settings</button>
+  </div>
+  <div class="display-settings" id="display-settings" hidden>
+    <label><input id="setting-compact" type="checkbox"> Compact cards</label>
+    <label><input id="setting-dim" type="checkbox"> Dim display</label>
+    <div class="settings-label">Visible panels</div>
+    <div id="panel-visibility"></div>
+    <button type="button" id="reset-settings">Reset display</button>
+  </div>
   <div class="offline-banner" id="offline-banner" aria-live="polite" hidden>
     MacBook server is unreachable. Showing the last loaded dashboard.
   </div>
   <section class="cards" aria-label="Dashboard modules">
-    <article class="card">
+    <article class="card" data-panel="portfolio">
       <h2>Portfolio · Manual snapshot</h2>
       <p id="portfolio-summary">Not configured</p>
       <div id="portfolio-list" class="details">Positions loaded from MacBook</div>
       <small id="portfolio-updated">Not live market prices</small>
     </article>
-    <article class="card">
+    <article class="card" data-panel="github">
       <h2>GitHub development</h2>
       <p id="github-summary">Loading</p>
       <div id="github-list" class="details">Connecting to GitHub</div>
       <small id="github-updated">Live data via MacBook</small>
     </article>
-    <article class="card">
+    <article class="card" data-panel="weather">
       <h2>Weather</h2>
       <p id="weather-temp">Loading</p>
       <div id="weather-details" class="details">Current weather</div>
       <small id="weather-updated">Live data via MacBook</small>
     </article>
-    <article class="card">
+    <article class="card" data-panel="trello">
       <h2>Trello workflow</h2>
       <p id="trello-summary">Not configured</p>
       <div id="trello-list" class="details">Next · In Progress · Done</div>
       <small id="trello-updated">Optional private board connection</small>
     </article>
-    <article class="card">
+    <article class="card" data-panel="server">
       <h2>MacBook server</h2>
       <p id="server-uptime">Loading</p>
       <div id="server-info" class="details">Checking service uptime</div>
       <small id="server-updated">Local diagnostics</small>
     </article>
-    <article class="card"><h2>Fitness</h2><p>Coming soon</p><small>Workout summary</small></article>
+    <article class="card" data-panel="fitness"><h2>Fitness</h2><p>Coming soon</p><small>Workout summary</small></article>
   </section>
   <footer>Local network &middot; TrisDashboard &middot; Data refreshes every 3 minutes</footer>
 </main>
 <script src="/static/dashboard.js"></script>
+<script src="/static/preferences.js"></script>
 </body>
 </html>

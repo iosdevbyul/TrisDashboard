@@ -101,3 +101,10 @@ The portfolio panel reads an optional JSON snapshot **from the MacBook only**. C
 - Missing prices display "price unavailable" rather than inventing valuation.
 - Keep your personal holdings file outside the public GitHub repository and outside the `frontend/` directory. Anyone on the trusted LAN who can reach the dashboard can view the displayed holdings.
 - If the file cannot be read, the card shows an unavailable state. Restart the launchd service to apply a new `TRIS_PORTFOLIO_FILE` environment variable once configured via a secure deployment workflow.
+
+
+## Local display preferences
+
+Each device has its own settings stored in browser localStorage. Select **Display settings** to toggle compact cards, reduce display brightness with a darker CSS theme, or hide individual panels; **Reset display** restores all panels. **Refresh now** reloads the current page. These preferences stay on the device and do not sync between iPad/iPhone. If Safari storage is disabled or wiped, the default display is used; no server credentials are stored there.
+
+For login-start portfolio loading, set a private **absolute JSON file path** under `TRIS_PORTFOLIO_FILE` in the Mac public settings JSON. This stores only the path in the per-user LaunchAgent plist, not portfolio contents or tokens. Keep your snapshot outside the repository. Reinstall the user agent after changing its settings.

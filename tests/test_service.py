@@ -50,3 +50,16 @@ def test_secrets_not_allowed_in_launchd_settings(tmp_path: Path):
     path.write_text('{"GITHUB_TOKEN": "secret"}')
     with pytest.raises(ValueError, match="Unsupported"):
         read_public_settings(path)
+
+
+def test_portfolio_path_is_allowed_but_must_be_absolute(tmp_path: Path):
+    import json
+    import pytest
+    from macos.service import read_public_settings
+    file = tmp_path / "settings.json"
+    file.write_text(json.dumps({"TRIS_PORTFOLIO_FILE": str(tmp_path / "private.json")}))
+    settings = read_public_settings(file)
+    assert settings["TRIS_PORTFOLIO_FILE"].endswith("private.json")
+    file.write_text('{"TRIS_PORTFOLIO_FILE": "private.json"}')
+    with pytest.raises(ValueError, match="absolute JSON path"):
+        read_public_settings(file)
