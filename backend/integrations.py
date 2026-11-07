@@ -8,6 +8,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 from backend.portfolio import portfolio
+from backend.fitness import fitness
 
 _cache = {}
 _lock = threading.Lock()
@@ -145,4 +146,4 @@ def trello() -> dict:
 
 
 def overview() -> dict:
-    return {"weather": weather(), "github": github(), "trello": trello(), "portfolio": portfolio()}
+    return {"weather": weather(), "github": github(), "trello": trello(), "portfolio": portfolio(), "fitness": fitness()}

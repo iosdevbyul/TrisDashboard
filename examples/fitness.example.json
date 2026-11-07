@@ -1,0 +1,6 @@
+{
+  "workouts": [
+    {"date": "2026-11-08", "type": "Running", "duration_minutes": 40, "distance_km": 7.0},
+    {"date": "2026-11-06", "type": "Strength", "duration_minutes": 55, "distance_km": 0}
+  ]
+}
