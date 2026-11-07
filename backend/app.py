@@ -3,7 +3,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import FastAPI
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from backend.access import allowed_client
 from fastapi.staticfiles import StaticFiles
 from backend.integrations import overview
 
@@ -27,6 +28,8 @@ SECURITY_HEADERS = {
 
 @app.middleware("http")
 async def secure_local_responses(request, call_next):
+    if not allowed_client(request.client.host if request.client else None):
+        return PlainTextResponse("Forbidden", status_code=403, headers={"Cache-Control": "no-store"})
     response = await call_next(request)
     for name, value in SECURITY_HEADERS.items():
         response.headers[name] = value

@@ -150,3 +150,8 @@ Each configured public repository has its own availability status. If one repo f
 ## Browser response safety and version refresh
 
 The local server sets response headers to prevent MIME sniffing, iframe embedding and referrer leakage, plus a restrictive same-origin Content Security Policy. The dashboard HTML, API and health probe use `Cache-Control: no-store`; local static CSS and JS require revalidation so browser reloads can pick up deployed changes. Interactive API documentation and OpenAPI generation are disabled to reduce unnecessary LAN endpoints. These measures reduce accidental exposure but **do not provide authentication or HTTPS**. Any device allowed onto the trusted home LAN and able to reach the service can view the configured content; do not forward the port to the internet. CI additionally checks Python module compilation.
+
+
+## Optional client IP admission control
+
+Use `TRIS_ALLOWED_CLIENT_IPS` for an **optional** comma-separated list of exact source IPs and CIDR networks. Example: `127.0.0.1,192.168.1.0/24`. The MacBook launchd settings JSON also supports this non-secret option. The server compares the actual network peer address, **not** untrusted `X-Forwarded-For` headers. When unset, existing same-Wi-Fi connectivity remains unchanged; configure only after confirming your MacBook/iPad subnet, and include `127.0.0.1` if the local diagnostic tool needs access. A mismatched IP receives HTTP 403. This is source-address filtering, **not authentication**, and cannot protect data from other devices using an allowed IP/network or eavesdropping on unencrypted HTTP. Avoid public port forwarding.
