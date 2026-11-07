@@ -116,6 +116,34 @@
     text("github-updated", statusText(info));
   }
 
+  function showTrello(info) {
+    var list = document.getElementById("trello-list");
+    while (list.firstChild) { list.removeChild(list.firstChild); }
+    if (!info || !info.available) {
+      text("trello-summary", info && info.configured ? "Unavailable" : "Not configured");
+      text("trello-updated", info && info.configured ? "Board temporarily unavailable" : "Configure on MacBook");
+      return;
+    }
+    var columns = info.lists || [];
+    var total = 0;
+    for (var i = 0; i < columns.length; i++) {
+      total += columns[i].count;
+      var row = document.createElement("div");
+      row.className = "repo-row";
+      row.textContent = columns[i].name + " · " + columns[i].count + " cards";
+      list.appendChild(row);
+      var names = columns[i].cards || [];
+      if (names.length) {
+        var preview = document.createElement("div");
+        preview.className = "trello-preview";
+        preview.textContent = names.join(" / ");
+        list.appendChild(preview);
+      }
+    }
+    text("trello-summary", total + " cards");
+    text("trello-updated", statusText(info));
+  }
+
   function loadOverview(force) {
     var now = new Date().getTime();
     if (!force && now - lastDataStarted < 30000) { return; }
@@ -127,6 +155,7 @@
         var payload = JSON.parse(xhr.responseText);
         showGithub(payload.github);
         showWeather(payload.weather);
+        showTrello(payload.trello);
       } catch (error) {
         text("weather-updated", "Invalid server response");
         text("github-updated", "Invalid server response");
