@@ -1,0 +1,144 @@
+"""Offline backup/restore of explicitly configured private dashboard JSON files."""
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+
+from macos.preflight import FILE_LOADERS
+from macos.service import read_public_settings
+
+MANIFEST = "manifest.json"
+MAX_FILE_BYTES = 128 * 1024
+
+
+def digest(content: bytes) -> str:
+    return hashlib.sha256(content).hexdigest()
+
+
+def configured_files(settings_file: Path) -> dict[str, tuple[Path, object]]:
+    settings = read_public_settings(settings_file)
+    results = {}
+    for label, (env_name, loader) in FILE_LOADERS.items():
+        if env_name in settings:
+            results[label] = (Path(settings[env_name]).expanduser().resolve(), loader)
+    return results
+
+
+def backup(settings_file: Path, destination: Path) -> dict:
+    source = configured_files(settings_file)
+    destination = destination.expanduser().resolve()
+    project = Path(__file__).resolve().parent.parent
+    if project == destination or project in destination.parents:
+        raise ValueError("Backups must live outside the public repository")
+    if destination.exists():
+        raise ValueError("Backup directory already exists")
+    if not source:
+        raise ValueError("No private data files configured")
+    # Validate and stage all originals before creating the final backup directory.
+    originals = {}
+    for name, (path, loader) in source.items():
+        loader(path)
+        data = path.read_bytes()
+        if len(data) > MAX_FILE_BYTES:
+            raise ValueError("Source file too large")
+        originals[name] = data
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temp = Path(tempfile.mkdtemp(prefix=".tris-backup-", dir=destination.parent))
+    os.chmod(temp, 0o700)
+    try:
+        manifest = {"version": 1, "created_utc": datetime.now(timezone.utc).isoformat(), "files": {}}
+        for name, data in originals.items():
+            filename = name + ".json"
+            path = temp / filename
+            path.write_bytes(data)
+            os.chmod(path, 0o600)
+            manifest["files"][name] = {"sha256": digest(data), "bytes": len(data)}
+        manifest_file = temp / MANIFEST
+        manifest_file.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        os.chmod(manifest_file, 0o600)
+        temp.rename(destination)
+    finally:
+        if temp.exists():
+            shutil.rmtree(temp)
+    return {"backed_up": len(originals), "created": True}
+
+
+def validate_backup(directory: Path) -> dict:
+    directory = directory.expanduser().resolve()
+    manifest = json.loads((directory / MANIFEST).read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict) or manifest.get("version") != 1:
+        raise ValueError("Unsupported backup manifest")
+    entries = manifest.get("files")
+    if not isinstance(entries, dict) or not entries:
+        raise ValueError("Backup manifest is empty")
+    if any(name not in FILE_LOADERS for name in entries):
+        raise ValueError("Unknown backup file")
+    for name, metadata in entries.items():
+        path = directory / (name + ".json")
+        if path.is_symlink():
+            raise ValueError("Backup file cannot be a symlink")
+        content = path.read_bytes()
+        if (len(content) > MAX_FILE_BYTES or len(content) != metadata["bytes"]
+                or digest(content) != metadata["sha256"]):
+            raise ValueError("Backup data checksum mismatch")
+    return entries
+
+
+def restore(settings_file: Path, directory: Path, *, force: bool = False) -> dict:
+    files = configured_files(settings_file)
+    entries = validate_backup(directory)
+    if any(name not in files for name in entries):
+        raise ValueError("Configured target missing for backup content")
+    if not force:
+        # Dry-run: validates backup and configuration, does not touch files.
+        return {"validated": len(entries), "restored": 0}
+    directory = directory.expanduser().resolve()
+    # Validate every copy with the existing schema validator before modifying any target.
+    for name, (target, loader) in files.items():
+        if name in entries:
+            loader(directory / (name + ".json"))
+            if not target.parent.is_dir():
+                raise ValueError("Target directory missing")
+    temp_files = []
+    try:
+        for name in entries:
+            target, _ = files[name]
+            with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".tris-restore-",
+                                             delete=False) as handle:
+                staged = Path(handle.name)
+                temp_files.append((staged, target))
+                handle.write((directory / (name + ".json")).read_bytes())
+            os.chmod(staged, 0o600)
+        for staged, target in temp_files:
+            os.replace(staged, target)
+    finally:
+        for staged, target in temp_files:
+            staged.unlink(missing_ok=True)
+    return {"validated": len(entries), "restored": len(entries)}
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Private offline dashboard JSON backup and restore")
+    parser.add_argument("command", choices=("backup", "restore"))
+    parser.add_argument("--settings", type=Path, required=True)
+    parser.add_argument("--directory", type=Path, required=True)
+    parser.add_argument("--force", action="store_true", help="Explicitly restore over configured files")
+    args = parser.parse_args()
+    try:
+        if args.command == "backup":
+            if args.force:
+                raise ValueError("--force is only for restore")
+            result = backup(args.settings, args.directory)
+        else:
+            result = restore(args.settings, args.directory, force=args.force)
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+        parser.exit(1, "Backup operation failed. Check files, permissions, and checksums.\n")
+    print(json.dumps(result, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()

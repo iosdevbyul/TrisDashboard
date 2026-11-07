@@ -244,3 +244,15 @@ Pass `--merge` instead of `--force` when importing another WakTrainer export int
 ## Optional scheduled workout import on MacBook
 
 If a separate process **already writes** the version 1 WakTrainer export JSON to a fixed private file, the MacBook can check for it every 15 minutes. Run `.venv/bin/python -m macos.periodic_workout install --input ~/tris-private/waktrainer-export.json --output ~/tris-private/fitness.json` as a logged-in macOS user to install an independent per-user LaunchAgent. The export file may not exist yet: the job quietly skips missing input, and repeat imports use the idempotent `--merge` behavior. To stop this scheduled import, run `.venv/bin/python -m macos.periodic_workout uninstall`. The job is **not automatically installed** during setup and does not create a source export, access the iOS app, communicate with iCloud, or wake a sleeping Mac. Do not put input/output files under the Git repository. Configure `TRIS_FITNESS_FILE` to the output path so the dashboard can show the records. Like v1 merge, two distinct sessions with identical measurements can collide; app-generated stable IDs are a future enhancement.
+
+## Offline backup and restore of personal data
+
+Back up the local JSON files configured in your Mac's allowlisted settings (portfolio, workout, dividends, agenda) to a **private destination outside this repository**:
+
+```sh
+.venv/bin/python -m macos.backup backup --settings ~/tris-dashboard-settings.json --directory ~/tris-private/backups/backup-001
+.venv/bin/python -m macos.backup restore --settings ~/tris-dashboard-settings.json --directory ~/tris-private/backups/backup-001
+.venv/bin/python -m macos.backup restore --settings ~/tris-dashboard-settings.json --directory ~/tris-private/backups/backup-001 --force
+```
+
+A new backup directory is created with owner-only file permissions and SHA-256 checksums. Existing backup directories are never silently overwritten; the manifest never contains personal file contents or original paths. Restore defaults to **validation only** and needs explicit `--force` before replacing any configured data file. The tool validates checksums and data schemas before writing. It backs up **only** explicitly configured local JSON files, not credentials or Keychain entries. Copies are plaintext, not encrypted: store on a protected Mac volume and do not place them in a public/synced directory. This is not a remote/cloud backup service. Stop background import jobs when restoring to avoid concurrent writes.
