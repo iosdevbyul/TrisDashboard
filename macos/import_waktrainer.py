@@ -12,7 +12,10 @@ from backend.fitness import load_fitness
 # Duplicate signature uses the fields available in the v1 interchange contract.
 # Distinct sessions with identical values are indistinguishable in v1.
 def workout_key(item: dict) -> tuple:
-    return (item["date"], item["type"], item["duration_minutes"], item.get("distance_km", 0))
+    if item.get("session_id"):
+        return ("id", item["session_id"])
+    return ("legacy", item["date"], item["type"], item["duration_minutes"],
+            item.get("distance_km", 0))
 
 
 def merged_workouts(existing: list, incoming: list) -> tuple[list, int]:
@@ -44,8 +47,9 @@ def parse_export(path: Path) -> dict:
     if path.stat().st_size > MAX_BYTES:
         raise ValueError("Export is too large")
     export = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(export, dict) or export.get("schema_version") != 1:
+    if not isinstance(export, dict) or type(export.get("schema_version")) is not int or export["schema_version"] not in (1, 2):
         raise ValueError("Unsupported export version")
+    version = export["schema_version"]
     sessions = export.get("sessions")
     if not isinstance(sessions, list) or len(sessions) > MAX_SESSIONS:
         raise ValueError("Invalid sessions")
@@ -67,12 +71,21 @@ def parse_export(path: Path) -> dict:
                 or not math.isfinite(seconds) or not math.isfinite(meters)
                 or not 0 <= seconds <= 86400 or not 0 <= meters <= 1_000_000):
             raise ValueError("Invalid session measurement")
-        workouts.append({
+        workout = {
             "date": timestamp.date().isoformat(),
             "type": TYPES[kind],
             "duration_minutes": round(seconds / 60, 3),
             "distance_km": round(meters / 1000, 3),
-        })
+        }
+        if version == 2:
+            session_id = session.get("session_id")
+            if (not isinstance(session_id, str) or not 1 <= len(session_id) <= 100
+                    or not all(char.isalnum() or char in "-_:." for char in session_id)):
+                raise ValueError("Version 2 requires stable session_id")
+            workout["session_id"] = session_id
+        workouts.append(workout)
+    if version == 2 and len({item["session_id"] for item in workouts}) != len(workouts):
+        raise ValueError("Duplicate session_id in export")
     return {"workouts": workouts}
 
 

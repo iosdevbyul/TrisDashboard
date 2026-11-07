@@ -25,3 +25,7 @@ This is a **TrisDashboard-defined interchange contract**, not a claim that the W
 - Reject unknown schema versions, unknown workout types, impossible units and invalid timestamps.
 
 The bridge converts these to the existing local fitness JSON format (minutes/kilometers). It performs no iOS permission requests, HealthKit reading, network upload or background synchronization. The app-side implementation remains a separate task.
+
+## Version 2: durable session identity (recommended)
+
+The version 2 interchange adds a required `session_id` per workout. It must be the same stable string across repeat exports of the same underlying workout and distinct for different sessions; use a workout UUID generated and retained by the source app, not a random value on each export. Accepted characters are letters, digits, hyphen, underscore, colon and period (1–100 characters). All other fields retain version 1 names, ranges and time-zone semantics. Repeated IDs within one export are rejected. Records are deduplicated **by session_id**; identical duration/distance workouts with different IDs remain separate. Version 1 remains accepted for existing sources and uses the legacy measurement-based heuristic. Version 2 does not prove the current WakTrainer app has implemented export.

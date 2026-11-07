@@ -92,3 +92,43 @@ def test_failure_cannot_overwrite_previous_workouts(tmp_path):
     with pytest.raises(ValueError):
         import_export(source, destination, force=True)
     assert destination.read_text() == "old"
+
+
+def test_v2_preserves_stable_session_id_and_distinguishes_same_metrics(tmp_path):
+    source = export(tmp_path, [
+        {"session_id": "ios-workout-001", "started_at": "2026-11-08T09:00:00+09:00",
+         "activity_type": "running", "duration_seconds": 3600, "distance_meters": 10000},
+        {"session_id": "ios-workout-002", "started_at": "2026-11-08T12:00:00+09:00",
+         "activity_type": "running", "duration_seconds": 3600, "distance_meters": 10000},
+    ], version=2)
+    dest = tmp_path / "fitness.json"
+    imported = import_export(source, dest)
+    assert imported["added"] == 2
+    assert import_export(source, dest, merge=True)["added"] == 0
+    records = json.loads(dest.read_text())["workouts"]
+    assert {record["session_id"] for record in records} == {"ios-workout-001", "ios-workout-002"}
+
+
+def test_v2_duplicate_ids_rejected(tmp_path):
+    session = {"session_id": "same-id", "started_at": "2026-11-08T09:00:00+09:00",
+               "activity_type": "running", "duration_seconds": 600}
+    with pytest.raises(ValueError, match="Duplicate session"):
+        parse_export(export(tmp_path, [session, session], version=2))
+
+
+def test_v2_rejects_missing_or_invalid_id(tmp_path):
+    session = {"started_at": "2026-11-08T09:00:00+09:00",
+               "activity_type": "running", "duration_seconds": 600}
+    with pytest.raises(ValueError, match="session_id"):
+        parse_export(export(tmp_path, [session], version=2))
+    session["session_id"] = "invalid id /"
+    with pytest.raises(ValueError, match="session_id"):
+        parse_export(export(tmp_path, [session], version=2))
+
+
+def test_legacy_v1_export_still_supported(tmp_path):
+    data = parse_export(export(tmp_path, [
+        {"started_at": "2026-11-08T08:10:00+09:00",
+         "activity_type": "walking", "duration_seconds": 1200}
+    ]))
+    assert "session_id" not in data["workouts"][0]
