@@ -1,0 +1,47 @@
+"""Read-only manually recorded dividend payments; never estimates future payouts."""
+import json
+import os
+from datetime import date
+from decimal import Decimal
+from pathlib import Path
+from backend.portfolio import nonnegative, CURRENCIES
+
+def load_dividends(path: Path, today: date | None = None) -> dict:
+    if path.stat().st_size > 65536:
+        raise ValueError("Dividend file too large")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    entries = payload.get("payments") if isinstance(payload, dict) else None
+    if not isinstance(entries, list) or len(entries) > 300:
+        raise ValueError("Invalid dividend payments")
+    reference = today or date.today()
+    totals = {}
+    month = reference.strftime("%Y-%m")
+    recent = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("Invalid payment")
+        ticker, currency = entry.get("symbol"), entry.get("currency")
+        if not isinstance(ticker, str) or not 1 <= len(ticker) <= 20 or not all(c.isalnum() or c in ".-_" for c in ticker):
+            raise ValueError("Invalid symbol")
+        if currency not in CURRENCIES:
+            raise ValueError("Unsupported currency")
+        paid_on = date.fromisoformat(entry["paid_on"])
+        amount = nonnegative(entry.get("amount"), "amount")
+        if paid_on > reference:
+            raise ValueError("Only recorded past or current payments allowed")
+        if paid_on.strftime("%Y-%m") == month:
+            totals[currency] = totals.get(currency, Decimal("0")) + amount
+        recent.append({"symbol": ticker, "currency": currency, "paid_on": paid_on.isoformat(), "amount": str(amount)})
+    recent.sort(key=lambda item: item["paid_on"], reverse=True)
+    return {"available": True, "configured": True, "source": "manual_confirmed_payments",
+            "month": month, "monthly_totals": {key: str(value) for key, value in sorted(totals.items())},
+            "record_count": len(entries), "recent": recent[:5], "stale": False}
+
+def dividends() -> dict:
+    file_path = os.environ.get("TRIS_DIVIDENDS_FILE", "").strip()
+    if not file_path:
+        return {"available": False, "configured": False, "stale": False}
+    try:
+        return load_dividends(Path(file_path).expanduser())
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"available": False, "configured": True, "stale": True}

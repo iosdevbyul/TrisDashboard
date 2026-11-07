@@ -18,7 +18,7 @@ def agent_path(home: Path) -> Path:
     return home / "Library" / "LaunchAgents" / (LABEL + ".plist")
 
 
-ALLOWED_SETTINGS = ("TRIS_LATITUDE", "TRIS_LONGITUDE", "TRIS_LOCATION_NAME", "TRIS_GITHUB_REPOS", "TRIS_PORTFOLIO_FILE", "TRIS_FITNESS_FILE")
+ALLOWED_SETTINGS = ("TRIS_LATITUDE", "TRIS_LONGITUDE", "TRIS_LOCATION_NAME", "TRIS_GITHUB_REPOS", "TRIS_PORTFOLIO_FILE", "TRIS_FITNESS_FILE", "TRIS_DIVIDENDS_FILE")
 
 
 def read_public_settings(path: Path) -> dict[str, str]:
@@ -51,6 +51,10 @@ def read_public_settings(path: Path) -> dict[str, str]:
         fitness_path = Path(settings["TRIS_FITNESS_FILE"])
         if not fitness_path.is_absolute() or fitness_path.suffix.lower() != ".json":
             raise ValueError("TRIS_FITNESS_FILE must be an absolute JSON path")
+    if "TRIS_DIVIDENDS_FILE" in settings:
+        dividend_path = Path(settings["TRIS_DIVIDENDS_FILE"])
+        if not dividend_path.is_absolute() or dividend_path.suffix.lower() != ".json":
+            raise ValueError("TRIS_DIVIDENDS_FILE must be an absolute JSON path")
     return settings
 
 
