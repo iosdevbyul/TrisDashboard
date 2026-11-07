@@ -76,6 +76,37 @@
     return info.stale ? "Last known data (stale)" : "Updated " + (info.updated_at ? info.updated_at.replace("T", " ").slice(0, 16) + " UTC" : "recently");
   }
 
+  function showPortfolio(info) {
+    var list = document.getElementById("portfolio-list");
+    while (list.firstChild) { list.removeChild(list.firstChild); }
+    if (!info || !info.available) {
+      text("portfolio-summary", "Not available");
+      text("portfolio-updated", info && info.configured ? "Check MacBook snapshot" : "Configure on MacBook");
+      return;
+    }
+    var positions = info.positions || [];
+    text("portfolio-summary", positions.length + " holdings");
+    for (var i = 0; i < positions.length; i++) {
+      var item = positions[i];
+      var row = document.createElement("div");
+      row.className = "repo-row";
+      row.textContent = item.symbol + " · " + item.quantity + " shares" +
+        (item.market_value !== null ? " · " + item.market_value + " " + item.currency : " · price unavailable");
+      list.appendChild(row);
+    }
+    var totals = info.totals || {};
+    var keys = Object.keys(totals);
+    if (keys.length) {
+      var total = document.createElement("div");
+      total.className = "portfolio-total";
+      var parts = [];
+      for (var j = 0; j < keys.length; j++) { parts.push(keys[j] + " " + totals[keys[j]]); }
+      total.textContent = "Values: " + parts.join(" / ") + (info.valuation_complete ? "" : " (partial)");
+      list.appendChild(total);
+    }
+    text("portfolio-updated", "Manual prices · Snapshot " + info.as_of.replace("T", " ").slice(0, 16));
+  }
+
   function showWeather(info) {
     if (!info || !info.available) {
       text("weather-temp", "Unavailable");
@@ -186,6 +217,7 @@
         showWeather(payload.weather);
         showTrello(payload.trello);
         showServer(payload.server);
+        showPortfolio(payload.portfolio);
       } catch (error) {
         text("weather-updated", "Invalid server response");
         text("github-updated", "Invalid server response");

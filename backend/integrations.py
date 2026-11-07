@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
+from backend.portfolio import portfolio
 
 _cache = {}
 _lock = threading.Lock()
@@ -144,4 +145,4 @@ def trello() -> dict:
 
 
 def overview() -> dict:
-    return {"weather": weather(), "github": github(), "trello": trello()}
+    return {"weather": weather(), "github": github(), "trello": trello(), "portfolio": portfolio()}
