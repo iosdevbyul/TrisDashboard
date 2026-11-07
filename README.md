@@ -260,3 +260,7 @@ A new backup directory is created with owner-only file permissions and SHA-256 c
 ## Restore failure recovery
 
 Restore validation now checks **both** backup file checksums and the dashboard data schemas, even without `--force`. During an explicit restore, prior versions of every destination are staged first. If a later file replacement fails, the command attempts to roll back files already replaced. A multi-file restore cannot be fully atomic across separate destinations or power loss; the rollback is best effort, and concurrent workout imports must be stopped before recovery. If rollback cannot complete, the command exits unsuccessfully; retain the original backup for manual recovery.
+
+## Stable workout IDs (WakTrainer export v2)
+
+The importer now supports interchange `schema_version: 2` with a **required stable `session_id`** for each workout. Two workouts with equal dates, duration and distance but different IDs no longer collapse into one record. Re-importing the same IDs remains idempotent. Version 1 files still work using the previous measurement-based fallback. See `examples/waktrainer-export-v2.example.json` and `docs/WAKTRAINER_EXPORT_CONTRACT.md`. The iOS app must still implement its own exporter and preserve the same IDs across exports.

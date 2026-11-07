@@ -36,6 +36,11 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             raise ValueError("Invalid distance")
         if not (float("-inf") < float(minutes) < float("inf") and float("-inf") < float(distance) < float("inf")):
             raise ValueError("Nonfinite measurement")
+        session_id = workout.get("session_id")
+        if session_id is not None and (
+                not isinstance(session_id, str) or not 1 <= len(session_id) <= 100
+                or not all(c.isalnum() or c in "-_:." for c in session_id)):
+            raise ValueError("Invalid session ID")
         if start <= workout_day <= reference:
             weekly.append({"date": workout_day.isoformat(), "type": kind, "duration_minutes": minutes, "distance_km": distance})
             totals["sessions"] += 1
