@@ -131,6 +131,32 @@
     text("portfolio-updated", "Manual prices · Snapshot " + info.as_of.replace("T", " ").slice(0, 16));
   }
 
+  function showDividends(info) {
+    var list = document.getElementById("dividend-list");
+    while (list.firstChild) { list.removeChild(list.firstChild); }
+    if (!info || !info.available) {
+      text("dividend-summary", info && info.configured ? "Unavailable" : "Not configured");
+      text("dividend-updated", "Local confirmed-payment file");
+      return;
+    }
+    var totals = info.monthly_totals || {};
+    var currencies = Object.keys(totals);
+    var label = [];
+    for (var i = 0; i < currencies.length; i++) {
+      label.push(currencies[i] + " " + totals[currencies[i]]);
+    }
+    text("dividend-summary", label.length ? label.join(" / ") : "No recorded payments this month");
+    var payments = info.recent || [];
+    for (var j = 0; j < payments.length; j++) {
+      var row = document.createElement("div");
+      row.className = "repo-row";
+      row.textContent = payments[j].paid_on + " · " + payments[j].symbol +
+        " · " + payments[j].amount + " " + payments[j].currency;
+      list.appendChild(row);
+    }
+    text("dividend-updated", "Manual confirmed payments · " + info.month);
+  }
+
   function showFitness(info) {
     var list = document.getElementById("fitness-list");
     while (list.firstChild) { list.removeChild(list.firstChild); }
@@ -267,6 +293,7 @@
         showServer(payload.server);
         showPortfolio(payload.portfolio);
         showFitness(payload.fitness);
+        showDividends(payload.dividends);
         showSummary(payload);
       } catch (error) {
         text("weather-updated", "Invalid server response");

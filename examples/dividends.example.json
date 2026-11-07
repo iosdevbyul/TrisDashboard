@@ -1,0 +1,5 @@
+{
+  "payments": [
+    {"symbol": "DEMO", "paid_on": "2026-01-02", "currency": "USD", "amount": "10.50"}
+  ]
+}

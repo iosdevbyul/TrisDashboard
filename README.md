@@ -130,3 +130,8 @@ Weather, GitHub and Trello are collected concurrently by the MacBook server. The
 On the MacBook, after cloning the repository, run `sh scripts/setup-mac.sh` to check for Python 3.11+, create `.venv`, and install server dependencies. This script does **not** start or expose a server or install launchd. Check local setup later using `.venv/bin/python -m macos.doctor` or `.venv/bin/python -m macos.doctor --json` for script-friendly status.
 
 The doctor reports Python compatibility, local environment existence, whether the per-user LaunchAgent exists, and whether `127.0.0.1:8080/healthz` responds. It does not print keys, tokens or personal data. Start on localhost with `.venv/bin/python -m uvicorn backend.app:app --host 127.0.0.1 --port 8080`. To allow an iPad on **trusted home Wi-Fi**, explicitly opt in with `.venv/bin/python -m macos.service install --lan` after stopping any manually started service. Make sure the Mac stays awake and never configure public router forwarding.
+
+
+## Confirmed dividend payment ledger
+
+Copy `examples/dividends.example.json` to a private MacBook file and replace the demo with **actual confirmed receipts**. Set `TRIS_DIVIDENDS_FILE` to its absolute JSON path, or add that path to the allowlisted non-secret launchd settings JSON and reinstall the agent. Each entry has `symbol`, `paid_on` (YYYY-MM-DD), `currency` (USD or KRW), and `amount` (a nonnegative amount recorded for that payment). The panel shows calendar-month totals per currency and recent recorded payments, without FX conversion or speculative future distributions. Never put sensitive holdings or account information in Git. No live broker, issuer, or dividend forecast service is connected.

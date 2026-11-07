@@ -1,7 +1,7 @@
 (function () {
   "use strict";
   var key = "tris.dashboard.display.v1";
-  var panelNames = ["portfolio", "github", "weather", "trello", "server", "fitness"];
+  var panelNames = ["portfolio", "dividends", "github", "weather", "trello", "server", "fitness"];
   var settings = {compact: false, dim: false, glance: false, hidden: []};
 
   function store() {

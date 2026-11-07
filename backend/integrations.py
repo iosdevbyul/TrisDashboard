@@ -10,6 +10,7 @@ from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 from backend.portfolio import portfolio
 from backend.fitness import fitness
+from backend.dividends import dividends
 
 _cache = {}
 _lock = threading.Lock()
@@ -176,4 +177,5 @@ def overview(timeout_seconds: float = 4.0) -> dict:
             result[name] = {"available": False, "configured": True, "stale": True}
     result["portfolio"] = portfolio()
     result["fitness"] = fitness()
+    result["dividends"] = dividends()
     return result
