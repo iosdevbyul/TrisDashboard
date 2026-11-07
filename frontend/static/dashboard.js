@@ -82,7 +82,7 @@
   }
 
   function showSummary(payload) {
-    var names = ["weather", "github", "trello", "portfolio", "fitness", "dividends", "agenda"];
+    var names = ["weather", "github", "trello", "portfolio", "fitness", "dividends", "agenda", "quotes"];
     var active = 0;
     var unavailable = 0;
     var stale = 0;
@@ -100,6 +100,34 @@
       (unavailable ? " · " + unavailable + " unavailable" : ""));
     var now = new Date();
     text("glance-updated", pad(now.getHours()) + ":" + pad(now.getMinutes()));
+  }
+
+  function showQuotes(info) {
+    var list = document.getElementById("quotes-list");
+    while (list.firstChild) { list.removeChild(list.firstChild); }
+    if (!info || !info.available) {
+      text("quotes-summary", info && info.configured ? "Provider unavailable" : "Not configured");
+      text("quotes-updated", "Optional source · no live pricing guarantee");
+      return;
+    }
+    var rows = info.quotes || [];
+    var successful = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var line = document.createElement("div");
+      line.className = "repo-row";
+      if (rows[i].price && rows[i].reported_at_utc) {
+        successful++;
+        line.textContent = rows[i].symbol + " · " + rows[i].price + " " + rows[i].currency +
+          " · " + rows[i].reported_at_utc.replace("T", " ").slice(0, 16) + " UTC" +
+          (rows[i].outdated ? " · OUTDATED" : "");
+      } else {
+        line.textContent = rows[i].symbol + " · Quote unavailable";
+      }
+      list.appendChild(line);
+    }
+    text("quotes-summary", successful + "/" + rows.length + " quotes reported");
+    text("quotes-updated", "Twelve Data · Provider timestamps · not guaranteed real-time" +
+      (info.stale ? " · Cached stale" : ""));
   }
 
   function showPortfolio(info) {
@@ -382,6 +410,7 @@
         showTrello(payload.trello);
         showServer(payload.server);
         showPortfolio(payload.portfolio);
+        showQuotes(payload.quotes);
         showFitness(payload.fitness);
         showDividends(payload.dividends);
         showAgenda(payload.agenda);

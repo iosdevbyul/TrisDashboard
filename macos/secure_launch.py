@@ -8,6 +8,7 @@ SERVICE_NAMES = {
     "TRIS_GITHUB_TOKEN": "ai.tris.dashboard.github",
     "TRIS_TRELLO_KEY": "ai.tris.dashboard.trello-key",
     "TRIS_TRELLO_TOKEN": "ai.tris.dashboard.trello-token",
+    "TRIS_TWELVEDATA_API_KEY": "ai.tris.dashboard.twelvedata",
 }
 KEYCHAIN_ACCOUNT = "TrisDashboard"
 
