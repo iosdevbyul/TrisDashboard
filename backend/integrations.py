@@ -81,11 +81,24 @@ def github() -> dict:
             pulls = get_json("https://api.github.com/repos/" + encoded + "/pulls?state=open&per_page=20")
             if not isinstance(pulls, list):
                 raise ValueError("Unexpected GitHub response")
+            runs_payload = get_json("https://api.github.com/repos/" + encoded + "/actions/runs?per_page=1")
+            runs = runs_payload["workflow_runs"]
+            if not isinstance(runs, list):
+                raise ValueError("Unexpected workflow response")
+            latest = runs[0] if runs else None
+            ci = {
+                "status": latest.get("status", "unknown"),
+                "conclusion": latest.get("conclusion"),
+                "url": latest.get("html_url"),
+                "name": latest.get("name", "Workflow"),
+            } if latest else None
             results.append({"repository": repo, "open_pr_count": len(pulls),
+                            "open_pr_count_truncated": len(pulls) == 20,
+                            "latest_ci": ci,
                             "open_prs": [{"number": item["number"], "title": item["title"][:120],
                                           "url": item["html_url"]} for item in pulls[:3]]})
         return {"available": True, "repositories": results}
-    return cached("github:" + ",".join(repositories), load, ttl=180)
+    return cached("github:" + ",".join(repositories), load, ttl=900)
 
 
 def overview() -> dict:

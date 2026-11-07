@@ -31,10 +31,15 @@ def test_weather_stale_fallback(monkeypatch):
 def test_github_repositories(monkeypatch):
     integrations._cache.clear()
     monkeypatch.setenv("TRIS_GITHUB_REPOS", "iosdevbyul/TrisDashboard,iosdevbyul/TrisDashboard")
-    monkeypatch.setattr(integrations, "get_json", lambda url: [{"number": 2, "title": "Fix tests", "html_url": "https://github.com/iosdevbyul/TrisDashboard/pull/2"}])
+    def mock_github(url):
+        if "/actions/runs" in url:
+            return {"workflow_runs": [{"status": "completed", "conclusion": "success", "html_url": "https://github.com/iosdevbyul/TrisDashboard/actions/runs/42", "name": "CI"}]}
+        return [{"number": 2, "title": "Fix tests", "html_url": "https://github.com/iosdevbyul/TrisDashboard/pull/2"}]
+    monkeypatch.setattr(integrations, "get_json", mock_github)
     result = integrations.github()
     assert len(result["repositories"]) == 1
     assert result["repositories"][0]["open_pr_count"] == 1
+    assert result["repositories"][0]["latest_ci"]["conclusion"] == "success"
 
 
 def test_unavailable_no_credentials_or_errors_leaked(monkeypatch):
