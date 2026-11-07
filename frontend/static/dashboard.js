@@ -107,6 +107,29 @@
     text("portfolio-updated", "Manual prices · Snapshot " + info.as_of.replace("T", " ").slice(0, 16));
   }
 
+  function showFitness(info) {
+    var list = document.getElementById("fitness-list");
+    while (list.firstChild) { list.removeChild(list.firstChild); }
+    if (!info || !info.available) {
+      text("fitness-summary", info && info.configured ? "Unavailable" : "Not configured");
+      text("fitness-updated", info && info.configured ? "Check MacBook workout file" : "Configure on MacBook");
+      return;
+    }
+    var summary = info.summary;
+    text("fitness-summary", summary.sessions + " sessions · " + summary.duration_minutes + " min");
+    var total = document.createElement("div");
+    total.textContent = "Distance " + summary.distance_km + " km · " + info.period_start + " to " + info.period_end;
+    list.appendChild(total);
+    var recent = info.recent || [];
+    for (var i = 0; i < recent.length; i++) {
+      var row = document.createElement("div");
+      row.className = "repo-row";
+      row.textContent = recent[i].date + " · " + recent[i].type + " · " + recent[i].duration_minutes + " min";
+      list.appendChild(row);
+    }
+    text("fitness-updated", "Local export · Refreshes on page data update");
+  }
+
   function showWeather(info) {
     if (!info || !info.available) {
       text("weather-temp", "Unavailable");
@@ -218,6 +241,7 @@
         showTrello(payload.trello);
         showServer(payload.server);
         showPortfolio(payload.portfolio);
+        showFitness(payload.fitness);
       } catch (error) {
         text("weather-updated", "Invalid server response");
         text("github-updated", "Invalid server response");

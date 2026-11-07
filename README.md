@@ -108,3 +108,8 @@ The portfolio panel reads an optional JSON snapshot **from the MacBook only**. C
 Each device has its own settings stored in browser localStorage. Select **Display settings** to toggle compact cards, reduce display brightness with a darker CSS theme, or hide individual panels; **Reset display** restores all panels. **Refresh now** reloads the current page. These preferences stay on the device and do not sync between iPad/iPhone. If Safari storage is disabled or wiped, the default display is used; no server credentials are stored there.
 
 For login-start portfolio loading, set a private **absolute JSON file path** under `TRIS_PORTFOLIO_FILE` in the Mac public settings JSON. This stores only the path in the per-user LaunchAgent plist, not portfolio contents or tokens. Keep your snapshot outside the repository. Reinstall the user agent after changing its settings.
+
+
+## Local fitness summary
+
+Fitness reads an optional MacBook-only JSON workout export, without requesting HealthKit permissions or pretending to synchronize WakTrainer. Copy `examples/fitness.example.json` to a private folder, replace with real workouts, and set `TRIS_FITNESS_FILE` to an absolute JSON file path. A rolling 7-day inclusive period shows sessions, minutes, kilometers, and up to five recent workouts. Missing or invalid exports show a clearly marked unavailable panel. Keep personal workout data out of Git and out of `frontend/`. To use login auto-start, add the absolute `TRIS_FITNESS_FILE` path to the nonsecret launchd settings JSON and reinstall the agent.
