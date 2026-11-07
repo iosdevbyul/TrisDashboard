@@ -132,3 +132,41 @@ def test_legacy_v1_export_still_supported(tmp_path):
          "activity_type": "walking", "duration_seconds": 1200}
     ]))
     assert "session_id" not in data["workouts"][0]
+
+
+def test_v2_conflicting_same_id_cannot_silently_discard_changed_measurement(tmp_path):
+    first = export(tmp_path, [{
+        "session_id": "stable-01", "started_at": "2026-11-08T09:00:00+09:00",
+        "activity_type": "running", "duration_seconds": 1200,
+        "distance_meters": 3000,
+    }], version=2)
+    output = tmp_path / "history.json"
+    import_export(first, output)
+    original = output.read_bytes()
+    export(tmp_path, [{
+        "session_id": "stable-01", "started_at": "2026-11-08T09:00:00+09:00",
+        "activity_type": "running", "duration_seconds": 1500,
+        "distance_meters": 3500,
+    }], version=2)
+    with pytest.raises(ValueError, match="Conflicting workout session ID"):
+        import_export(first, output, merge=True)
+    assert output.read_bytes() == original
+
+
+def test_v2_two_different_ids_same_metrics_are_preserved(tmp_path):
+    path = export(tmp_path, [
+        {"session_id": "a", "started_at": "2026-11-08T09:00:00+09:00",
+         "activity_type": "running", "duration_seconds": 1200},
+        {"session_id": "b", "started_at": "2026-11-08T09:00:00+09:00",
+         "activity_type": "running", "duration_seconds": 1200},
+    ], version=2)
+    output = tmp_path / "history.json"
+    assert import_export(path, output)["added"] == 2
+    assert import_export(path, output, merge=True)["added"] == 0
+
+
+def test_v1_duplicate_measurements_rejected_instead_of_double_counted(tmp_path):
+    workout = {"started_at": "2026-11-08T09:00:00+09:00",
+               "activity_type": "running", "duration_seconds": 1200}
+    with pytest.raises(ValueError, match="Duplicate legacy"):
+        parse_export(export(tmp_path, [workout, workout]))

@@ -29,3 +29,7 @@ The bridge converts these to the existing local fitness JSON format (minutes/kil
 ## Version 2: durable session identity (recommended)
 
 The version 2 interchange adds a required `session_id` per workout. It must be the same stable string across repeat exports of the same underlying workout and distinct for different sessions; use a workout UUID generated and retained by the source app, not a random value on each export. Accepted characters are letters, digits, hyphen, underscore, colon and period (1–100 characters). All other fields retain version 1 names, ranges and time-zone semantics. Repeated IDs within one export are rejected. Records are deduplicated **by session_id**; identical duration/distance workouts with different IDs remain separate. Version 1 remains accepted for existing sources and uses the legacy measurement-based heuristic. Version 2 does not prove the current WakTrainer app has implemented export.
+
+## Reimport collision handling
+
+When reimporting v2, the same `session_id` with the same saved metrics is idempotent. The same ID with **different** saved metrics is treated as a conflict and the import is rejected without altering the existing file. The exporter should not reuse IDs for different workouts. Version 1 data cannot distinguish separate sessions with identical summarized measurements, so duplicates within one v1 export are rejected rather than silently counted twice. The operator must resolve conflicts upstream; there is no silent history replacement.
