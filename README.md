@@ -286,3 +286,7 @@ When the owner has configured both a local portfolio snapshot and the optional T
 ## Workout identity conflicts
 
 The WakTrainer v2 importer now refuses to silently ignore a corrected or conflicting session that reuses an existing `session_id` with different metrics. It rejects the entire new import without changing the previous history and leaves conflict resolution to the owner/export producer. Existing exact-match records are still safely deduplicated. Legacy v1 exports containing duplicate measurement signatures are rejected to avoid double-counting.
+
+## Browser recovery and quote display regression tests
+
+The Node.js fake-browser CI now exercises overview API HTTP failure, bounded retry scheduling, successful recovery with provider-stamped quotes and partial portfolio valuation, and malformed JSON responses. Tests assert that previously rendered values are retained during failures, quote totals remain explicitly source-attributed, and data source status updates correctly. The checks require no real API token, broker account or external network; the final Safari 9 hardware test is still required.
