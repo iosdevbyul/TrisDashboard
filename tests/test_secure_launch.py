@@ -35,3 +35,28 @@ def test_launchd_uses_wrapper_without_secret_settings(tmp_path):
     assert args[1:3] == ["-m", "macos.secure_launch"]
     assert args[-4:] == ["--host", "0.0.0.0", "--port", "8080"]
     assert "TOKEN" not in str(config)
+
+
+def test_credential_status_never_discloses_values():
+    from macos.secure_launch import credential_status
+    values = credential_status(lookup=lambda service: "sensitive-" + service)
+    assert all(values.values())
+    assert "sensitive" not in str(values)
+
+
+def test_credential_status_reports_missing_item_and_missing_security_binary():
+    from macos.secure_launch import credential_status
+    def missing(service):
+        if service.endswith("github"):
+            raise OSError("security command unavailable")
+        return None
+    values = credential_status(lookup=missing)
+    assert all(value is False for value in values.values())
+
+
+def test_keychain_lookup_error_does_not_block_public_dashboard():
+    from macos.secure_launch import provider_environment
+    def missing(service):
+        raise OSError("security unavailable")
+    values = provider_environment({"TRIS_GITHUB_REPOS": "owner/public"}, lookup=missing)
+    assert values == {"TRIS_GITHUB_REPOS": "owner/public"}

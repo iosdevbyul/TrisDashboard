@@ -7,6 +7,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 from macos.service import agent_path
+from macos.secure_launch import credential_status
 
 
 def probe_server(url: str = "http://127.0.0.1:8080/healthz") -> bool:
@@ -32,9 +33,13 @@ def inspect(project: Path, home: Path, *, probe=probe_server, python_version=Non
 def main() -> None:
     parser = argparse.ArgumentParser(description="Check the local MacBook dashboard deployment")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable status")
+    parser.add_argument("--keychain", action="store_true",
+                        help="Check presence of optional provider credentials without printing them")
     args = parser.parse_args()
     project = Path(__file__).resolve().parent.parent
     result = inspect(project, Path.home())
+    if args.keychain:
+        result["credentials_present"] = credential_status()
     if args.json:
         print(json.dumps(result, sort_keys=True))
     else:

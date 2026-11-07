@@ -32,3 +32,10 @@ def test_shell_bootstrap_is_explicit_about_lan_access():
     assert "python3 -m venv .venv" in script
     assert "install --lan" in script
     assert "\\npython -m macos.service install --lan" not in script
+
+
+def test_doctor_keychain_flag_does_not_show_secret_text():
+    from pathlib import Path
+    script = (Path(__file__).resolve().parent.parent / "macos" / "doctor.py").read_text()
+    assert "credentials_present" in script
+    assert "credential_status()" in script

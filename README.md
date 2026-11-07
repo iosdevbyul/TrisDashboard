@@ -232,3 +232,7 @@ A versioned, opt-in JSON bridge is available as `.venv/bin/python -m macos.impor
 ## Live MacBook deployment smoke test
 
 After starting the server, run `.venv/bin/python -m macos.smoke` or `.venv/bin/python -m macos.smoke --json` on the MacBook. This tool checks only `http://127.0.0.1:8080`: health, dashboard HTML, all three local frontend assets, API payload shape, and security/cache headers. It counts ready, stale and unavailable sources without printing personal calendar events, positions, credentials or repository names. The tool exits with status 1 if the server or contract is broken; upstream optional integrations may be unavailable without failing the deployment check. When a custom IP allowlist is configured, allow loopback `127.0.0.1` for local smoke tests. It is an integration smoke test, not a long-duration physical Mac/iPad acceptance test.
+
+## Checking login credentials without displaying secrets
+
+Run `.venv/bin/python -m macos.doctor --keychain --json` on the MacBook to inspect only **presence booleans** of the optional GitHub token, Trello API key and Trello token. No token values, Keychain error strings or command-line secret arguments are printed. Missing Keychain entries remain optional: public GitHub monitoring, weather and local JSON cards still work. The service needs a logged-in macOS session, and macOS may prompt for Keychain access. An account configured with GitHub or Trello still needs the right repository/board permissions and board ID.
