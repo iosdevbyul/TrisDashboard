@@ -20,6 +20,8 @@ def test_slow_provider_does_not_block_other_modules(monkeypatch):
         assert result["fitness"]["available"] is False
     finally:
         blocker.set()
+        # Ensure this shared in-flight request finishes before the next test.
+        integrations._PROVIDER_INFLIGHT["weather"].result(timeout=2)
 
 
 def test_provider_exception_never_breaks_other_data(monkeypatch):
