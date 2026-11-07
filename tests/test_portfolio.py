@@ -5,7 +5,10 @@ import pytest
 from backend.portfolio import load_portfolio, portfolio
 
 
-def write_snapshot(tmp_path, positions, as_of="2026-11-08T09:00:00+09:00"):
+def write_snapshot(tmp_path, positions, as_of=None):
+    if as_of is None:
+        from datetime import datetime, timezone, timedelta
+        as_of = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
     path = tmp_path / "holdings.json"
     path.write_text(json.dumps({"as_of": as_of, "positions": positions}))
     return path
@@ -50,3 +53,15 @@ def test_invalid_snapshot_does_not_crash_dashboard(tmp_path, monkeypatch):
 def test_portfolio_unconfigured(monkeypatch):
     monkeypatch.delenv("TRIS_PORTFOLIO_FILE", raising=False)
     assert not portfolio()["available"]
+
+
+def test_snapshot_age_metadata(tmp_path):
+    from datetime import datetime, timezone
+    from backend.quality import snapshot_quality
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    path = write_snapshot(tmp_path, [{"symbol": "QQQI", "currency": "USD", "quantity": "3"}],
+                          as_of=(now - timedelta(days=5)).isoformat())
+    data = load_portfolio(path)
+    assert data["quality"]["outdated"] is True
+    assert data["quality"]["threshold_hours"] == 72

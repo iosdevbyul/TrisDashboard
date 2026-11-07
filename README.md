@@ -155,3 +155,8 @@ The local server sets response headers to prevent MIME sniffing, iframe embeddin
 ## Optional client IP admission control
 
 Use `TRIS_ALLOWED_CLIENT_IPS` for an **optional** comma-separated list of exact source IPs and CIDR networks. Example: `127.0.0.1,192.168.1.0/24`. The MacBook launchd settings JSON also supports this non-secret option. The server compares the actual network peer address, **not** untrusted `X-Forwarded-For` headers. When unset, existing same-Wi-Fi connectivity remains unchanged; configure only after confirming your MacBook/iPad subnet, and include `127.0.0.1` if the local diagnostic tool needs access. A mismatched IP receives HTTP 403. This is source-address filtering, **not authentication**, and cannot protect data from other devices using an allowed IP/network or eavesdropping on unencrypted HTTP. Avoid public port forwarding.
+
+
+## Data freshness and validation
+
+A manual portfolio snapshot is labeled **OUTDATED** when its timezone-aware `as_of` timestamp is more than 72 hours old. Future timestamps more than ten minutes ahead are rejected, rather than misrepresented as current. The returned quality metadata includes age in hours and the threshold. A recent manual snapshot still means only that the file timestamp is recent: it **does not** mean real-time market prices. Missing position prices stay unavailable.
