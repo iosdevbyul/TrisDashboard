@@ -1,0 +1,17 @@
+html,body{margin:0;min-height:100%;background:#111822;color:#f2f5fa;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
+*{box-sizing:border-box}
+.dashboard{max-width:1024px;margin:0 auto;padding:28px}
+.header{display:table;width:100%;margin-bottom:26px}
+.header-time,.server-status{display:table-cell;vertical-align:middle}
+.server-status{text-align:right;color:#acb9cb;font-size:15px}
+.indicator{display:inline-block;width:10px;height:10px;margin-right:7px;border-radius:50%;background:#c69a55}
+.indicator.online{background:#60c59a}.indicator.offline{background:#d46d74}
+.eyebrow{color:#8ea4c3;letter-spacing:3px;font-size:12px;margin:0 0 10px}
+h1{font-size:60px;margin:0;font-weight:500;line-height:1.1}
+.muted{color:#aab8ca;margin-top:8px}
+.cards{overflow:hidden;margin:-8px}
+.card{float:left;width:calc(50% - 16px);margin:8px;padding:26px;min-height:170px;border-radius:14px;background:#202c3b}
+.card h2{margin:0 0 20px;color:#a6b8d1;text-transform:uppercase;letter-spacing:1px;font-size:15px}
+.card p{font-size:23px;margin:0 0 10px}.card small{color:#8fa2ba;font-size:13px}
+footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
+@media (max-width:600px){.dashboard{padding:20px 16px}h1{font-size:48px}.card{float:none;width:auto;min-height:115px;padding:20px}.card h2{margin-bottom:10px}}
