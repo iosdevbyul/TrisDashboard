@@ -236,3 +236,7 @@ After starting the server, run `.venv/bin/python -m macos.smoke` or `.venv/bin/p
 ## Checking login credentials without displaying secrets
 
 Run `.venv/bin/python -m macos.doctor --keychain --json` on the MacBook to inspect only **presence booleans** of the optional GitHub token, Trello API key and Trello token. No token values, Keychain error strings or command-line secret arguments are printed. Missing Keychain entries remain optional: public GitHub monitoring, weather and local JSON cards still work. The service needs a logged-in macOS session, and macOS may prompt for Keychain access. An account configured with GitHub or Trello still needs the right repository/board permissions and board ID.
+
+## Incremental WakTrainer import
+
+Pass `--merge` instead of `--force` when importing another WakTrainer export into an existing private fitness JSON file. The importer first validates both the incoming export and existing history, then appends only previously unseen workout signatures and atomically writes the combined file. Repeating the same import does not create duplicate records; malformed input never overwrites history. **Limitation of v1:** without stable workout IDs, two distinct workouts with identical date, type, rounded duration and distance cannot be distinguished; they are treated as one. A future WakTrainer exporter with stable session IDs should upgrade the contract. A combined file remains subject to the 500-record limit. The Mac app still requires a user-provided export file; it is not automatic iOS syncing.

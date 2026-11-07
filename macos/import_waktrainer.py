@@ -9,6 +9,26 @@ from pathlib import Path
 
 from backend.fitness import load_fitness
 
+# Duplicate signature uses the fields available in the v1 interchange contract.
+# Distinct sessions with identical values are indistinguishable in v1.
+def workout_key(item: dict) -> tuple:
+    return (item["date"], item["type"], item["duration_minutes"], item.get("distance_km", 0))
+
+
+def merged_workouts(existing: list, incoming: list) -> tuple[list, int]:
+    combined = list(existing)
+    known = {workout_key(item) for item in existing}
+    added = 0
+    for item in incoming:
+        signature = workout_key(item)
+        if signature not in known:
+            combined.append(item)
+            known.add(signature)
+            added += 1
+    if len(combined) > MAX_SESSIONS:
+        raise ValueError("Too many combined sessions")
+    return combined, added
+
 TYPES = {
     "running": "Running",
     "walking": "Walking",
@@ -57,7 +77,7 @@ def parse_export(path: Path) -> dict:
 
 
 def import_export(source: Path, destination: Path, *, force: bool = False,
-                  dry_run: bool = False) -> dict:
+                  dry_run: bool = False, merge: bool = False) -> dict:
     source = source.expanduser().resolve()
     destination = destination.expanduser().resolve()
     project = Path(__file__).resolve().parent.parent
@@ -65,8 +85,20 @@ def import_export(source: Path, destination: Path, *, force: bool = False,
             or project in destination.parents or destination.suffix.lower() != ".json"):
         raise ValueError("Destination must be private JSON outside repository")
     data = parse_export(source)
-    if destination.exists() and not force:
-        raise ValueError("Destination exists")
+    if force and merge:
+        raise ValueError("--force and --merge cannot be combined")
+    added = len(data["workouts"])
+    if destination.exists():
+        if merge:
+            # Validate existing data before considering an append.
+            load_fitness(destination)
+            old = json.loads(destination.read_text(encoding="utf-8"))
+            if not isinstance(old, dict) or not isinstance(old.get("workouts"), list):
+                raise ValueError("Existing workout file is invalid")
+            merged, added = merged_workouts(old["workouts"], data["workouts"])
+            data["workouts"] = merged
+        elif not force:
+            raise ValueError("Destination exists")
     if not dry_run:
         destination.parent.mkdir(parents=True, exist_ok=True)
     temp = None
@@ -81,7 +113,7 @@ def import_export(source: Path, destination: Path, *, force: bool = False,
         if not dry_run:
             os.replace(temp, destination)
             temp = None
-        return {"sessions": len(data["workouts"]), "written": not dry_run}
+        return {"sessions": len(data["workouts"]), "added": added, "written": not dry_run}
     finally:
         if temp is not None:
             temp.unlink(missing_ok=True)
@@ -92,14 +124,16 @@ def main() -> None:
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--merge", action="store_true",
+                        help="Append unique sessions without replacing existing workout history")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     try:
         result = import_export(args.input, args.output, force=args.force,
-                               dry_run=args.dry_run)
+                               dry_run=args.dry_run, merge=args.merge)
     except (OSError, ValueError, TypeError, KeyError):
         parser.exit(1, "Import failed: invalid WakTrainer export or destination.\n")
-    print("Validated " + str(result["sessions"]) + " sessions" +
+    print("Validated " + str(result["sessions"]) + " sessions (" + str(result["added"]) + " new)" +
           ("; saved locally" if result["written"] else "; dry-run only"))
 
 
