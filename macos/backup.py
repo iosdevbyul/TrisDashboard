@@ -93,31 +93,63 @@ def restore(settings_file: Path, directory: Path, *, force: bool = False) -> dic
     entries = validate_backup(directory)
     if any(name not in files for name in entries):
         raise ValueError("Configured target missing for backup content")
-    if not force:
-        # Dry-run: validates backup and configuration, does not touch files.
-        return {"validated": len(entries), "restored": 0}
     directory = directory.expanduser().resolve()
-    # Validate every copy with the existing schema validator before modifying any target.
+    # Dry-run and actual restore both require schema validation, not just checksums.
     for name, (target, loader) in files.items():
         if name in entries:
             loader(directory / (name + ".json"))
-            if not target.parent.is_dir():
+            if force and not target.parent.is_dir():
                 raise ValueError("Target directory missing")
-    temp_files = []
+    if not force:
+        return {"validated": len(entries), "restored": 0}
+    staged_files = []
+    rollback_files = []
+    replaced = []
     try:
+        # Stage all incoming content and recovery copies before changing any target.
         for name in entries:
             target, _ = files[name]
             with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".tris-restore-",
                                              delete=False) as handle:
                 staged = Path(handle.name)
-                temp_files.append((staged, target))
+                staged_files.append((staged, target))
                 handle.write((directory / (name + ".json")).read_bytes())
             os.chmod(staged, 0o600)
-        for staged, target in temp_files:
+            if target.exists():
+                with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".tris-rollback-",
+                                                 delete=False) as handle:
+                    recovery = Path(handle.name)
+                    handle.write(target.read_bytes())
+                os.chmod(recovery, 0o600)
+                rollback_files.append((target, recovery))
+            else:
+                rollback_files.append((target, None))
+        for staged, target in staged_files:
             os.replace(staged, target)
+            replaced.append(target)
+    except Exception:
+        # Best-effort rollback when one of the per-file replacements fails.
+        # Restore old bytes with same-directory replacements; do not delete failed targets.
+        recovery_map = dict(rollback_files)
+        errors = []
+        for target in reversed(replaced):
+            recovery = recovery_map[target]
+            try:
+                if recovery is None:
+                    target.unlink()
+                else:
+                    os.replace(recovery, target)
+            except OSError as error:
+                errors.append(error)
+        if errors:
+            raise RuntimeError("Restore failed and rollback was incomplete") from None
+        raise
     finally:
-        for staged, target in temp_files:
+        for staged, target in staged_files:
             staged.unlink(missing_ok=True)
+        for target, recovery in rollback_files:
+            if recovery is not None:
+                recovery.unlink(missing_ok=True)
     return {"validated": len(entries), "restored": len(entries)}
 
 
@@ -135,7 +167,7 @@ def main() -> None:
             result = backup(args.settings, args.directory)
         else:
             result = restore(args.settings, args.directory, force=args.force)
-    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+    except (OSError, ValueError, KeyError, TypeError, RuntimeError, json.JSONDecodeError):
         parser.exit(1, "Backup operation failed. Check files, permissions, and checksums.\n")
     print(json.dumps(result, sort_keys=True))
 

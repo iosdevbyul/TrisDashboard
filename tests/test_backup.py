@@ -64,3 +64,44 @@ def test_backup_missing_configuration_rejected(tmp_path):
     settings.write_text("{}")
     with pytest.raises(ValueError, match="No private"):
         backup(settings, tmp_path / "backup")
+
+
+def test_partial_replace_failure_rolls_back_all_data(tmp_path, monkeypatch):
+    from macos import backup as module
+    settings, holdings, agenda = fixture_files(tmp_path)
+    snapshot = tmp_path / "snapshot"
+    module.backup(settings, snapshot)
+    holdings.write_text('{"as_of":"changed","positions":[]}')
+    agenda.write_text('{"events":[{"date":"2026-11-08","title":"new local event"}]}')
+    original_holdings, original_agenda = holdings.read_bytes(), agenda.read_bytes()
+    original_replace = module.os.replace
+    counter = {"value": 0}
+
+    def fail_second_destination(src, dst):
+        if str(src).find(".tris-restore-") != -1:
+            counter["value"] += 1
+            if counter["value"] == 2:
+                raise OSError("simulated storage failure")
+        return original_replace(src, dst)
+
+    monkeypatch.setattr(module.os, "replace", fail_second_destination)
+    with pytest.raises(OSError, match="simulated"):
+        module.restore(settings, snapshot, force=True)
+    assert holdings.read_bytes() == original_holdings
+    assert agenda.read_bytes() == original_agenda
+
+
+def test_restore_dry_run_also_validates_schema(tmp_path):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    snapshot = tmp_path / "snapshot"
+    backup(settings, snapshot)
+    import hashlib
+    malformed = b'{"positions":[]}'
+    (snapshot / "portfolio.json").write_bytes(malformed)
+    manifest_path = snapshot / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["files"]["portfolio"]["sha256"] = hashlib.sha256(malformed).hexdigest()
+    manifest["files"]["portfolio"]["bytes"] = len(malformed)
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises((ValueError, KeyError)):
+        restore(settings, snapshot)
