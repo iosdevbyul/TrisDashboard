@@ -88,3 +88,11 @@ def test_frontend_retries_failed_overview_without_discarding_cards():
     assert "30000, 60000, 120000, 180000" in script
     for token in ("const ", "let ", "=>", "fetch(", "?.", "??"):
         assert token not in script
+
+
+def test_source_strip_covers_all_configured_panels():
+    js = client.get("/static/dashboard.js").text
+    assert '["weather", "github", "trello", "portfolio", "fitness", "dividends", "agenda"]' in js
+    assert 'active + "/" + names.length + " ready"' in js
+    assert "info.quality.outdated" in js
+    assert '"/5 ready"' not in js

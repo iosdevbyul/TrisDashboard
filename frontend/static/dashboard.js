@@ -82,7 +82,7 @@
   }
 
   function showSummary(payload) {
-    var names = ["weather", "github", "trello", "portfolio", "fitness"];
+    var names = ["weather", "github", "trello", "portfolio", "fitness", "dividends", "agenda"];
     var active = 0;
     var unavailable = 0;
     var stale = 0;
@@ -90,12 +90,12 @@
       var info = payload[names[i]];
       if (info && info.available) {
         active++;
-        if (info.stale) { stale++; }
-      } else if (info && info.configured) {
+        if (info.stale || (info.quality && info.quality.outdated)) { stale++; }
+      } else if (info && info.configured !== false) {
         unavailable++;
       }
     }
-    text("glance-sources", active + "/5 ready" +
+    text("glance-sources", active + "/" + names.length + " ready" +
       (stale ? " · " + stale + " stale" : "") +
       (unavailable ? " · " + unavailable + " unavailable" : ""));
     var now = new Date();
