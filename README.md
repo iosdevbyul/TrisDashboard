@@ -52,7 +52,7 @@ To configure weather and GitHub repositories for automatic launches, create a JS
 }
 ```
 
-Then install with `python3 -m macos.service install --lan --settings ~/tris-dashboard-settings.json`. Settings are validated and embedded in the per-user LaunchAgent plist, so change them by uninstalling and reinstalling the agent. Only the four **non-secret** public settings above are permitted. Never put tokens/passwords in this file. Service starts on login, not while MacBook sleeps. Logs: `~/Library/Logs/TrisDashboard/`.
+Then install with `python3 -m macos.service install --lan --settings ~/tris-dashboard-settings.json`. Settings are validated and embedded in the per-user LaunchAgent plist, so change them by uninstalling and reinstalling the agent. Only allowlisted **non-secret** configuration values are permitted, including optional local portfolio and fitness JSON file paths. Never put tokens/passwords in this file. Service starts on login, not while MacBook sleeps. Logs: `~/Library/Logs/TrisDashboard/`.
 
 ## Security & compatibility
 
@@ -123,3 +123,10 @@ The top strip reports the number of ready configured or public data sources, sta
 ## Provider timeout isolation
 
 Weather, GitHub and Trello are collected concurrently by the MacBook server. The overview waits at most four seconds for remote results, so one stuck provider does not prevent local fitness/portfolio and other completed providers from rendering. Slow or failed services appear unavailable/stale without returning exception text or credentials. Unfinished provider requests are reused until finished instead of adding an unlimited queue. Browser overview timeout is 10 seconds and stale/out-of-order responses are ignored. Polling remains conservative and provider result caching still applies.
+
+
+## One-command MacBook setup and diagnostics
+
+On the MacBook, after cloning the repository, run `sh scripts/setup-mac.sh` to check for Python 3.11+, create `.venv`, and install server dependencies. This script does **not** start or expose a server or install launchd. Check local setup later using `.venv/bin/python -m macos.doctor` or `.venv/bin/python -m macos.doctor --json` for script-friendly status.
+
+The doctor reports Python compatibility, local environment existence, whether the per-user LaunchAgent exists, and whether `127.0.0.1:8080/healthz` responds. It does not print keys, tokens or personal data. Start on localhost with `.venv/bin/python -m uvicorn backend.app:app --host 127.0.0.1 --port 8080`. To allow an iPad on **trusted home Wi-Fi**, explicitly opt in with `.venv/bin/python -m macos.service install --lan` after stopping any manually started service. Make sure the Mac stays awake and never configure public router forwarding.
