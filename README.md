@@ -177,3 +177,7 @@ Before starting the MacBook LaunchAgent, validate the public, allowlisted settin
 ```
 
 The command returns non-zero when settings or a referenced local data file is invalid, and prints only `valid` / `invalid` / `not-configured` flags. It never prints private paths, portfolio values, calendar titles, or tokens. Unconfigured optional data panels are permitted. CI includes mocked end-to-end tests checking that JavaScript-rendered fields exist in the HTML and that local static assets resolve. This is not a substitute for booting the actual Mac or iPad; hardware verification remains the final step.
+
+## Source overview accuracy
+
+The at-a-glance status strip counts all seven external/local data sources (weather, GitHub, Trello, portfolio, workout, dividend, agenda). It flags outdated manual portfolio snapshots in the stale count, includes configured sources that are temporarily unavailable, and never counts the MacBook status as an external data source. Unconfigured optional sources remain excluded from unavailable counts.
