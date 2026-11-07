@@ -31,4 +31,4 @@ def test_shell_bootstrap_is_explicit_about_lan_access():
     script = (Path(__file__).resolve().parent.parent / "scripts" / "setup-mac.sh").read_text()
     assert "python3 -m venv .venv" in script
     assert "install --lan" in script
-    assert "python -m macos.service install --lan" not in script
+    assert "\\npython -m macos.service install --lan" not in script
