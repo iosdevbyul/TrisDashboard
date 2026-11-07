@@ -185,3 +185,12 @@ The at-a-glance status strip counts all seven external/local data sources (weath
 ## Trello count limits and credential rotation
 
 The Trello overview requests at most 100 open cards per list. When that boundary is reached, the UI labels it **100+ / known cards**, rather than falsely claiming an exact count. Switching Trello key/token invalidates the cached board view, using a one-way digest as the in-process cache scope; raw credentials are never stored as cache keys or returned to clients. It remains a read-only optional integration; the Mac must provide its Trello credentials separately.
+
+
+## Optional GitHub private repositories (server-side token)
+
+To monitor non-public repositories, set `TRIS_GITHUB_TOKEN` **only in the MacBook backend process environment**, using a GitHub fine-grained personal access token with minimal read-only access to the specific repositories and their Actions data. If unset, the public no-token API behavior remains unchanged. Private repositories may require read permissions for **Pull requests** and **Actions**. Access varies by repository permissions and GitHub policy.
+
+Never commit the token, put it in frontend JavaScript, a local portfolio file, or the allowlisted public launchd settings JSON. The authentication header is sent only by the MacBook server to GitHub's HTTPS API. Cached results are scoped by a one-way token digest to prevent stale data after rotation; no raw token is stored in cache. **Warning:** Private repository names and PR titles displayed in this dashboard are visible to any client that can access the MacBook's HTTP dashboard. Restrict access to trusted devices using the optional IP allowlist; this does not encrypt LAN traffic.
+
+A secure macOS Keychain/launchd secret loader is not implemented yet, so the login-start LaunchAgent intentionally cannot persist the token through its public settings mechanism.

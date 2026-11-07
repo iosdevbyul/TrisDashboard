@@ -178,3 +178,40 @@ def test_trello_bounded_counts_are_not_misrepresented(monkeypatch):
     assert result["lists"][0]["count"] == 100
     assert result["lists"][0]["count_truncated"] is True
     assert result["lists"][1]["count_truncated"] is False
+
+
+def test_private_github_uses_server_only_bearer_token(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_GITHUB_REPOS", "owner/private-repo")
+    monkeypatch.setenv("TRIS_GITHUB_TOKEN", "private-access-token")
+    calls = []
+    def fake_http(url, headers=None):
+        calls.append((url, headers))
+        if "/actions/runs" in url:
+            return {"workflow_runs": []}
+        return [{"number": 9, "title": "Review", "html_url": "https://github.com/owner/private-repo/pull/9"}]
+    monkeypatch.setattr(integrations, "get_json", fake_http)
+    result = integrations.github()
+    assert result["available"]
+    assert all("Bearer private-access-token" == headers["Authorization"] for _, headers in calls)
+    assert "private-access-token" not in str(result)
+    assert "private-access-token" not in str(integrations._cache)
+
+
+def test_github_token_rotation_invalidates_cache(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_GITHUB_REPOS", "owner/private-repo")
+    monkeypatch.setenv("TRIS_GITHUB_TOKEN", "token-one")
+    requests = []
+    def fake_http(url, headers=None):
+        requests.append(headers)
+        if "/actions/runs" in url:
+            return {"workflow_runs": []}
+        return []
+    monkeypatch.setattr(integrations, "get_json", fake_http)
+    assert integrations.github()["available"]
+    monkeypatch.setenv("TRIS_GITHUB_TOKEN", "token-two")
+    assert integrations.github()["available"]
+    assert len(requests) == 4
+    assert "token-one" not in str(integrations._cache)
+    assert "token-two" not in str(integrations._cache)
