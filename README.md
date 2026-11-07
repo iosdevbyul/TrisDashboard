@@ -135,3 +135,8 @@ The doctor reports Python compatibility, local environment existence, whether th
 ## Confirmed dividend payment ledger
 
 Copy `examples/dividends.example.json` to a private MacBook file and replace the demo with **actual confirmed receipts**. Set `TRIS_DIVIDENDS_FILE` to its absolute JSON path, or add that path to the allowlisted non-secret launchd settings JSON and reinstall the agent. Each entry has `symbol`, `paid_on` (YYYY-MM-DD), `currency` (USD or KRW), and `amount` (a nonnegative amount recorded for that payment). The panel shows calendar-month totals per currency and recent recorded payments, without FX conversion or speculative future distributions. Never put sensitive holdings or account information in Git. No live broker, issuer, or dividend forecast service is connected.
+
+
+## Personal local agenda
+
+Copy `examples/agenda.example.json` to a private MacBook file and set `TRIS_AGENDA_FILE` to the absolute path, including in the allowlisted launchd settings JSON if needed. The optional card shows a maximum of eight events occurring in the next 14 days. Each event requires a local `date` in YYYY-MM-DD and `title`, and optionally a 24-hour `time` in HH:MM. No Google/Apple calendar synchronization, notifications or recurring-event interpretation is implemented. The schedule is visible to clients on your trusted home LAN; never commit personal calendar data.

@@ -157,6 +157,25 @@
     text("dividend-updated", "Manual confirmed payments · " + info.month);
   }
 
+  function showAgenda(info) {
+    var list = document.getElementById("agenda-list");
+    while (list.firstChild) { list.removeChild(list.firstChild); }
+    if (!info || !info.available) {
+      text("agenda-summary", info && info.configured ? "Unavailable" : "Not configured");
+      text("agenda-updated", info && info.configured ? "Check local agenda file" : "Configure on MacBook");
+      return;
+    }
+    text("agenda-summary", info.upcoming_count + " upcoming events");
+    var events = info.events || [];
+    for (var i = 0; i < events.length; i++) {
+      var row = document.createElement("div");
+      row.className = "agenda-row";
+      row.textContent = events[i].date + (events[i].time ? " " + events[i].time : "") + " · " + events[i].title;
+      list.appendChild(row);
+    }
+    text("agenda-updated", "Local calendar · " + info.window_start + " to " + info.window_end);
+  }
+
   function showFitness(info) {
     var list = document.getElementById("fitness-list");
     while (list.firstChild) { list.removeChild(list.firstChild); }
@@ -294,6 +313,7 @@
         showPortfolio(payload.portfolio);
         showFitness(payload.fitness);
         showDividends(payload.dividends);
+        showAgenda(payload.agenda);
         showSummary(payload);
       } catch (error) {
         text("weather-updated", "Invalid server response");
