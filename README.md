@@ -165,3 +165,15 @@ A manual portfolio snapshot is labeled **OUTDATED** when its timezone-aware `as_
 ## Resilient browser refresh
 
 The overview endpoint is normally refreshed every three minutes. Failed/invalid responses preserve the last displayed values and trigger bounded retry delays (30, 60, 120, up to 180 seconds). Recovery resets the failure counter. Retry timers are cleared when the browser is hidden or a new explicit refresh starts, and out-of-order replies are ignored. This behavior works with ES5-era JavaScript; final Safari 9 device checks remain outstanding.
+
+
+## Offline deployment preflight
+
+Before starting the MacBook LaunchAgent, validate the public, allowlisted settings and any configured personal data files **without sending them to an external service**:
+
+```sh
+.venv/bin/python -m macos.preflight --settings ~/tris-dashboard-settings.json
+.venv/bin/python -m macos.preflight --settings ~/tris-dashboard-settings.json --json
+```
+
+The command returns non-zero when settings or a referenced local data file is invalid, and prints only `valid` / `invalid` / `not-configured` flags. It never prints private paths, portfolio values, calendar titles, or tokens. Unconfigured optional data panels are permitted. CI includes mocked end-to-end tests checking that JavaScript-rendered fields exist in the HTML and that local static assets resolve. This is not a substitute for booting the actual Mac or iPad; hardware verification remains the final step.
