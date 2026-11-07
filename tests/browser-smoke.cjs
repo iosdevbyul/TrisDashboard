@@ -95,7 +95,7 @@ assert.ok(paths.some((url) => url.startsWith("/healthz")));
 assert.ok(paths.some((url) => url.startsWith("/api/overview")));
 assert.equal(byId("weather-temp").textContent, "22 °C");
 assert.equal(byId("connection").textContent, "Server online");
-assert.match(byId("glance-sources").textContent, /2\/7 ready/);
+assert.match(byId("glance-sources").textContent, /2\/8 ready/);
 assert.equal(byId("server-uptime").textContent, "30m online");
 assert.ok(byId("panel-visibility").children.length >= 8);
 
