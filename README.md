@@ -264,3 +264,7 @@ Restore validation now checks **both** backup file checksums and the dashboard d
 ## Stable workout IDs (WakTrainer export v2)
 
 The importer now supports interchange `schema_version: 2` with a **required stable `session_id`** for each workout. Two workouts with equal dates, duration and distance but different IDs no longer collapse into one record. Re-importing the same IDs remains idempotent. Version 1 files still work using the previous measurement-based fallback. See `examples/waktrainer-export-v2.example.json` and `docs/WAKTRAINER_EXPORT_CONTRACT.md`. The iOS app must still implement its own exporter and preserve the same IDs across exports.
+
+## Dividend income history
+
+The manually confirmed dividend card now displays the last six calendar months (including the current month) as currency-separated amounts. Months without recorded payments are shown explicitly, and historical figures remain **recorded receipts only**, not promised yields, price returns or estimated future dividends. This feature never converts USD and KRW or fetches investment prices.
