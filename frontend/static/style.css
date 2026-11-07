@@ -52,3 +52,5 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .glance .details{font-size:12px;line-height:1.25;max-height:48px;overflow:hidden}
 .glance .card small{font-size:11px}
 @media (max-width:600px){.glance-strip>div{padding:9px 6px}.glance-label{font-size:9px}.glance-strip strong{font-size:11px}}
+
+.agenda-row{padding:3px 0;font-size:13px;line-height:1.4;overflow-wrap:break-word}

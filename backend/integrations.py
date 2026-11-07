@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 from backend.portfolio import portfolio
 from backend.fitness import fitness
 from backend.dividends import dividends
+from backend.agenda import agenda
 
 _cache = {}
 _lock = threading.Lock()
@@ -178,4 +179,5 @@ def overview(timeout_seconds: float = 4.0) -> dict:
     result["portfolio"] = portfolio()
     result["fitness"] = fitness()
     result["dividends"] = dividends()
+    result["agenda"] = agenda()
     return result
