@@ -54,3 +54,5 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 @media (max-width:600px){.glance-strip>div{padding:9px 6px}.glance-label{font-size:9px}.glance-strip strong{font-size:11px}}
 
 .agenda-row{padding:3px 0;font-size:13px;line-height:1.4;overflow-wrap:break-word}
+
+.github-pr-link{display:block;font-size:12px;color:#a7ccef;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 0}

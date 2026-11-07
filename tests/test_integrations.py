@@ -117,3 +117,31 @@ def test_extended_weather_fields(monkeypatch):
     assert data["today_high_c"] == 20
     assert data["today_low_c"] == 11
     assert data["rain_chance_percent"] == 35
+
+
+def test_github_partial_failure_keeps_other_repo(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_GITHUB_REPOS", "owner/good,owner/bad")
+    def provider(url):
+        if "owner/bad" in url:
+            raise OSError("private-provider-failure")
+        if "/actions/runs" in url:
+            return {"workflow_runs": []}
+        return [{"number": 17, "title": "Improve UI", "html_url": "https://github.com/owner/good/pull/17"}]
+    monkeypatch.setattr(integrations, "get_json", provider)
+    result = integrations.github()
+    assert result["available"] and result["partial"]
+    assert result["repositories"][0]["available"]
+    assert result["repositories"][0]["open_prs"][0]["number"] == 17
+    assert result["repositories"][1]["available"] is False
+    assert result["repositories"][1]["open_pr_count"] is None
+    assert "private-provider-failure" not in str(result)
+
+
+def test_github_all_failed_returns_unavailable(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_GITHUB_REPOS", "owner/failing")
+    monkeypatch.setattr(integrations, "get_json", lambda url: (_ for _ in ()).throw(OSError("down")))
+    data = integrations.github()
+    assert data["available"] is False
+    assert data["stale"] is True

@@ -140,3 +140,8 @@ Copy `examples/dividends.example.json` to a private MacBook file and replace the
 ## Personal local agenda
 
 Copy `examples/agenda.example.json` to a private MacBook file and set `TRIS_AGENDA_FILE` to the absolute path, including in the allowlisted launchd settings JSON if needed. The optional card shows a maximum of eight events occurring in the next 14 days. Each event requires a local `date` in YYYY-MM-DD and `title`, and optionally a 24-hour `time` in HH:MM. No Google/Apple calendar synchronization, notifications or recurring-event interpretation is implemented. The schedule is visible to clients on your trusted home LAN; never commit personal calendar data.
+
+
+## GitHub per-repository health and PR previews
+
+Each configured public repository has its own availability status. If one repo fails, other working repositories still show their PR counts and latest workflow status; total PR count is marked as **known** when incomplete. Up to three open PR titles are linked to GitHub per repository, and URLs are only rendered when they use the expected GitHub HTTPS prefix. Provider exception details are never passed to the browser. Rate-limit and private-repository constraints remain.

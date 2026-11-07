@@ -234,6 +234,13 @@
     var repos = info.repositories || [];
     var total = 0;
     for (var i = 0; i < repos.length; i++) {
+      if (!repos[i].available) {
+        var failed = document.createElement("div");
+        failed.className = "repo-row";
+        failed.textContent = repos[i].repository + " · Unavailable";
+        list.appendChild(failed);
+        continue;
+      }
       total += repos[i].open_pr_count;
       var row = document.createElement("div");
       row.className = "repo-row";
@@ -247,8 +254,21 @@
       row.textContent = repos[i].repository + " · " + repos[i].open_pr_count +
         (repos[i].open_pr_count_truncated ? "+ open PRs" : " open PRs") + " · " + ciText;
       list.appendChild(row);
+      var previews = repos[i].open_prs || [];
+      for (var k = 0; k < previews.length; k++) {
+        if (typeof previews[k].url === "string" &&
+            previews[k].url.indexOf("https://github.com/") === 0) {
+          var link = document.createElement("a");
+          link.className = "github-pr-link";
+          link.href = previews[k].url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = "#" + previews[k].number + " " + previews[k].title;
+          list.appendChild(link);
+        }
+      }
     }
-    text("github-summary", total + " open PRs");
+    text("github-summary", total + (info.partial ? "+ known open PRs" : " open PRs"));
     text("github-updated", statusText(info));
   }
 
