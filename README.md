@@ -212,3 +212,15 @@ The importer validates every record with the existing dashboard fitness parser, 
 The MacBook login agent can now use `--keychain`, which starts a small Python wrapper that reads optional GitHub/Trello credentials from the logged-in user's Keychain and then replaces itself with uvicorn. The wrapper **does not put secrets in the LaunchAgent plist, command arguments, or browser**. Create generic-password entries in macOS **Keychain Access** (login keychain), each with account `TrisDashboard` and the following service names: `ai.tris.dashboard.github` (GitHub token), `ai.tris.dashboard.trello-key` (Trello API key), `ai.tris.dashboard.trello-token` (Trello token). Your macOS version may show the service field as the item's name. Grant access to the Python interpreter used by `.venv` only when prompted; unattended startup can fail if the Keychain is locked or access requires approval.
 
 Once the entries exist, stop any manually running server and use `.venv/bin/python -m macos.service install --lan --keychain --settings ~/tris-dashboard-settings.json` (omit `--settings` if unused). **Trello also requires `TRIS_TRELLO_BOARD_ID`**: this is a non-secret board identifier you can set in the public launchd settings JSON. Reinstall the user agent after changing settings. For security, never paste passwords or tokens into a terminal command's arguments or commit them to Git. No Keychain items are created by this code. On non-macOS hosts the wrapper is not supported.
+
+## Offline portfolio and dividend CSV import
+
+The MacBook can now convert CSV exports to private JSON without brokerage login or live market-price requests. Import columns for positions: `symbol,currency,quantity,price` (price may be blank). For confirmed distributions: `symbol,currency,paid_on,amount`. See `examples/portfolio.example.csv` and `examples/dividends.example.csv`.
+
+```sh
+.venv/bin/python -m macos.import_finance portfolio --input ~/Downloads/positions.csv --output ~/tris-private/portfolio.json --dry-run
+.venv/bin/python -m macos.import_finance portfolio --input ~/Downloads/positions.csv --output ~/tris-private/portfolio.json
+.venv/bin/python -m macos.import_finance dividends --input ~/Downloads/dividends.csv --output ~/tris-private/dividends.json
+```
+
+Conversions validate against the dashboard's original JSON parsers, write private files atomically, and require `--force` to replace an existing output. The portfolio's import time is recorded as `as_of` by default; this is **not the market quotation timestamp** and does not imply live prices. If you know the actual reference timestamp, pass the ISO 8601 `--as-of` value. Only record dividends actually received. Data remains local to the MacBook; external CSV schemas must be adapted before import.
