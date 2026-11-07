@@ -63,3 +63,16 @@ def test_display_settings_and_legacy_preferences_script():
     assert "localStorage" in script.text
     for forbidden in ("const ", "let ", "=>", "?.", "??", "fetch("):
         assert forbidden not in script.text
+
+
+def test_glance_mode_markup_and_legacy_syntax():
+    page = client.get("/").text
+    assert 'id="glance-sources"' in page
+    assert 'id="setting-glance"' in page
+    settings = client.get("/static/preferences.js").text
+    dashboard = client.get("/static/dashboard.js").text
+    assert "glance" in settings
+    assert "showSummary(payload)" in dashboard
+    for script in (settings, dashboard):
+        for unsupported in ("const ", "let ", "=>", "?.", "??", "fetch("):
+            assert unsupported not in script

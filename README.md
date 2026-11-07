@@ -113,3 +113,8 @@ For login-start portfolio loading, set a private **absolute JSON file path** und
 ## Local fitness summary
 
 Fitness reads an optional MacBook-only JSON workout export, without requesting HealthKit permissions or pretending to synchronize WakTrainer. Copy `examples/fitness.example.json` to a private folder, replace with real workouts, and set `TRIS_FITNESS_FILE` to an absolute JSON file path. A rolling 7-day inclusive period shows sessions, minutes, kilometers, and up to five recent workouts. Missing or invalid exports show a clearly marked unavailable panel. Keep personal workout data out of Git and out of `frontend/`. To use login auto-start, add the absolute `TRIS_FITNESS_FILE` path to the nonsecret launchd settings JSON and reinstall the agent.
+
+
+## At-a-glance desk mode
+
+The top strip reports the number of ready configured or public data sources, stale/unavailable counts and time of the last successfully parsed overview response. The source count covers weather, GitHub, Trello, portfolio and fitness (five possible panels); sources without configuration are not counted as available. Glance mode compresses card layout and clips lengthy details for desk viewing. The preference is stored separately on each browser and remains optional. It is **not** a substitute for real-device visual acceptance.
