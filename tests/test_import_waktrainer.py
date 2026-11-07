@@ -45,6 +45,45 @@ def test_reject_invalid_duration(tmp_path, value):
         parse_export(source)
 
 
+def test_merge_import_is_idempotent(tmp_path):
+    first = export(tmp_path, [{"started_at": "2026-11-08T08:10:00+09:00",
+                               "activity_type": "running", "duration_seconds": 2700,
+                               "distance_meters": 7250}])
+    output = tmp_path / "history.json"
+    assert import_export(first, output)["added"] == 1
+    assert import_export(first, output, merge=True)["added"] == 0
+    assert len(json.loads(output.read_text())["workouts"]) == 1
+
+
+def test_merge_preserves_other_sessions(tmp_path):
+    source = export(tmp_path, [{"started_at": "2026-11-08T08:10:00+09:00",
+                                "activity_type": "running", "duration_seconds": 600}])
+    output = tmp_path / "history.json"
+    output.write_text(json.dumps({"workouts": [
+        {"date": "2026-11-07", "type": "Strength", "duration_minutes": 50, "distance_km": 0}
+    ]}))
+    result = import_export(source, output, merge=True)
+    assert result["added"] == 1
+    assert result["sessions"] == 2
+    assert len(json.loads(output.read_text())["workouts"]) == 2
+
+
+def test_invalid_previous_history_never_overwritten(tmp_path):
+    source = export(tmp_path, [{"started_at": "2026-11-08T08:10:00+09:00",
+                               "activity_type": "running", "duration_seconds": 600}])
+    output = tmp_path / "history.json"
+    output.write_text("invalid")
+    with pytest.raises(ValueError):
+        import_export(source, output, merge=True)
+    assert output.read_text() == "invalid"
+
+
+def test_force_merge_conflict_rejected(tmp_path):
+    source = export(tmp_path, [])
+    with pytest.raises(ValueError, match="cannot"):
+        import_export(source, tmp_path / "output.json", merge=True, force=True)
+
+
 def test_failure_cannot_overwrite_previous_workouts(tmp_path):
     source = export(tmp_path, [{"started_at": "2026-11-08T08:10:00+09:00",
                                "activity_type": "undefined", "duration_seconds": 50}])
