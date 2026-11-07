@@ -1,5 +1,6 @@
 """Server-only read-only integrations with bounded HTTP calls and stale caching."""
 import json
+import hashlib
 from concurrent.futures import ThreadPoolExecutor, wait
 import os
 import threading
@@ -162,12 +163,16 @@ def trello() -> dict:
             cards = entry.get("cards", [])
             if not isinstance(cards, list):
                 raise ValueError("Invalid Trello cards")
+            if len(cards) > 100:
+                raise ValueError("Unexpected Trello card limit")
             result.append({"name": name, "count": len(cards),
+                           "count_truncated": len(cards) == 100,
                            "cards": [str(card.get("name", ""))[:90] for card in cards[:3]]})
         return {"available": True, "configured": True, "lists": result}
 
-    # The cache key must never contain access tokens.
-    return cached("trello:" + board, load, ttl=600)
+    # Credential rotation must invalidate the old result without storing raw secrets.
+    credential_scope = hashlib.sha256((key + "\0" + token).encode("utf-8")).hexdigest()
+    return cached("trello:" + board + ":" + credential_scope, load, ttl=600)
 
 
 def overview(timeout_seconds: float = 4.0) -> dict:

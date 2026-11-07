@@ -145,3 +145,36 @@ def test_github_all_failed_returns_unavailable(monkeypatch):
     data = integrations.github()
     assert data["available"] is False
     assert data["stale"] is True
+
+
+def test_trello_credential_rotation_does_not_reuse_cached_cards(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_TRELLO_BOARD_ID", "abc123")
+    monkeypatch.setenv("TRIS_TRELLO_KEY", "key")
+    monkeypatch.setenv("TRIS_TRELLO_TOKEN", "token-v1")
+    calls = []
+    def fake_provider(url):
+        calls.append(url)
+        return [{"name": "Next", "cards": [{"name": "task"}]}]
+    monkeypatch.setattr(integrations, "get_json", fake_provider)
+    assert integrations.trello()["available"]
+    monkeypatch.setenv("TRIS_TRELLO_TOKEN", "token-v2")
+    assert integrations.trello()["available"]
+    assert len(calls) == 2
+    assert "token-v1" not in str(integrations._cache)
+    assert "token-v2" not in str(integrations._cache)
+
+
+def test_trello_bounded_counts_are_not_misrepresented(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_TRELLO_BOARD_ID", "abc123")
+    monkeypatch.setenv("TRIS_TRELLO_KEY", "key")
+    monkeypatch.setenv("TRIS_TRELLO_TOKEN", "token")
+    monkeypatch.setattr(integrations, "get_json", lambda url: [
+        {"name": "Next", "cards": [{"name": "task"}] * 100},
+        {"name": "Done", "cards": []},
+    ])
+    result = integrations.trello()
+    assert result["lists"][0]["count"] == 100
+    assert result["lists"][0]["count_truncated"] is True
+    assert result["lists"][1]["count_truncated"] is False
