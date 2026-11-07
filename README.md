@@ -228,3 +228,7 @@ Conversions validate against the dashboard's original JSON parsers, write privat
 ## WakTrainer JSON export bridge (contract v1)
 
 A versioned, opt-in JSON bridge is available as `.venv/bin/python -m macos.import_waktrainer --input ~/Downloads/waktrainer-export.json --output ~/tris-private/fitness.json --dry-run`. Remove `--dry-run` to write; use `--force` only to replace a previous output. It accepts a strictly validated, timezone-aware workout export and converts seconds/meters to minutes/kilometers. See `docs/WAKTRAINER_EXPORT_CONTRACT.md` and the example file. **The current WakTrainer app has not been verified to produce this export.** This is preparation for a future WakTrainer-side exporter, not a claim of automatic synchronization.
+
+## Live MacBook deployment smoke test
+
+After starting the server, run `.venv/bin/python -m macos.smoke` or `.venv/bin/python -m macos.smoke --json` on the MacBook. This tool checks only `http://127.0.0.1:8080`: health, dashboard HTML, all three local frontend assets, API payload shape, and security/cache headers. It counts ready, stale and unavailable sources without printing personal calendar events, positions, credentials or repository names. The tool exits with status 1 if the server or contract is broken; upstream optional integrations may be unavailable without failing the deployment check. When a custom IP allowlist is configured, allow loopback `127.0.0.1` for local smoke tests. It is an integration smoke test, not a long-duration physical Mac/iPad acceptance test.
