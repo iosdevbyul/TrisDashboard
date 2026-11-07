@@ -82,7 +82,20 @@
       text("weather-details", "No weather data yet");
     } else {
       text("weather-temp", info.temperature_c + " °C");
-      text("weather-details", info.location + " · Humidity " + info.humidity_percent + "%");
+      var details = info.location + " · Humidity " + info.humidity_percent + "%";
+      if (info.feels_like_c !== null && typeof info.feels_like_c !== "undefined") {
+        details += " · Feels " + info.feels_like_c + " °C";
+      }
+      if (info.today_high_c !== null && typeof info.today_high_c !== "undefined") {
+        details += " · High " + info.today_high_c + " °C";
+      }
+      if (info.today_low_c !== null && typeof info.today_low_c !== "undefined") {
+        details += " / Low " + info.today_low_c + " °C";
+      }
+      if (info.rain_chance_percent !== null && typeof info.rain_chance_percent !== "undefined") {
+        details += " · Rain " + info.rain_chance_percent + "%";
+      }
+      text("weather-details", details);
     }
     text("weather-updated", statusText(info));
   }
@@ -144,6 +157,22 @@
     text("trello-updated", statusText(info));
   }
 
+  function showServer(info) {
+    if (!info || !info.available) {
+      text("server-uptime", "Unavailable");
+      text("server-info", "No diagnostics received");
+      return;
+    }
+    var totalMinutes = Math.floor(info.uptime_seconds / 60);
+    var days = Math.floor(totalMinutes / 1440);
+    var hours = Math.floor((totalMinutes % 1440) / 60);
+    var minutes = totalMinutes % 60;
+    var uptime = days ? days + "d " + hours + "h" : hours ? hours + "h " + minutes + "m" : minutes + "m";
+    text("server-uptime", uptime + " online");
+    text("server-info", "MacBook local API reachable");
+    text("server-updated", "Server clock: " + String(info.server_time_utc || "").replace("T", " ").slice(0, 16) + " UTC");
+  }
+
   function loadOverview(force) {
     var now = new Date().getTime();
     if (!force && now - lastDataStarted < 30000) { return; }
@@ -156,6 +185,7 @@
         showGithub(payload.github);
         showWeather(payload.weather);
         showTrello(payload.trello);
+        showServer(payload.server);
       } catch (error) {
         text("weather-updated", "Invalid server response");
         text("github-updated", "Invalid server response");

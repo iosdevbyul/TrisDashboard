@@ -40,3 +40,14 @@ def test_overview_endpoint(monkeypatch):
     assert response.status_code == 200
     assert response.json()["weather"]["available"] is False
     assert response.headers["cache-control"] == "no-store"
+
+
+def test_overview_includes_server_uptime(monkeypatch):
+    monkeypatch.setattr(app_module, "overview", lambda: {"weather": {}, "github": {}, "trello": {}})
+    response = client.get("/api/overview")
+    assert response.status_code == 200
+    server = response.json()["server"]
+    assert server["available"] is True
+    assert server["uptime_seconds"] >= 0
+    assert server["server_time_utc"].endswith("+00:00")
+    assert response.headers["cache-control"] == "no-store"

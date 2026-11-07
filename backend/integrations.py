@@ -46,7 +46,8 @@ def weather() -> dict:
     label = os.environ.get("TRIS_LOCATION_NAME", "Seoul")[:60]
     query = urlencode({
         "latitude": latitude, "longitude": longitude,
-        "current": "temperature_2m,relative_humidity_2m,weather_code",
+        "current": "temperature_2m,relative_humidity_2m,weather_code,apparent_temperature,wind_speed_10m",
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_probability_max",
         "timezone": "auto",
     })
     url = "https://api.open-meteo.com/v1/forecast?" + query
@@ -59,6 +60,11 @@ def weather() -> dict:
             "temperature_c": current["temperature_2m"],
             "humidity_percent": current["relative_humidity_2m"],
             "weather_code": current["weather_code"],
+            "feels_like_c": current.get("apparent_temperature"),
+            "wind_kmh": current.get("wind_speed_10m"),
+            "today_high_c": (payload.get("daily", {}).get("temperature_2m_max") or [None])[0],
+            "today_low_c": (payload.get("daily", {}).get("temperature_2m_min") or [None])[0],
+            "rain_chance_percent": (payload.get("daily", {}).get("precipitation_probability_max") or [None])[0],
         }
     return cached("weather:" + query + ":" + label, load, ttl=600)
 

@@ -80,3 +80,12 @@ CI checks Python 3.11, 3.12, and 3.13. Tests mock external providers and require
 Trello integration is optional. Supply `TRIS_TRELLO_BOARD_ID`, `TRIS_TRELLO_KEY`, and `TRIS_TRELLO_TOKEN` as **MacBook server environment variables** to show counts and a few card names from lists named Next, In Progress, and Done. It does not create, update, or move Trello cards. Provider results are cached for 10 minutes.
 
 Do not put these credentials in frontend files, GitHub commits, or the public launchd settings JSON. For a login-start service, provide secrets through a separately managed secure launcher/keychain workflow in a future release; the current public settings installer intentionally rejects tokens. If no credentials are supplied, the Trello panel shows Not configured.
+
+
+## Desk display diagnostics and weather details
+
+The MacBook server's `/api/overview` includes local process uptime and UTC server time. This is the **dashboard process uptime**, not physical Mac uptime, and does not reveal hostnames or local filesystem information. The UI shows the last successful response even while the server is unreachable.
+
+Weather additionally shows apparent temperature, today's high/low and maximum precipitation probability when provided by Open-Meteo. If optional forecast fields are missing, basic current temperature and humidity still render.
+
+Keep the tablet's Safari page visible while using the desk display. Device-specific checks are intentionally deferred to the final acceptance phase.

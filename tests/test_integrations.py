@@ -91,3 +91,29 @@ def test_trello_stale_if_provider_unavailable(monkeypatch):
         item["time"] = -999999
     monkeypatch.setattr(integrations, "get_json", lambda url: (_ for _ in ()).throw(OSError("offline")))
     assert integrations.trello()["stale"]
+
+
+def test_extended_weather_fields(monkeypatch):
+    integrations._cache.clear()
+    def response(url):
+        assert "daily=" in url
+        return {
+            "current": {
+                "temperature_2m": 16,
+                "relative_humidity_2m": 60,
+                "weather_code": 2,
+                "apparent_temperature": 14,
+                "wind_speed_10m": 8,
+            },
+            "daily": {
+                "temperature_2m_max": [20],
+                "temperature_2m_min": [11],
+                "precipitation_probability_max": [35],
+            },
+        }
+    monkeypatch.setattr(integrations, "get_json", response)
+    data = integrations.weather()
+    assert data["feels_like_c"] == 14
+    assert data["today_high_c"] == 20
+    assert data["today_low_c"] == 11
+    assert data["rain_chance_percent"] == 35
