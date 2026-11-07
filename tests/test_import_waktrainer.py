@@ -31,7 +31,7 @@ def test_timezone_is_required(tmp_path):
         parse_export(source)
 
 
-@pytest.mark.parametrize("version", [0, 2, "1", None])
+@pytest.mark.parametrize("version", [0, 3, "1", None])
 def test_reject_unknown_schema_version(tmp_path, version):
     with pytest.raises(ValueError):
         parse_export(export(tmp_path, [], version=version))
