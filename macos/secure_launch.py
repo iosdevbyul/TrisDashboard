@@ -23,10 +23,24 @@ def keychain_value(service: str, *, runner=subprocess.run) -> str | None:
     return result.stdout.rstrip("\r\n") or None
 
 
+def credential_status(*, lookup=keychain_value) -> dict:
+    """Only availability booleans; never expose token bytes or keychain error text."""
+    available = {}
+    for name, service in SERVICE_NAMES.items():
+        try:
+            available[name] = bool(lookup(service))
+        except OSError:
+            available[name] = False
+    return available
+
+
 def provider_environment(base: dict | None = None, *, lookup=keychain_value) -> dict:
     env = dict(os.environ if base is None else base)
     for name, service in SERVICE_NAMES.items():
-        value = lookup(service)
+        try:
+            value = lookup(service)
+        except OSError:
+            value = None
         if value is not None:
             env[name] = value
     return env
