@@ -150,7 +150,7 @@ retry.callback();
 assert.equal(byId("quotes-summary").textContent, "1/1 quotes reported");
 assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
 assert.match(byId("portfolio-quote-values").textContent, /Not guaranteed live/);
-assert.match(byId("glance-sources").textContent, /4\\/8 ready/);
+assert.match(byId("glance-sources").textContent, /4\/8 ready/);
 assert.match(byId("data-refresh-state").textContent, /succeeded/i);
 
 // Invalid response JSON must not erase the previous successful market display.
