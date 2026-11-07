@@ -268,3 +268,7 @@ The importer now supports interchange `schema_version: 2` with a **required stab
 ## Dividend income history
 
 The manually confirmed dividend card now displays the last six calendar months (including the current month) as currency-separated amounts. Months without recorded payments are shown explicitly, and historical figures remain **recorded receipts only**, not promised yields, price returns or estimated future dividends. This feature never converts USD and KRW or fetches investment prices.
+
+## JavaScript browser smoke checks in CI
+
+GitHub Actions now includes a separate Node.js job that parses both frontend scripts and executes the dashboard in a **network-free fake DOM with mocked API responses**. It verifies the initial time/data render, status summary, local settings controls and refresh action. This catches missing DOM elements and script exceptions earlier than Python-only tests. Node.js is a test runner **only**; the deployed MacBook server does not require Node. This test is not a real Safari 9 engine, so visual layout, older browser compatibility and long-duration hardware operation still require the final iPad mini acceptance test.
