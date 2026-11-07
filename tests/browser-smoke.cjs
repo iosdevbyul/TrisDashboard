@@ -9,6 +9,9 @@ const html = fs.readFileSync(path.join(root, "frontend/index.html"), "utf8");
 const elements = new Map();
 const handlers = {};
 const paths = [];
+const scheduled = [];
+let overviewStatus = 200;
+let overviewBody = null;
 
 function element(id = "") {
   const children = [];
@@ -65,9 +68,12 @@ class XMLHttpRequest {
   open(method, url) { this.url = url; }
   send() {
     paths.push(this.url);
-    this.status = 200;
+    const isOverview = this.url.startsWith("/api/overview");
+    this.status = isOverview ? overviewStatus : 200;
     this.readyState = 4;
-    this.responseText = JSON.stringify(this.url.startsWith("/api/overview") ? response : {status:"ok"});
+    this.responseText = isOverview && overviewBody !== null
+      ? overviewBody
+      : JSON.stringify(isOverview ? response : {status:"ok"});
     if (this.onreadystatechange) this.onreadystatechange();
   }
   abort() { this.readyState = 4; }
@@ -84,7 +90,14 @@ const window = {
 
 const context = vm.createContext({
   document, window, XMLHttpRequest, Date, JSON, Object, Math, String,
-  setInterval: () => 1, setTimeout: () => 2, clearTimeout: () => {}
+  setInterval: () => 1,
+  setTimeout: (callback, delay) => {
+    scheduled.push({ callback, delay, cancelled: false });
+    return scheduled.length;
+  },
+  clearTimeout: (id) => {
+    if (scheduled[id - 1]) scheduled[id - 1].cancelled = true;
+  }
 });
 vm.runInContext(fs.readFileSync(path.join(root, "frontend/static/dashboard.js"), "utf8"),
   context, {timeout: 1500});
@@ -106,4 +119,45 @@ assert.ok(state["tris.dashboard.display.v1"]);
 handlers["refresh-button:click"]();
 assert.ok(paths.includes("reload"));
 
-console.log("Frontend JavaScript smoke test passed.");
+// API failure must retain the last rendered values and schedule a bounded retry.
+const priorWeather = byId("weather-temp").textContent;
+overviewStatus = 503;
+handlers["document:visibilitychange"]();
+assert.equal(byId("weather-temp").textContent, priorWeather);
+assert.match(byId("data-refresh-state").textContent, /failed/i);
+const retry = scheduled.find((item) => item.delay === 30000 && !item.cancelled);
+assert.ok(retry, "First failed overview should retry after 30 seconds");
+
+// On successful retry, the quote and partial valuation cards must render safely.
+overviewStatus = 200;
+response.portfolio = {
+  available: true, as_of: "2026-11-08T00:00:00+00:00",
+  positions: [{ symbol: "JEPQ", currency: "USD", quantity: "3",
+                market_value: null, price: null }],
+  totals: {}, valuation_complete: false, quality: { outdated: false }
+};
+response.quotes = {
+  available: true, provider: "Twelve Data", quotes: [
+    { symbol: "JEPQ", currency: "USD", price: "50.25",
+      reported_at_utc: "2026-11-08T00:00:00+00:00", outdated: false }
+  ]
+};
+response.valuation = {
+  available: true, matched_count: 1, position_count: 1,
+  partial: false, totals: { USD: "150.75" }, stale: false
+};
+retry.callback();
+assert.equal(byId("quotes-summary").textContent, "1/1 quotes reported");
+assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
+assert.match(byId("portfolio-quote-values").textContent, /Not guaranteed live/);
+assert.match(byId("glance-sources").textContent, /4\/8 ready/);
+assert.match(byId("data-refresh-state").textContent, /succeeded/i);
+
+// Invalid response JSON must not erase the previous successful market display.
+overviewBody = "{invalid-json";
+handlers["document:visibilitychange"]();
+assert.match(byId("data-refresh-state").textContent, /failed/i);
+assert.equal(byId("quotes-summary").textContent, "1/1 quotes reported");
+assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
+
+console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
