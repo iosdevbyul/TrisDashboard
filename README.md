@@ -194,3 +194,15 @@ To monitor non-public repositories, set `TRIS_GITHUB_TOKEN` **only in the MacBoo
 Never commit the token, put it in frontend JavaScript, a local portfolio file, or the allowlisted public launchd settings JSON. The authentication header is sent only by the MacBook server to GitHub's HTTPS API. Cached results are scoped by a one-way token digest to prevent stale data after rotation; no raw token is stored in cache. **Warning:** Private repository names and PR titles displayed in this dashboard are visible to any client that can access the MacBook's HTTP dashboard. Restrict access to trusted devices using the optional IP allowlist; this does not encrypt LAN traffic.
 
 A secure macOS Keychain/launchd secret loader is not implemented yet, so the login-start LaunchAgent intentionally cannot persist the token through its public settings mechanism.
+
+
+## Offline CSV import for workout summaries
+
+If WakTrainer or another fitness source can provide a **CSV export** matching columns `date,type,duration_minutes,distance_km`, convert it locally into the existing private JSON format:
+
+```sh
+.venv/bin/python -m macos.import_workouts --input ~/Downloads/workouts.csv --output ~/tris-private/fitness.json --dry-run
+.venv/bin/python -m macos.import_workouts --input ~/Downloads/workouts.csv --output ~/tris-private/fitness.json
+```
+
+The importer validates every record with the existing dashboard fitness parser, rejects malformed/nonfinite/negative measurements, caps file size and workouts, and performs an atomic replacement only after successful validation. Existing outputs require the explicit `--force` flag. Private output files are created with owner-only permissions on normal macOS systems. Set `TRIS_FITNESS_FILE` to the output path in the MacBook's configuration. **This is a manual CSV bridge, not an automatic WakTrainer/HealthKit synchronization.** No files are uploaded to an external server.
