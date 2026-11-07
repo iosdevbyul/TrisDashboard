@@ -50,3 +50,15 @@ def test_invalid_snapshot_does_not_crash_dashboard(tmp_path, monkeypatch):
 def test_portfolio_unconfigured(monkeypatch):
     monkeypatch.delenv("TRIS_PORTFOLIO_FILE", raising=False)
     assert not portfolio()["available"]
+
+
+def test_snapshot_age_metadata(tmp_path):
+    from datetime import datetime, timezone
+    from backend.quality import snapshot_quality
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    path = write_snapshot(tmp_path, [{"symbol": "QQQI", "currency": "USD", "quantity": "3"}],
+                          as_of=(now - timedelta(days=5)).isoformat())
+    data = load_portfolio(path)
+    assert data["quality"]["outdated"] is True
+    assert data["quality"]["threshold_hours"] == 72

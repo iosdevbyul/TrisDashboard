@@ -128,7 +128,9 @@
       total.textContent = "Values: " + parts.join(" / ") + (info.valuation_complete ? "" : " (partial)");
       list.appendChild(total);
     }
-    text("portfolio-updated", "Manual prices · Snapshot " + info.as_of.replace("T", " ").slice(0, 16));
+    var quality = info.quality || {};
+    text("portfolio-updated", "Manual prices · Snapshot " + info.as_of.replace("T", " ").slice(0, 16) +
+      (quality.outdated ? " · OUTDATED (older than " + quality.threshold_hours + "h)" : ""));
   }
 
   function showDividends(info) {

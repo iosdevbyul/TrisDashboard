@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from backend.quality import snapshot_quality
 
 MAX_POSITIONS = 25
 CURRENCIES = {"USD", "KRW"}
@@ -39,6 +40,7 @@ def load_portfolio(path: Path) -> dict:
             raise ValueError("as_of requires timezone")
     except ValueError as error:
         raise ValueError("Invalid as_of timestamp") from error
+    quality = snapshot_quality(parsed)
     positions = []
     totals = {}
     for item in data["positions"]:
@@ -62,6 +64,7 @@ def load_portfolio(path: Path) -> dict:
     return {"available": True, "source": "manual_snapshot", "as_of": parsed.isoformat(),
             "positions": positions, "totals": {k: str(v) for k, v in sorted(totals.items())},
             "valuation_complete": all(p["market_value"] is not None for p in positions),
+            "quality": quality,
             "stale": False}
 
 
