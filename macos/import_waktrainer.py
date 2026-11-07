@@ -20,14 +20,22 @@ def workout_key(item: dict) -> tuple:
 
 def merged_workouts(existing: list, incoming: list) -> tuple[list, int]:
     combined = list(existing)
-    known = {workout_key(item) for item in existing}
+    known = {}
+    for item in existing:
+        signature = workout_key(item)
+        if signature in known and known[signature] != item:
+            raise ValueError("Conflicting existing workout session ID")
+        known[signature] = item
     added = 0
     for item in incoming:
         signature = workout_key(item)
-        if signature not in known:
-            combined.append(item)
-            known.add(signature)
-            added += 1
+        if signature in known:
+            if known[signature] != item:
+                raise ValueError("Conflicting workout session ID; import stopped")
+            continue
+        combined.append(item)
+        known[signature] = item
+        added += 1
     if len(combined) > MAX_SESSIONS:
         raise ValueError("Too many combined sessions")
     return combined, added
@@ -86,6 +94,8 @@ def parse_export(path: Path) -> dict:
         workouts.append(workout)
     if version == 2 and len({item["session_id"] for item in workouts}) != len(workouts):
         raise ValueError("Duplicate session_id in export")
+    if version == 1 and len({workout_key(item) for item in workouts}) != len(workouts):
+        raise ValueError("Duplicate legacy workout in export")
     return {"workouts": workouts}
 
 

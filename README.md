@@ -282,3 +282,7 @@ The quote card renders **only the provider-reported price, currency and UTC sour
 ## Optional quote-derived partial portfolio value
 
 When the owner has configured both a local portfolio snapshot and the optional Twelve Data source, the portfolio card adds a **separate** estimate for only those holdings where the vendor-returned ticker and currency match the local record. Each eligible record uses decimal arithmetic (quantity × provider-reported close). Outdated quotes are excluded, missing quotes remain **unvalued**, and USD/KRW totals are never combined. The UI displays how many holdings are covered and labels incomplete calculations **PARTIAL**. Original manual prices and position records are never overwritten. Quote values are not guaranteed real-time and should not be used as brokerage account statements or investment returns.
+
+## Workout identity conflicts
+
+The WakTrainer v2 importer now refuses to silently ignore a corrected or conflicting session that reuses an existing `session_id` with different metrics. It rejects the entire new import without changing the previous history and leaves conflict resolution to the owner/export producer. Existing exact-match records are still safely deduplicated. Legacy v1 exports containing duplicate measurement signatures are rejected to avoid double-counting.
