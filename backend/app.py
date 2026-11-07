@@ -1,8 +1,9 @@
 """Local-only dashboard server. Bind to the LAN interface at runtime."""
 from pathlib import Path
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from backend.integrations import overview
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
@@ -18,3 +19,8 @@ def index() -> FileResponse:
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/overview")
+def dashboard_overview() -> JSONResponse:
+    return JSONResponse(overview(), headers={"Cache-Control": "no-store"})

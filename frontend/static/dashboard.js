@@ -7,12 +7,14 @@
   var lastCheck = document.getElementById("last-check");
   var offlineBanner = document.getElementById("offline-banner");
   var request = null;
-  var consecutiveFailures = 0;
+  var overviewRequest = null;
   var wasOffline = false;
   var lastRequestStarted = 0;
+  var lastDataStarted = 0;
   var requestSequence = 0;
 
   function pad(number) { return number < 10 ? "0" + number : String(number); }
+  function text(id, value) { document.getElementById(id).textContent = String(value); }
 
   function tick() {
     var now = new Date();
@@ -20,20 +22,36 @@
     date.textContent = now.getFullYear() + "." + pad(now.getMonth() + 1) + "." + pad(now.getDate());
   }
 
+  function get(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url + (url.indexOf("?") === -1 ? "?" : "&") + "t=" + new Date().getTime(), true);
+    xhr.timeout = 6000;
+    var completed = false;
+    function finish(online) {
+      if (completed) { return; }
+      completed = true;
+      callback(online, xhr);
+    }
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) { finish(xhr.status === 200); }
+    };
+    xhr.onerror = function () { finish(false); };
+    xhr.ontimeout = function () { finish(false); };
+    try { xhr.send(); } catch (error) { finish(false); }
+    return xhr;
+  }
+
   function setConnection(online) {
     if (online) {
-      consecutiveFailures = 0;
       offlineBanner.hidden = true;
       connection.textContent = "Server online";
       indicator.className = "indicator online";
       lastCheck.textContent = "Checked " + pad(new Date().getHours()) + ":" + pad(new Date().getMinutes());
       if (wasOffline) {
         wasOffline = false;
-        // Recover server-rendered assets that might have changed during an outage.
-        window.location.reload();
+        loadOverview(true);
       }
     } else {
-      consecutiveFailures += 1;
       wasOffline = true;
       offlineBanner.hidden = false;
       connection.textContent = "Server offline";
@@ -46,33 +64,75 @@
     var now = new Date().getTime();
     if (now - lastRequestStarted < 2000) { return; }
     lastRequestStarted = now;
-    if (request && request.readyState !== 4) { request.abort(); }
-    var xhr = new XMLHttpRequest();
     var sequence = ++requestSequence;
-    var completed = false;
-    request = xhr;
+    if (request && request.readyState !== 4) { request.abort(); }
+    request = get("/healthz", function (online) {
+      if (sequence === requestSequence) { setConnection(online); }
+    });
+  }
 
-    function complete(online) {
-      if (completed || sequence !== requestSequence) { return; }
-      completed = true;
-      setConnection(online);
+  function statusText(info) {
+    if (!info || !info.available) { return "Unavailable"; }
+    return info.stale ? "Last known data (stale)" : "Updated " + (info.updated_at ? info.updated_at.replace("T", " ").slice(0, 16) + " UTC" : "recently");
+  }
+
+  function showWeather(info) {
+    if (!info || !info.available) {
+      text("weather-temp", "Unavailable");
+      text("weather-details", "No weather data yet");
+    } else {
+      text("weather-temp", info.temperature_c + " °C");
+      text("weather-details", info.location + " · Humidity " + info.humidity_percent + "%");
     }
+    text("weather-updated", statusText(info));
+  }
 
-    xhr.open("GET", "/healthz?t=" + now, true);
-    xhr.timeout = 5000;
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4) { complete(xhr.status === 200); }
-    };
-    xhr.onerror = function () { complete(false); };
-    xhr.ontimeout = function () { complete(false); };
-    try { xhr.send(); } catch (error) { complete(false); }
+  function showGithub(info) {
+    var list = document.getElementById("github-list");
+    while (list.firstChild) { list.removeChild(list.firstChild); }
+    if (!info || !info.available) {
+      text("github-summary", "Unavailable");
+      text("github-updated", statusText(info));
+      return;
+    }
+    var repos = info.repositories || [];
+    var total = 0;
+    for (var i = 0; i < repos.length; i++) {
+      total += repos[i].open_pr_count;
+      var row = document.createElement("div");
+      row.className = "repo-row";
+      row.textContent = repos[i].repository + " · " + repos[i].open_pr_count + " open PRs";
+      list.appendChild(row);
+    }
+    text("github-summary", total + " open PRs");
+    text("github-updated", statusText(info));
+  }
+
+  function loadOverview(force) {
+    var now = new Date().getTime();
+    if (!force && now - lastDataStarted < 30000) { return; }
+    lastDataStarted = now;
+    if (overviewRequest && overviewRequest.readyState !== 4) { overviewRequest.abort(); }
+    overviewRequest = get("/api/overview", function (ok, xhr) {
+      if (!ok) { return; }
+      try {
+        var payload = JSON.parse(xhr.responseText);
+        showGithub(payload.github);
+        showWeather(payload.weather);
+      } catch (error) {
+        text("weather-updated", "Invalid server response");
+        text("github-updated", "Invalid server response");
+      }
+    });
   }
 
   tick();
   checkServer();
+  loadOverview(true);
   setInterval(tick, 1000);
   setInterval(checkServer, 15000);
+  setInterval(loadOverview, 180000);
   document.addEventListener("visibilitychange", function () {
-    if (!document.hidden) { tick(); checkServer(); }
+    if (!document.hidden) { tick(); checkServer(); loadOverview(true); }
   });
 }());

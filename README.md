@@ -1,6 +1,6 @@
 # TrisDashboard
 
-Personal, dark-themed always-on display for **iPad mini 1 (iOS 9 Safari)** and iPhone. A MacBook hosts the server over trusted home Wi-Fi. No cloud services, subscriptions, Docker, or Apple developer certificate are required.
+Personal, dark-themed always-on display for **iPad mini 1 (iOS 9 Safari)** and iPhone. A MacBook hosts the server over trusted home Wi-Fi. No cloud subscription, Docker, or Apple developer certificate is required.
 
 ## First run on MacBook (Python 3.11+)
 
@@ -13,28 +13,39 @@ python -m pip install -r requirements.txt
 python -m uvicorn backend.app:app --host 127.0.0.1 --port 8080
 ```
 
-Open http://127.0.0.1:8080 on the Mac. To test on an iPad or iPhone, stop the process and restart with `--host 0.0.0.0` on a **trusted private network only**. On the device, use `http://<macbook-lan-ip>:8080`. Both devices need the same network; macOS Firewall may request permission.
+Open http://127.0.0.1:8080 on the Mac. For iPad/iPhone on trusted Wi-Fi, run with `--host 0.0.0.0` and open `http://<macbook-lan-ip>:8080`.
 
-## Optional Mac login auto-start (launchd)
+## Live data configuration
 
-Set up `.venv` first. Run from the project directory, as your normal user (no sudo):
+Dashboard refreshes every 3 minutes in the browser. MacBook caches remote data (weather for 10 minutes, GitHub for 3 minutes), uses 5-second upstream timeouts and shows previous data marked stale on a provider outage.
+
+Weather uses the free Open-Meteo current forecast endpoint. Defaults to central Seoul; you may configure location using environment variables before launching the server:
+
+```sh
+export TRIS_LATITUDE=37.5665
+export TRIS_LONGITUDE=126.9780
+export TRIS_LOCATION_NAME=Seoul
+export TRIS_GITHUB_REPOS=iosdevbyul/TrisDashboard,iosdevbyul/DonghakStockVision
+```
+
+GitHub uses the public read-only REST API for open PR counts (up to 20 per repository) with no credentials required. Set `TRIS_GITHUB_REPOS` to a comma-separated list of up to 6 **public** repositories; private repo support and GitHub Actions status will be added later. Default is only TrisDashboard. Rate limits may apply. Data integrations are server-only; do not put tokens in browser scripts. Weather data requires outbound internet access from the Mac.
+
+## Optional login auto-start (launchd)
+
+Create the virtual environment first. Run as your normal macOS user, no sudo:
 
 ```sh
 python3 -m macos.service install --lan
 python3 -m macos.service status
 ```
 
-`--lan` explicitly allows same-Wi-Fi devices; omit it for Mac-only localhost access. This creates a per-user LaunchAgent that starts on login and restarts when the server crashes. It does **not** install a system-wide daemon and it does not keep a sleeping Mac awake. To remove:
+`--lan` enables the trusted Wi-Fi client connection. Without it, the service binds only localhost. To uninstall: `python3 -m macos.service uninstall`.
 
-```sh
-python3 -m macos.service uninstall
-```
+If using launchd, export the configuration at install time is **not** persisted. To configure external data for the launchd agent, update its environment through a future supported configuration mechanism; defaults work without configuration. Service starts on login, not while MacBook sleeps. Logs: `~/Library/Logs/TrisDashboard/`.
 
-Logs: `~/Library/Logs/TrisDashboard/server.log` and `error.log`. If you move the repository or replace the virtual environment, uninstall and reinstall the service. Stop any manually started server before enabling launchd to avoid port conflicts.
+## Security & compatibility
 
-**Power / reliability:** Keep the Mac awake while serving the dashboard. Confirm the device's auto-lock setting (where available); a Safari page cannot bypass iOS auto-lock. Monitor battery health/heat if using an old iPad continuously. A browser suspended while the device is locked cannot guarantee continuous updates.
-
-**Security:** The service is intentionally unauthenticated; do not set router port forwarding or expose port 8080 publicly. Only enable LAN mode on a trusted Wi-Fi. Never embed API credentials or personal tokens in frontend assets. HTTP on the LAN is unencrypted.
+The service has no login and uses unencrypted HTTP on the home LAN. Do not expose port 8080 to the public internet. Keep the Mac awake for uninterrupted service. iOS 9 Safari uses ES5 JS / conservative CSS; validate against the real iPad. Long-running background browser refresh is not guaranteed when locked or suspended.
 
 ## Tests
 
@@ -43,22 +54,11 @@ python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-GitHub Actions checks Python 3.11, 3.12 and 3.13 for every PR and on main.
+CI checks Python 3.11, 3.12, and 3.13. Tests mock external providers and require no external network.
 
-## Device acceptance checklist
+## Device acceptance
 
-1. On MacBook, load `/` and confirm the local clock, date and four placeholders.
-2. On iPad mini 1, connect to the same Wi-Fi, open the Mac LAN URL in Safari, rotate to landscape. Confirm a two-column dark layout without horizontal scrolling.
-3. On iPhone, check portrait layout has a single column, usable text and no clipping.
-4. On iPad, use Safari **Add to Home Screen** to test an app-like launch (dependent on device/iOS behavior).
-5. Restart/stop the Mac server. Check offline message appears and online recovery occurs within approximately 15–20 seconds once the server is reachable.
-6. Leave the display running while the Mac stays awake and inspect for memory/refresh problems.
-
-Actual iOS 9 device behavior is **not** simulated by backend CI; validate on the physical tablet.
-
-## Available routes
-
-- `/` dashboard
-- `/healthz` JSON server health
-
-Investments, GitHub/Trello, weather and workout panels intentionally show placeholders until server-side integrations arrive.
+1. Mac and iPad/iPhone share trusted Wi-Fi, load the dashboard URL, and verify landscape/portrait layouts.
+2. Verify current weather and GitHub open PRs update; temporarily cut Mac internet to test stale weather display.
+3. Stop the Mac server and confirm offline banner; restart and check connection recovery.
+4. Add to iPad Home Screen if desired. Validate auto-lock, charging heat and long-running rendering on the physical iPad.
