@@ -22,3 +22,15 @@ jobs:
       - run: python -m compileall -q backend macos
       - run: python -m pytest -q
       - run: sh -n scripts/setup-mac.sh
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: |
+          node --check frontend/static/dashboard.js
+          node --check frontend/static/preferences.js
+          node --check tests/browser-smoke.cjs
+      - name: Exercise dashboard with mocked browser and API
+        run: node tests/browser-smoke.cjs
