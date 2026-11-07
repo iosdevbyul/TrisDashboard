@@ -56,3 +56,5 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .agenda-row{padding:3px 0;font-size:13px;line-height:1.4;overflow-wrap:break-word}
 
 .github-pr-link{display:block;font-size:12px;color:#a7ccef;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 0}
+
+.refresh-status{color:#8ea4bc;font-size:12px;margin:0 0 12px}

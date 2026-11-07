@@ -160,3 +160,8 @@ Use `TRIS_ALLOWED_CLIENT_IPS` for an **optional** comma-separated list of exact 
 ## Data freshness and validation
 
 A manual portfolio snapshot is labeled **OUTDATED** when its timezone-aware `as_of` timestamp is more than 72 hours old. Future timestamps more than ten minutes ahead are rejected, rather than misrepresented as current. The returned quality metadata includes age in hours and the threshold. A recent manual snapshot still means only that the file timestamp is recent: it **does not** mean real-time market prices. Missing position prices stay unavailable.
+
+
+## Resilient browser refresh
+
+The overview endpoint is normally refreshed every three minutes. Failed/invalid responses preserve the last displayed values and trigger bounded retry delays (30, 60, 120, up to 180 seconds). Recovery resets the failure counter. Retry timers are cleared when the browser is hidden or a new explicit refresh starts, and out-of-order replies are ignored. This behavior works with ES5-era JavaScript; final Safari 9 device checks remain outstanding.

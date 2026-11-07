@@ -76,3 +76,15 @@ def test_glance_mode_markup_and_legacy_syntax():
     for script in (settings, dashboard):
         for unsupported in ("const ", "let ", "=>", "?.", "??", "fetch("):
             assert unsupported not in script
+
+
+def test_frontend_retries_failed_overview_without_discarding_cards():
+    page = client.get("/").text
+    script = client.get("/static/dashboard.js").text
+    assert 'id="data-refresh-state"' in page
+    assert "consecutiveOverviewFailures" in script
+    assert "retryOverview()" in script
+    assert "clearOverviewRetry()" in script
+    assert "30000, 60000, 120000, 180000" in script
+    for token in ("const ", "let ", "=>", "fetch(", "?.", "??"):
+        assert token not in script

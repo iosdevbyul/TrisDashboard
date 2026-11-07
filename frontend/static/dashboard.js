@@ -13,6 +13,8 @@
   var lastDataStarted = 0;
   var requestSequence = 0;
   var overviewSequence = 0;
+  var overviewRetryTimer = null;
+  var consecutiveOverviewFailures = 0;
 
   function pad(number) { return number < 10 ? "0" + number : String(number); }
   function text(id, value) { document.getElementById(id).textContent = String(value); }
@@ -318,16 +320,44 @@
     text("server-updated", "Server clock: " + String(info.server_time_utc || "").replace("T", " ").slice(0, 16) + " UTC");
   }
 
+  function clearOverviewRetry() {
+    if (overviewRetryTimer !== null) {
+      clearTimeout(overviewRetryTimer);
+      overviewRetryTimer = null;
+    }
+  }
+
+  function retryOverview() {
+    consecutiveOverviewFailures += 1;
+    text("glance-updated", "Refresh failed · retry scheduled");
+    text("data-refresh-state", "Data refresh failed. Last successful values retained.");
+    clearOverviewRetry();
+    // A bounded backoff prevents hammering an unavailable MacBook.
+    var delays = [30000, 60000, 120000, 180000];
+    var delay = delays[Math.min(consecutiveOverviewFailures - 1, delays.length - 1)];
+    overviewRetryTimer = setTimeout(function () {
+      overviewRetryTimer = null;
+      if (!document.hidden) { loadOverview(true); }
+    }, delay);
+  }
+
   function loadOverview(force) {
     var now = new Date().getTime();
     if (!force && now - lastDataStarted < 30000) { return; }
     lastDataStarted = now;
+    clearOverviewRetry();
     var sequence = ++overviewSequence;
     if (overviewRequest && overviewRequest.readyState !== 4) { overviewRequest.abort(); }
     overviewRequest = get("/api/overview", function (ok, xhr) {
-      if (sequence !== overviewSequence || !ok) { return; }
+      if (sequence !== overviewSequence) { return; }
+      if (!ok) { retryOverview(); return; }
       try {
         var payload = JSON.parse(xhr.responseText);
+        if (!payload || typeof payload !== "object" || !payload.server || !payload.weather || !payload.github) {
+          throw new Error("Unexpected overview response");
+        }
+        consecutiveOverviewFailures = 0;
+        text("data-refresh-state", "Last overview refresh succeeded.");
         showGithub(payload.github);
         showWeather(payload.weather);
         showTrello(payload.trello);
@@ -340,6 +370,7 @@
       } catch (error) {
         text("weather-updated", "Invalid server response");
         text("github-updated", "Invalid server response");
+        retryOverview();
       }
     }, 10000);
   }
@@ -351,6 +382,6 @@
   setInterval(checkServer, 15000);
   setInterval(loadOverview, 180000);
   document.addEventListener("visibilitychange", function () {
-    if (!document.hidden) { tick(); checkServer(); loadOverview(true); }
+    if (!document.hidden) { tick(); checkServer(); loadOverview(true); } else { clearOverviewRetry(); }
   });
 }());
