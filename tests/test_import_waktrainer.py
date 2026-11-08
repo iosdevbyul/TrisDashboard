@@ -201,3 +201,40 @@ def test_bad_import_releases_sidecar_lock(tmp_path):
         "activity_type": "walking", "duration_seconds": 1200
     }], version=2)
     assert import_export(source, target)["added"] == 1
+
+
+def test_dry_run_has_no_lock_or_directory_side_effects(tmp_path):
+    source = export(tmp_path, [{"session_id": "dry-01",
+                               "started_at": "2026-11-08T09:00:00+09:00",
+                               "activity_type": "walking",
+                               "duration_seconds": 600}], version=2)
+    target = tmp_path / "new-private-folder" / "history.json"
+    result = import_export(source, target, dry_run=True)
+    assert result["written"] is False
+    assert not target.parent.exists()
+
+
+def test_import_rejects_world_readable_sidecar_lock(tmp_path):
+    source = export(tmp_path, [{"session_id": "private-01",
+                               "started_at": "2026-11-08T09:00:00+09:00",
+                               "activity_type": "walking",
+                               "duration_seconds": 600}], version=2)
+    lock = tmp_path / "history.json.lock"
+    lock.write_bytes(b"")
+    lock.chmod(0o644)
+    with pytest.raises(ValueError, match="owner-only"):
+        import_export(source, tmp_path / "history.json")
+    assert not (tmp_path / "history.json").exists()
+
+
+def test_import_rejects_symlink_sidecar_lock(tmp_path):
+    source = export(tmp_path, [{"session_id": "private-02",
+                               "started_at": "2026-11-08T09:00:00+09:00",
+                               "activity_type": "walking",
+                               "duration_seconds": 600}], version=2)
+    victim = tmp_path / "victim.txt"
+    victim.write_text("unrelated file")
+    (tmp_path / "history.json.lock").symlink_to(victim)
+    with pytest.raises((OSError, ValueError)):
+        import_export(source, tmp_path / "history.json")
+    assert victim.read_text() == "unrelated file"

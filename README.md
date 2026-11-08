@@ -302,3 +302,7 @@ When **all** requested market symbols return unusable/error results, the failed 
 ## Local workout import concurrency
 
 Both scheduled and manual WakTrainer JSON imports now acquire an exclusive advisory sidecar lock (`fitness.json.lock`) before reading or replacing history. This prevents two concurrent importer processes from independently reading the same old file and overwriting each other's newly imported workouts. The lock remains on disk (owner-only permissions) to avoid races with waiting processes. When `--merge` encounters no new sessions, it leaves the JSON untouched, including its modification time. Other programs writing the same JSON directly must also honor this lock; this is not distributed synchronization or iPhone-to-Mac transfer.
+
+## Import preflight and lock file safety
+
+WakTrainer `--dry-run` validates the source without creating a new output directory or lock file. A real import opens its persistent advisory lock using owner-only file permissions, verifies regular-file ownership and refuses unsafe or symlinked lock files. The scheduled importer always selects merge semantics under that lock, even when two scheduled invocations race to create the first JSON file. These protections are for a single trusted Mac user and are not a replacement for account permissions or encrypted storage.
