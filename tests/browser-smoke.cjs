@@ -124,6 +124,7 @@ assert.match(byId("glance-sources").textContent, /2\/8 ready/);
 assert.equal(byId("server-uptime").textContent, "30m online");
 assert.ok(byId("panel-visibility").children.length >= 8);
 
+byId("display-settings").hidden = true;
 handlers["settings-button:click"].call(byId("settings-button"));
 assert.equal(byId("display-settings").hidden, false);
 handlers["document:keydown"]({keyCode: 27});
