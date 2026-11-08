@@ -299,3 +299,21 @@ def test_inbox_status_rejects_world_readable_state(tmp_path):
     assert read_run_state(tmp_path)["last_run_known"] is True
     path.chmod(0o644)
     assert read_run_state(tmp_path) == {"last_run_known": False}
+
+
+def test_inbox_status_marks_symlinked_candidate_unavailable(tmp_path):
+    from macos.periodic_inbox import inspect, agent_path
+    home, inbox = tmp_path / "Home", tmp_path / "Downloads"
+    inbox.mkdir()
+    agent = agent_path(home)
+    agent.parent.mkdir(parents=True)
+    agent.write_bytes(plistlib.dumps(agent_config(
+        tmp_path / "repo", home, inbox, tmp_path / "private" / "fitness.json"
+    )))
+    victim = tmp_path / "private.json"
+    victim.write_text("{}")
+    (inbox / "waktrainer-dashboard-link.json").symlink_to(victim)
+    status = inspect(home)
+    assert status["installed"] is True
+    assert status["inbox_available"] is False
+    assert str(victim) not in str(status)
