@@ -149,3 +149,12 @@ def test_oversized_inbox_file_fails_preview_without_creating_output(tmp_path):
     with pytest.raises(ValueError, match="too large"):
         receive(inbox, target)
     assert not target.parent.exists()
+
+
+def test_inbox_output_cannot_match_incoming_export_pattern(tmp_path):
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    output = inbox / "waktrainer-dashboard-output.json"
+    with pytest.raises(ValueError, match="Output must not match"):
+        receive(inbox, output, apply=True)
+    assert not output.exists()
