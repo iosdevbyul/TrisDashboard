@@ -84,8 +84,6 @@
   document.getElementById("reset-settings").addEventListener("click", function () {
     settings = {compact: false, dim: false, glance: false, hidden: []}; apply(); store();
   });
-  document.getElementById("refresh-button").addEventListener("click", function () {
-    window.location.reload();
-  });
+
   buildControls(); restore(); apply();
 }());
