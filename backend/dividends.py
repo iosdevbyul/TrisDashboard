@@ -3,7 +3,7 @@ import json
 import os
 import re
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from backend.portfolio import nonnegative, CURRENCIES
 
@@ -68,9 +68,13 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     for monthly in history.values():
         for currency, amount in monthly.items():
             history_totals[currency] = history_totals.get(currency, Decimal("0")) + amount
+    monthly_average = {currency: str((amount / Decimal(6)).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP))
+        for currency, amount in sorted(history_totals.items())}
     return {"available": True, "configured": True, "source": "manual_confirmed_payments",
             "month": month, "monthly_totals": {key: str(value) for key, value in sorted(totals.items())},
             "six_month_totals": {key: str(value) for key, value in sorted(history_totals.items())},
+            "observed_monthly_average": monthly_average,
             "history": [{"month": key, "totals": {currency: str(amount) for currency, amount in sorted(history[key].items())}}
                         for key in months],
             "record_count": len(entries), "recent": recent[:5], "stale": False}
