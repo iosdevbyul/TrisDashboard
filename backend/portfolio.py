@@ -6,6 +6,15 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from backend.quality import snapshot_quality
 
+def _unique_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate portfolio JSON key")
+        result[key] = value
+    return result
+
+
 MAX_POSITIONS = 25
 CURRENCIES = {"USD", "KRW"}
 
@@ -26,7 +35,7 @@ def load_portfolio(path: Path) -> dict:
     """Only user-supplied snapshot values; never infer prices, returns or dividends."""
     if path.stat().st_size > 64 * 1024:
         raise ValueError("Snapshot file too large")
-    data = json.loads(path.read_text(encoding="utf-8"))
+    data = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys)
     if not isinstance(data, dict) or not isinstance(data.get("positions"), list):
         raise ValueError("Expected positions array")
     if len(data["positions"]) > MAX_POSITIONS:
@@ -47,7 +56,7 @@ def load_portfolio(path: Path) -> dict:
         if not isinstance(item, dict):
             raise ValueError("Invalid position")
         symbol, currency = item.get("symbol"), item.get("currency")
-        if not isinstance(symbol, str) or not 1 <= len(symbol) <= 20 or not all(c.isalnum() or c in ".-_" for c in symbol):
+        if not isinstance(symbol, str) or not 1 <= len(symbol) <= 20 or not all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-_" for c in symbol):
             raise ValueError("Invalid ticker")
         if currency not in CURRENCIES:
             raise ValueError("Unsupported currency")
