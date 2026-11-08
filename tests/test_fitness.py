@@ -129,3 +129,11 @@ def test_reject_non_ascii_session_id(tmp_path):
                                 "duration_minutes":30, "session_id":"ｓｅｓｓｉｏｎ"}])
     with pytest.raises(ValueError):
         load_fitness(path, today=date(2026, 11, 8))
+
+
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_reject_nonstandard_json_numeric_constant_anywhere(tmp_path, constant):
+    path = tmp_path / "invalid-fitness.json"
+    path.write_text('{"metadata":' + constant + ',"workouts":[]}')
+    with pytest.raises(ValueError, match="Non-standard JSON"):
+        load_fitness(path, today=date(2026, 11, 8))

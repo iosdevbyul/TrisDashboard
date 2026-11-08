@@ -9,6 +9,10 @@ from pathlib import Path
 _DATE_RE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
 
+def _reject_nonstandard_constant(value):
+    raise ValueError("Non-standard JSON numeric constant: " + value)
+
+
 def _unique_keys(pairs):
     result = {}
     for key, value in pairs:
@@ -21,7 +25,8 @@ def _unique_keys(pairs):
 def load_fitness(path: Path, today: date | None = None) -> dict:
     if path.stat().st_size > 128 * 1024:
         raise ValueError("Workout file too large")
-    payload = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys)
+    payload = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys,
+                         parse_constant=_reject_nonstandard_constant)
     if not isinstance(payload, dict) or not isinstance(payload.get("workouts"), list):
         raise ValueError("Expected workouts array")
     workouts = payload["workouts"]
