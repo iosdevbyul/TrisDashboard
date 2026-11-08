@@ -339,3 +339,15 @@ WakTrainer's iOS export action creates a different `waktrainer-dashboard-UUID.js
 ```
 
 It reads only `waktrainer-dashboard-*.json` files owned by the logged-in Mac user, rejects symbolic links, caps the number of files and workout records, validates duplicates/conflicts before updating the private JSON, and refuses to erase existing history. Files are **not moved or deleted**, so re-running the command is idempotent; remove/archive older exports manually if the inbox exceeds 50 files. No device upload, cloud polling, root privileges or automatic watch service is added. The owner must first share files from iPhone to the chosen Mac folder (for example, AirDrop/Files).
+
+## Optional automatic MacBook import of WakTrainer AirDrop files
+
+After confirming that manually exported WakTrainer v2 files arrive in a dedicated Mac folder and `macos.receive_workouts` reports expected data, the owner can **explicitly install** a per-user macOS LaunchAgent that checks that folder every 15 minutes:
+
+```sh
+.venv/bin/python -m macos.periodic_inbox install --directory ~/Downloads --output ~/tris-private/fitness.json
+.venv/bin/python -m macos.periodic_inbox run-once --directory ~/Downloads --output ~/tris-private/fitness.json
+.venv/bin/python -m macos.periodic_inbox uninstall
+```
+
+The optional agent scans only the owner-created `waktrainer-dashboard-*.json` exports. It ignores unrelated downloads and keeps all original files; existing session IDs prevent duplicate imports. It will not start unless installed, will not request iOS access, and will not transfer files from the phone to the Mac. On errors (invalid files, conflicting IDs, more than 50 candidates), import fails rather than deleting originals. Use a dedicated folder and periodically archive old files to stay below this bound. The agent uses the already-tested locked atomic workout importer, and does not require credentials, extra cloud services or recurring subscriptions. Actual login-agent behavior remains for MacBook acceptance testing.
