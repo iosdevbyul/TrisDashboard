@@ -1,15 +1,27 @@
 """Read-only manually recorded dividend payments; never estimates future payouts."""
 import json
 import os
+import re
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
 from backend.portfolio import nonnegative, CURRENCIES
 
+_DATE_RE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+
+
+def _unique_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate dividend JSON key")
+        result[key] = value
+    return result
+
 def load_dividends(path: Path, today: date | None = None) -> dict:
     if path.stat().st_size > 65536:
         raise ValueError("Dividend file too large")
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys)
     entries = payload.get("payments") if isinstance(payload, dict) else None
     if not isinstance(entries, list) or len(entries) > 300:
         raise ValueError("Invalid dividend payments")
@@ -26,11 +38,14 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         if not isinstance(entry, dict):
             raise ValueError("Invalid payment")
         ticker, currency = entry.get("symbol"), entry.get("currency")
-        if not isinstance(ticker, str) or not 1 <= len(ticker) <= 20 or not all(c.isalnum() or c in ".-_" for c in ticker):
+        if not isinstance(ticker, str) or not 1 <= len(ticker) <= 20 or not all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-_" for c in ticker):
             raise ValueError("Invalid symbol")
         if currency not in CURRENCIES:
             raise ValueError("Unsupported currency")
-        paid_on = date.fromisoformat(entry["paid_on"])
+        raw_paid = entry.get("paid_on")
+        if not isinstance(raw_paid, str) or not _DATE_RE.fullmatch(raw_paid):
+            raise ValueError("Invalid payment date")
+        paid_on = date.fromisoformat(raw_paid)
         amount = nonnegative(entry.get("amount"), "amount")
         if paid_on > reference:
             raise ValueError("Only recorded past or current payments allowed")
