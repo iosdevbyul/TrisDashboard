@@ -74,6 +74,14 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .workout-bar-track{height:9px;background:#304155;border-radius:5px;overflow:hidden}
 .workout-bar-fill{display:block;height:9px;background:#6bc5a2;border-radius:5px}
 
+.dividend-bars{margin:12px 0 14px}
+.dividend-bars>div:first-child{font-size:12px;color:#aac4df;margin-bottom:6px}
+.dividend-bar-row{display:table;table-layout:fixed;width:100%;font-size:11px;margin:4px 0}
+.dividend-bar-row>span{display:table-cell;vertical-align:middle}
+.dividend-bar-row>span:first-child{width:122px}
+.dividend-bar-track{height:8px;background:#304155;border-radius:4px;overflow:hidden}
+.dividend-bar-fill{display:block;height:8px;background:#77b7e5}
+
 /* Readable large-text accessibility option for first generation iPad mini. */
 .large-text .card h2{font-size:18px}
 .large-text .card p{font-size:27px}

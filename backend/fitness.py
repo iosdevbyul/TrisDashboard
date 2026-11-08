@@ -97,6 +97,16 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
                           for kind, values in by_type.items()]
     activity_breakdown.sort(key=lambda entry: (-entry["duration_minutes"], entry["type"]))
     active_days = sum(1 for day in daily.values() if day["sessions"] > 0)
+    longest_streak = 0
+    current_streak = 0
+    for day in daily.values():
+        current_streak = current_streak + 1 if day["sessions"] > 0 else 0
+        longest_streak = max(longest_streak, current_streak)
+    ongoing_streak = 0
+    for day in reversed(list(daily.values())):
+        if day["sessions"] == 0:
+            break
+        ongoing_streak += 1
     modified = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
     age_hours = max(0.0, (datetime.now(timezone.utc) - modified).total_seconds()) / 3600
     return {"available": True, "configured": True, "source": "manual_export",
@@ -105,6 +115,8 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "file_older_than_week": age_hours > 168,
             "period_start": start.isoformat(), "period_end": reference.isoformat(),
             "active_days": active_days,
+            "longest_streak_days": longest_streak,
+            "ongoing_streak_days": ongoing_streak,
             "activity_breakdown": activity_breakdown,
             "summary": {"sessions": totals["sessions"], "duration_minutes": round(totals["minutes"], 1),
                         "distance_km": round(totals["distance_km"], 2)},

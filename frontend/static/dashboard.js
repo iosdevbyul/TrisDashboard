@@ -173,6 +173,19 @@
       total.textContent = "Values: " + parts.join(" / ") + (info.valuation_complete ? "" : " (partial)");
       list.appendChild(total);
     }
+    var allocations = info.currency_allocations || {};
+    var allocationCurrencies = Object.keys(allocations);
+    for (var c = 0; c < allocationCurrencies.length; c++) {
+      var shares = allocations[allocationCurrencies[c]];
+      var allocationLine = document.createElement("div");
+      allocationLine.className = "repo-row";
+      var breakdown = [];
+      for (var a = 0; a < shares.length; a++) {
+        breakdown.push(shares[a].symbol + " " + shares[a].percent + "%");
+      }
+      allocationLine.textContent = "Manual " + allocationCurrencies[c] + " allocation: " + breakdown.join(" · ");
+      list.appendChild(allocationLine);
+    }
     if (valuation && valuation.available) {
       var totalsLabel = [];
       var quoteKeys = Object.keys(valuation.totals || {});
@@ -232,6 +245,43 @@
       list.appendChild(observedRow);
     }
     var history = info.history || [];
+    var maxByCurrency = {};
+    for (var h = 0; h < history.length; h++) {
+      var monthValues = history[h].totals || {};
+      var monthCurrencies = Object.keys(monthValues);
+      for (var k = 0; k < monthCurrencies.length; k++) {
+        var numericAmount = Number(monthValues[monthCurrencies[k]]);
+        if (isFinite(numericAmount) && numericAmount >= 0) {
+          maxByCurrency[monthCurrencies[k]] = Math.max(maxByCurrency[monthCurrencies[k]] || 0, numericAmount);
+        }
+      }
+    }
+    var chartCurrencies = Object.keys(maxByCurrency);
+    for (var cc = 0; cc < chartCurrencies.length; cc++) {
+      var currency = chartCurrencies[cc];
+      var chart = document.createElement("div");
+      chart.className = "dividend-bars";
+      var title = document.createElement("div");
+      title.textContent = "Recorded " + currency + " payments by month";
+      chart.appendChild(title);
+      for (var mm = 0; mm < history.length; mm++) {
+        var amount = Number((history[mm].totals || {})[currency] || 0);
+        var barRow = document.createElement("div");
+        barRow.className = "dividend-bar-row";
+        var caption = document.createElement("span");
+        caption.textContent = history[mm].month + " · " + amount;
+        var track = document.createElement("span");
+        track.className = "dividend-bar-track";
+        var fill = document.createElement("span");
+        fill.className = "dividend-bar-fill";
+        fill.style.width = (maxByCurrency[currency] > 0 ? Math.round(100 * amount / maxByCurrency[currency]) : 0) + "%";
+        track.appendChild(fill);
+        barRow.appendChild(caption);
+        barRow.appendChild(track);
+        chart.appendChild(barRow);
+      }
+      list.appendChild(chart);
+    }
     for (var h = 0; h < history.length; h++) {
       var monthlyRow = document.createElement("div");
       monthlyRow.className = "repo-row";
@@ -312,6 +362,13 @@
       (typeof info.active_days === "number" ? "Active " + info.active_days + "/7 days · " : "") +
       info.period_start + " to " + info.period_end;
     list.appendChild(total);
+    if (typeof info.longest_streak_days === "number") {
+      var streak = document.createElement("div");
+      streak.className = "repo-row";
+      streak.textContent = "7-day window: longest " + info.longest_streak_days +
+        " consecutive active days · Through today " + (info.ongoing_streak_days || 0) + " days";
+      list.appendChild(streak);
+    }
     var activities = info.activity_breakdown || [];
     for (var a = 0; a < activities.length; a++) {
       var activityLine = document.createElement("div");
