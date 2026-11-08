@@ -31,6 +31,7 @@ def readiness(project: Path, home: Path, *, settings: Path | None = None,
         }
     result["summary"] = {
         "python_ready": bool(host.get("python_supported")),
+        "venv_ready": bool(host.get("venv_created")),
         "server_reachable": bool(host.get("local_server_reachable")),
         "settings_ready": (settings is None or result["settings"].get("private_files_ready") is True),
         "inbox_agent_installed": bool(import_status.get("installed")),
@@ -39,6 +40,8 @@ def readiness(project: Path, home: Path, *, settings: Path | None = None,
     failures = []
     if not result["summary"]["python_ready"]:
         failures.append("python")
+    if not result["summary"]["venv_ready"]:
+        failures.append("venv")
     if settings is not None and not result["summary"]["settings_ready"]:
         failures.append("settings")
     if require_server and not result["summary"]["server_reachable"]:
@@ -86,6 +89,7 @@ def main() -> None:
         print(json.dumps(result, sort_keys=True))
     else:
         print("Mac Python ready: " + str(result["summary"]["python_ready"]))
+        print("Virtual environment ready: " + str(result["summary"]["venv_ready"]))
         print("Dashboard server reachable: " + str(result["summary"]["server_reachable"]))
         print("Configured private files ready: " + str(result["summary"]["settings_ready"]))
         print("Workout inbox agent installed: " + str(result["summary"]["inbox_agent_installed"]))
