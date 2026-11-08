@@ -30,7 +30,18 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
             latest[key] = quote
     matched = []
     totals = {}
-    for item in portfolio.get("positions", []):
+    seen_positions = set()
+    duplicated_positions = set()
+    for item in portfolio["positions"]:
+        if not isinstance(item, dict):
+            continue
+        key = (item.get("symbol"), item.get("currency"))
+        if not all(isinstance(part, str) for part in key):
+            continue
+        if key in seen_positions:
+            duplicated_positions.add(key)
+        seen_positions.add(key)
+    for item in portfolio["positions"]:
         if not isinstance(item, dict):
             continue
         symbol = item.get("symbol")
@@ -38,7 +49,7 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
         if not isinstance(symbol, str) or not isinstance(currency, str):
             continue
         key = (symbol, currency)
-        quote = None if key in ambiguous else latest.get(key)
+        quote = None if key in ambiguous or key in duplicated_positions else latest.get(key)
         if quote is None:
             continue
         if isinstance(item.get("quantity"), bool) or isinstance(quote.get("price"), bool):
