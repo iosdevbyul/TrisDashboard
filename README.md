@@ -324,3 +324,7 @@ The MacBook fitness reader now rejects duplicate stable `session_id` values acro
 ## Workout activity by day
 
 The fitness card displays a seven-day, date-scoped activity breakdown with session counts, active minutes and kilometers per day, including explicit zeros on rest days. The same validated workout export drives the existing weekly aggregate and the daily rows; older workouts are excluded from both. No new HealthKit permissions, location traces or remote data access are introduced.
+
+## Workout source file freshness
+
+The local fitness panel now displays the MacBook workout JSON **file modification time in UTC**, and identifies a file not updated in more than seven days. This timestamp describes the last local file write, **not** the time of the most recent workout, a mobile sync, or data correctness. A week without exercising is not automatically an error, so the source does not become unavailable or mark data as stale solely because the file is old. No additional background network access is required.

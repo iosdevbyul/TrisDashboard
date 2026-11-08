@@ -86,3 +86,25 @@ def test_daily_workout_breakdown_includes_empty_days(tmp_path):
     assert days[3]["date"] == "2026-11-05"
     assert days[3]["distance_km"] == 2.2
     assert sum(day["sessions"] for day in days) == 3
+
+
+def test_workout_file_freshness_reports_source_mtime(tmp_path):
+    import os
+    from datetime import datetime, timedelta, timezone
+    path = snapshot(tmp_path, [{"date": "2026-11-08", "type": "Running",
+                                "duration_minutes": 30}])
+    modified = datetime.now(timezone.utc) - timedelta(days=8)
+    os.utime(path, (modified.timestamp(), modified.timestamp()))
+    data = load_fitness(path, today=date(2026, 11, 8))
+    assert data["file_older_than_week"] is True
+    assert data["file_age_hours"] >= 190
+    assert datetime.fromisoformat(data["file_updated_utc"]).tzinfo is not None
+    assert data["stale"] is False
+
+
+def test_fitness_file_freshness_does_not_infer_last_workout(tmp_path):
+    path = snapshot(tmp_path, [{"date": "2023-11-08", "type": "Running",
+                                "duration_minutes": 30}])
+    data = load_fitness(path, today=date(2026, 11, 8))
+    assert data["file_older_than_week"] is False
+    assert data["summary"]["sessions"] == 0
