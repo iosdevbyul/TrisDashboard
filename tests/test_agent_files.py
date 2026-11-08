@@ -76,10 +76,11 @@ def test_failed_agent_write_preserves_concurrent_replacement(tmp_path, monkeypat
     from macos import agent_files
     path = tmp_path / "agent.plist"
     original_chmod = agent_files.os.chmod
+    replacement = tmp_path / "replacement.plist"
+    replacement.write_text("replacement")
     def replace_during_chmod(target, mode):
         if target == path:
-            path.unlink()
-            path.write_text("replacement")
+            replacement.replace(path)
             raise OSError("simulated write failure")
         return original_chmod(target, mode)
     monkeypatch.setattr(agent_files.os, "chmod", replace_during_chmod)
