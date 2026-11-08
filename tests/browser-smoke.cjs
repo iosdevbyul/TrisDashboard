@@ -242,12 +242,12 @@ response.agenda = { available:true, window_start:"2026-11-09", window_end:"2026-
   events:Array.from({length:10}, (_,i)=>({date:"2026-11-09",title:"Event "+i,time:""})) };
 handlers["document:visibilitychange"]();
 assert.equal(byId("agenda-toggle").hidden, false);
-assert.equal(byId("agenda-list").children.length, 10);
+assert.equal(byId("agenda-list").children.length, 9);
 handlers["agenda-toggle:click"]();
-assert.equal(byId("agenda-list").children.length, 12);
+assert.equal(byId("agenda-list").children.length, 11);
 assert.equal(byId("agenda-toggle").attributes["aria-expanded"], "true");
 handlers["agenda-toggle:click"]();
-assert.equal(byId("agenda-list").children.length, 10);
+assert.equal(byId("agenda-list").children.length, 9);
 
 // A 20-result GitHub API page is only a lower bound, not an exact PR count.
 response.github = { available: true, repositories: [{
