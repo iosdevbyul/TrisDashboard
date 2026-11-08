@@ -90,3 +90,24 @@ def test_overlapping_airdrop_exports_with_same_workout_are_deduplicated(tmp_path
     assert first["duplicates"] == 1
     assert len(json.loads(output.read_text())["workouts"]) == 1
     assert receive(inbox, output, apply=True)["new"] == 0
+
+
+def test_many_overlapping_exports_only_count_unique_sessions(tmp_path):
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    source_sessions = [{
+        "session_id": "id-" + str(i),
+        "started_at": "2026-11-08T08:15:00+09:00",
+        "activity_type": "running", "duration_seconds": 600,
+        "distance_meters": 2500
+    } for i in range(200)]
+    for name in ("first", "second", "third"):
+        (inbox / ("waktrainer-dashboard-" + name + ".json")).write_text(
+            json.dumps({"schema_version": 2, "sessions": source_sessions}))
+    output = tmp_path / "private" / "fitness.json"
+    result = receive(inbox, output, apply=True)
+    assert result["incoming"] == 600
+    assert result["new"] == 200
+    assert result["duplicates"] == 400
+    assert len(json.loads(output.read_text())["workouts"]) == 200
+    assert receive(inbox, output, apply=True)["new"] == 0

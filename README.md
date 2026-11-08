@@ -351,3 +351,7 @@ After confirming that manually exported WakTrainer v2 files arrive in a dedicate
 ```
 
 The optional agent scans only the owner-created `waktrainer-dashboard-*.json` exports. It ignores unrelated downloads and keeps all original files; existing session IDs prevent duplicate imports. It will not start unless installed, will not request iOS access, and will not transfer files from the phone to the Mac. On errors (invalid files, conflicting IDs, more than 50 candidates), import fails rather than deleting originals. Use a dedicated folder and periodically archive old files to stay below this bound. The agent uses the already-tested locked atomic workout importer, and does not require credentials, extra cloud services or recurring subscriptions. Actual login-agent behavior remains for MacBook acceptance testing.
+
+## Overlapping workout exports
+
+WakTrainer exports complete history snapshots, so two or more shared JSON files often contain the same stable workout IDs. The inbox importer now counts and stages **unique sessions** before enforcing the 500-session history cap, instead of rejecting repeated full exports simply because their summed raw rows exceed 500. It still validates every source file and rejects conflicting records under the same stable ID. The summary distinguishes raw input rows, duplicates and genuinely new sessions.
