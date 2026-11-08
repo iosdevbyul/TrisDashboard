@@ -51,7 +51,7 @@ def receive(directory: Path, output: Path, *, apply: bool = False,
         payload = json.loads(raw)
         if not isinstance(payload, dict) or type(payload.get("schema_version")) is not int or payload["schema_version"] != 2:
             raise ValueError("Inbox accepts only WakTrainer version 2 exports")
-        validated = parse_export(path, timezone_name=timezone_name)["workouts"]
+        validated = parse_export(path, timezone_name=timezone_name, raw=raw)["workouts"]
         # Each iOS share is a full snapshot. Repeated snapshots overlap heavily;
         # enforce the cap on unique sessions, not the sum of duplicate records.
         for session, item in zip(payload["sessions"], validated):

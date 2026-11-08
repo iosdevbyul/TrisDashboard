@@ -78,10 +78,16 @@ def _reject_export_constant(value):
     raise ValueError("Non-standard workout export JSON value")
 
 
-def parse_export(path: Path, *, timezone_name: str | None = None) -> dict:
-    if path.stat().st_size > MAX_BYTES:
+def parse_export(path: Path, *, timezone_name: str | None = None,
+                 raw: bytes | None = None) -> dict:
+    if raw is None:
+        if path.stat().st_size > MAX_BYTES:
+            raise ValueError("Export is too large")
+        with path.open("rb") as stream:
+            raw = stream.read(MAX_BYTES + 1)
+    if len(raw) > MAX_BYTES:
         raise ValueError("Export is too large")
-    export = json.loads(path.read_text(encoding="utf-8"),
+    export = json.loads(raw,
                         object_pairs_hook=_unique_export_keys,
                         parse_constant=_reject_export_constant)
     if not isinstance(export, dict) or type(export.get("schema_version")) is not int or export["schema_version"] not in (1, 2):
