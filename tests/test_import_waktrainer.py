@@ -285,3 +285,16 @@ def test_workout_export_rejects_duplicate_or_nonstandard_json(tmp_path, raw):
     file.write_text(raw)
     with pytest.raises(ValueError):
         parse_export(file)
+
+
+def test_future_waktrainer_session_fails_before_writing(tmp_path):
+    from datetime import datetime, timezone, timedelta
+    future = (datetime.now(timezone.utc) + timedelta(days=5)).isoformat()
+    source = export(tmp_path, [{
+        "session_id": "future-id", "started_at": future,
+        "activity_type": "walking", "duration_seconds": 600,
+    }], version=2)
+    target = tmp_path / "private" / "fitness.json"
+    with pytest.raises(ValueError, match="Future workout session"):
+        import_export(source, target, dry_run=True)
+    assert not target.exists()
