@@ -65,3 +65,5 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .toolbar button:focus,.display-settings button:focus,.display-settings input:focus,.github-pr-link:focus{outline:3px solid #a7ccef;outline-offset:2px}
 .card p,.card small,.details,.refresh-status{overflow-wrap:break-word}
 @media (max-width:600px){.toolbar button,.display-settings button{min-height:44px}.display-settings label{padding:5px 0}}
+
+.toolbar button:disabled{opacity:.65;cursor:default}
