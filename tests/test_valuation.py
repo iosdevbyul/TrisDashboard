@@ -102,3 +102,20 @@ def test_boolean_quantity_and_price_never_become_market_values():
     result = quote_valuation(portfolio, quotes)
     assert result["available"] is False
     assert result["matched_count"] == 0
+
+
+def test_market_valuation_handles_malformed_payloads_without_crashing():
+    good_portfolio = {"available": True, "positions": [{"symbol": "JEPQ", "currency": "USD", "quantity": "2"}]}
+    good_quotes = {"available": True, "quotes": [{"symbol": "JEPQ", "currency": "USD", "price": "50", "reported_at_utc": "stamp"}]}
+    assert quote_valuation(None, good_quotes)["available"] is False
+    assert quote_valuation({"available": True, "positions": None}, good_quotes)["available"] is False
+    assert quote_valuation(good_portfolio, {"available": True, "quotes": None})["available"] is False
+    assert quote_valuation(good_portfolio, None)["available"] is False
+    assert quote_valuation(good_portfolio, {"available": False})["available"] is False
+    malformed = {"available": True, "quotes": [
+        {"symbol": ["JEPQ"], "currency": "USD", "price": "50", "reported_at_utc": "stamp"},
+        good_quotes["quotes"][0],
+    ]}
+    assert quote_valuation(good_portfolio, malformed)["totals"] == {"USD": "100"}
+    bad_portfolio = {"available": True, "positions": [{"symbol": ["JEPQ"], "currency": "USD", "quantity": "2"}]}
+    assert quote_valuation(bad_portfolio, good_quotes)["available"] is False
