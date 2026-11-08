@@ -129,8 +129,14 @@ assert.equal(byId("panel-weather").hidden, true);
 assert.equal(byId("panel-portfolio").hidden, false);
 assert.equal(byId("panel-github").hidden, false);
 assert.equal(byId("panel-fitness").hidden, false);
+handlers["minimal-panels:click"]();
+assert.equal(byId("panel-weather").hidden, false);
+assert.equal(byId("panel-agenda").hidden, false);
+assert.equal(byId("panel-server").hidden, false);
+assert.equal(byId("panel-portfolio").hidden, true);
 handlers["show-all-panels:click"]();
 assert.equal(byId("panel-weather").hidden, false);
+assert.equal(byId("panel-portfolio").hidden, false);
 
 byId("setting-compact").checked = true;
 handlers["setting-compact:change"].call(byId("setting-compact"));
