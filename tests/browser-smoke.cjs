@@ -225,6 +225,7 @@ healthBody = '{"status":"not-ready"}';
 clockOffset += 3000;
 handlers["document:visibilitychange"]();
 assert.equal(byId("connection").textContent, "Server offline");
+assert.match(byId("offline-banner").textContent, /Last successful update at \d\d:\d\d/);
 healthBody = '{"status":"ok"}';
 clockOffset += 3000;
 handlers["document:visibilitychange"]();
