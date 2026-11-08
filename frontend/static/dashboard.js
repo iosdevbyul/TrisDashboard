@@ -460,6 +460,12 @@
     }, 10000);
   }
 
+  document.getElementById("refresh-button").addEventListener("click", function () {
+    text("data-refresh-state", "Refreshing dashboard data...");
+    checkServer();
+    loadOverview(true);
+  });
+
   tick();
   checkServer();
   loadOverview(true);
