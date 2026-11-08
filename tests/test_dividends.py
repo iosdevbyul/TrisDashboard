@@ -92,3 +92,9 @@ def test_reject_nonstandard_json_numeric_constant_anywhere(tmp_path, constant):
     path.write_text('{"metadata":' + constant + ',"payments":[]}')
     with pytest.raises(ValueError, match="Non-standard JSON"):
         load_dividends(path, today=date(2026, 11, 8))
+
+
+@pytest.mark.parametrize("reference", ["2026-11-08", 1, True, __import__("datetime").datetime(2026, 11, 8)])
+def test_invalid_dividend_reference_date_is_rejected(tmp_path, reference):
+    with pytest.raises(ValueError, match="Invalid dividend reference date"):
+        load_dividends(snapshot(tmp_path, []), today=reference)
