@@ -149,3 +149,39 @@ def test_restore_rejects_large_manifest_without_decoding(tmp_path):
     manifest.write_bytes(b" " * (16 * 1024 + 1))
     with pytest.raises(ValueError, match="manifest"):
         restore(settings, snapshot, force=True)
+
+
+def test_backup_refuses_destination_created_during_staging(tmp_path, monkeypatch):
+    from macos import backup as module
+    settings, holdings, agenda = fixture_files(tmp_path)
+    destination = tmp_path / "snapshots" / "backup-001"
+    chmod = module.os.chmod
+    injected = {"yes": False}
+    def overlap(path, mode):
+        chmod(path, mode)
+        if str(path).endswith("manifest.json") and not injected["yes"]:
+            injected["yes"] = True
+            destination.mkdir(parents=True)
+    monkeypatch.setattr(module.os, "chmod", overlap)
+    with pytest.raises(FileExistsError):
+        module.backup(settings, destination)
+    assert destination.is_dir()
+    assert not (destination / "manifest.json").exists()
+
+
+def test_backup_copy_failure_removes_incomplete_directory(tmp_path, monkeypatch):
+    from macos import backup as module
+    settings, holdings, agenda = fixture_files(tmp_path)
+    destination = tmp_path / "snapshots" / "backup-001"
+    replace = module.os.replace
+    calls = {"n": 0}
+    def fail_later(src, dst):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise OSError("simulated backup disk failure")
+        return replace(src, dst)
+    monkeypatch.setattr(module.os, "replace", fail_later)
+    with pytest.raises(OSError, match="simulated"):
+        module.backup(settings, destination)
+    assert not destination.exists()
+    assert holdings.is_file() and agenda.is_file()

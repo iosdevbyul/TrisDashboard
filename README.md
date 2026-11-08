@@ -477,3 +477,7 @@ Offline restore now rejects oversized or symlinked manifests, malformed sizes/ch
 ## Offline real-server restart smoke test
 
 Run `.venv/bin/python -m macos.server_cycle_check --json` to start the installed FastAPI/uvicorn application on an **ephemeral localhost-only port**, verify `/healthz`, stop the process and repeat the full start/health/stop cycle. The check exercises actual Python process startup and recovery, not just FastAPI's in-memory test client. It uses no user configuration, external API requests, account credentials or privileged ports. The test is also run in GitHub's Python CI matrix. **Limit:** Linux CI process lifecycle passing does not prove macOS launchd reboots or physical Safari behavior; test those separately on the MacBook/iPad.
+
+### Exclusive backup destination creation
+
+Backup creation now exclusively reserves the destination directory rather than renaming the temporary directory over an empty folder that another process may have created. Staged data files are moved into place, the manifest is published last, and incomplete output is cleaned up on recoverable copy errors. Interrupted/power-loss backups may still leave a manifest-free incomplete directory, which restore rejects. This is **not** a fully atomic directory publication.
