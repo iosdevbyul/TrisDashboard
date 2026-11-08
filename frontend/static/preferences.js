@@ -85,6 +85,10 @@
     settings.hidden = [];
     apply(); store();
   });
+  document.getElementById("hide-all-panels").addEventListener("click", function () {
+    settings.hidden = panelNames.slice(0);
+    apply(); store();
+  });
   document.getElementById("reset-settings").addEventListener("click", function () {
     settings = {compact: false, dim: false, glance: false, hidden: []}; apply(); store();
   });
