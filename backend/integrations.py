@@ -116,7 +116,10 @@ def github() -> dict:
     repositories = []
     for name in raw.split(","):
         name = name.strip()
-        if len(name.split("/")) == 2 and all(part and part.replace("-", "").replace("_", "").replace(".", "").isalnum() for part in name.split("/")):
+        if (len(name.split("/")) == 2 and all(
+                part and len(part) <= 100 and all(
+                    char in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._"
+                    for char in part) for part in name.split("/"))):
             if name not in repositories:
                 repositories.append(name)
         if len(repositories) == 6:
