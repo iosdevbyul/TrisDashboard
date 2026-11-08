@@ -39,3 +39,24 @@ def test_doctor_keychain_flag_does_not_show_secret_text():
     script = (Path(__file__).resolve().parent.parent / "macos" / "doctor.py").read_text()
     assert "credentials_present" in script
     assert "credential_status()" in script
+
+
+def test_doctor_health_probe_limits_response_and_verifies_content(monkeypatch):
+    from macos import doctor
+    class Response:
+        status = 200
+        def __init__(self, body):
+            self.body = body
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def read(self, amount):
+            assert amount == 513
+            return self.body[:amount]
+    monkeypatch.setattr(doctor, "urlopen", lambda url, timeout: Response(b" " * 513))
+    assert doctor.probe_server() is False
+    monkeypatch.setattr(doctor, "urlopen", lambda url, timeout: Response(b'{"status":"ok"}'))
+    assert doctor.probe_server() is True
+    monkeypatch.setattr(doctor, "urlopen", lambda url, timeout: Response(b'{"status":"unexpected"}'))
+    assert doctor.probe_server() is False
