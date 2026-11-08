@@ -46,3 +46,13 @@ def test_invalid_allowlist_types_fail_closed():
     for value in (None, 123, ["127.0.0.1"]):
         with pytest.raises(ValueError, match="Invalid client allowlist"):
             validate_allowlist(value)
+
+
+def test_forbidden_responses_preserve_security_headers(monkeypatch):
+    monkeypatch.setenv("TRIS_ALLOWED_CLIENT_IPS", "127.0.0.1/32")
+    response = TestClient(app).get("/api/overview")
+    assert response.status_code == 403
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["Cache-Control"] == "no-store"
+    assert "frame-ancestors 'none'" in response.headers["Content-Security-Policy"]
