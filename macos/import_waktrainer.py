@@ -174,7 +174,10 @@ def _import_export_unlocked(source: Path, destination: Path, *, force: bool = Fa
                                          delete=False) as handle:
             temp = Path(handle.name)
             json.dump(data, handle, ensure_ascii=False)
-        load_fitness(temp)
+        # Evaluate local workout days in the same timezone used for export conversion.
+        zone = validated_timezone(timezone_name)
+        validation_day = datetime.now(zone).date() if zone else None
+        load_fitness(temp, today=validation_day)
         if not dry_run:
             os.replace(temp, destination)
             temp = None
