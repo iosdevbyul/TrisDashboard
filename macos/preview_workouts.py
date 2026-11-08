@@ -7,8 +7,8 @@ from backend.fitness import load_fitness
 from macos.import_waktrainer import merged_workouts, parse_export
 
 
-def preview(source: Path, destination: Path) -> dict:
-    data = parse_export(source.expanduser().resolve())
+def preview(source: Path, destination: Path, *, timezone_name: str | None = None) -> dict:
+    data = parse_export(source.expanduser().resolve(), timezone_name=timezone_name)
     destination = destination.expanduser().resolve()
     existing = []
     if destination.exists():
@@ -33,9 +33,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Inspect a private workout import without modifying any files")
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--timezone", dest="timezone_name",
+                        help="Optional IANA timezone for workout calendar dates")
     args = parser.parse_args()
     try:
-        result = preview(args.input, args.output)
+        result = preview(args.input, args.output, timezone_name=args.timezone_name)
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
         parser.exit(1, "Preview failed: validate the workout export and destination.\n")
     print(json.dumps(result, sort_keys=True))

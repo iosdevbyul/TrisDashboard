@@ -8,6 +8,18 @@ import stat
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+
+def validated_timezone(name: str | None):
+    if name is None:
+        return None
+    if not isinstance(name, str) or not name or len(name) > 100:
+        raise ValueError("Invalid workout timezone")
+    try:
+        return ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError) as error:
+        raise ValueError("Unsupported workout timezone") from error
 
 from backend.fitness import load_fitness
 
@@ -53,7 +65,7 @@ MAX_BYTES = 128 * 1024
 MAX_SESSIONS = 500
 
 
-def parse_export(path: Path) -> dict:
+def parse_export(path: Path, *, timezone_name: str | None = None) -> dict:
     if path.stat().st_size > MAX_BYTES:
         raise ValueError("Export is too large")
     export = json.loads(path.read_text(encoding="utf-8"))
@@ -63,6 +75,7 @@ def parse_export(path: Path) -> dict:
     sessions = export.get("sessions")
     if not isinstance(sessions, list) or len(sessions) > MAX_SESSIONS:
         raise ValueError("Invalid sessions")
+    zone = validated_timezone(timezone_name)
     workouts = []
     for session in sessions:
         if not isinstance(session, dict):
@@ -82,7 +95,7 @@ def parse_export(path: Path) -> dict:
                 or not 0 <= seconds <= 86400 or not 0 <= meters <= 1_000_000):
             raise ValueError("Invalid session measurement")
         workout = {
-            "date": timestamp.date().isoformat(),
+            "date": (timestamp.astimezone(zone) if zone else timestamp).date().isoformat(),
             "type": TYPES[kind],
             "duration_minutes": round(seconds / 60, 3),
             "distance_km": round(meters / 1000, 3),
@@ -102,14 +115,15 @@ def parse_export(path: Path) -> dict:
 
 
 def _import_export_unlocked(source: Path, destination: Path, *, force: bool = False,
-                           dry_run: bool = False, merge: bool = False) -> dict:
+                           dry_run: bool = False, merge: bool = False,
+                           timezone_name: str | None = None) -> dict:
     source = source.expanduser().resolve()
     destination = destination.expanduser().resolve()
     project = Path(__file__).resolve().parent.parent
     if (source == destination or destination == project
             or project in destination.parents or destination.suffix.lower() != ".json"):
         raise ValueError("Destination must be private JSON outside repository")
-    data = parse_export(source)
+    data = parse_export(source, timezone_name=timezone_name)
     if force and merge:
         raise ValueError("--force and --merge cannot be combined")
     added = len(data["workouts"])
@@ -148,7 +162,8 @@ def _import_export_unlocked(source: Path, destination: Path, *, force: bool = Fa
 
 
 def import_export(source: Path, destination: Path, *, force: bool = False,
-                  dry_run: bool = False, merge: bool = False) -> dict:
+                  dry_run: bool = False, merge: bool = False,
+                  timezone_name: str | None = None) -> dict:
     """Serialize imports from the MacBook's scheduled and manual paths."""
     destination = destination.expanduser().resolve()
     project = Path(__file__).resolve().parent.parent
@@ -160,7 +175,8 @@ def import_export(source: Path, destination: Path, *, force: bool = False,
     if dry_run:
         # Validation should not create destination folders, lock files or JSON output.
         return _import_export_unlocked(
-            source, destination, force=force, dry_run=True, merge=merge)
+            source, destination, force=force, dry_run=True, merge=merge,
+            timezone_name=timezone_name)
     destination.parent.mkdir(parents=True, exist_ok=True)
     # Persistent sidecar lock is intentionally never unlinked: removing it races waiting writers.
     lock_path = destination.with_name(destination.name + ".lock")
@@ -177,7 +193,8 @@ def import_export(source: Path, destination: Path, *, force: bool = False,
         fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
         try:
             return _import_export_unlocked(
-                source, destination, force=force, dry_run=False, merge=merge)
+                source, destination, force=force, dry_run=False, merge=merge,
+                timezone_name=timezone_name)
         finally:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
@@ -190,10 +207,13 @@ def main() -> None:
     parser.add_argument("--merge", action="store_true",
                         help="Append unique sessions without replacing existing workout history")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--timezone", dest="timezone_name",
+                        help="Optional IANA timezone for workout calendar dates (e.g. Asia/Seoul)")
     args = parser.parse_args()
     try:
         result = import_export(args.input, args.output, force=args.force,
-                               dry_run=args.dry_run, merge=args.merge)
+                               dry_run=args.dry_run, merge=args.merge,
+                               timezone_name=args.timezone_name)
     except (OSError, ValueError, TypeError, KeyError):
         parser.exit(1, "Import failed: invalid WakTrainer export or destination.\n")
     print("Validated " + str(result["sessions"]) + " sessions (" + str(result["added"]) + " new)" +
