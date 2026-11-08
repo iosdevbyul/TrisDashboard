@@ -305,6 +305,9 @@
       text("weather-temp", info.temperature_c + " °C");
       var details = info.location + " · " + weatherDescription(info.weather_code) +
         " · Humidity " + info.humidity_percent + "%";
+      if (typeof info.wind_kmh === "number" && isFinite(info.wind_kmh) && info.wind_kmh >= 0) {
+        details += " · Wind " + info.wind_kmh + " km/h";
+      }
       if (info.feels_like_c !== null && typeof info.feels_like_c !== "undefined") {
         details += " · Feels " + info.feels_like_c + " °C";
       }
