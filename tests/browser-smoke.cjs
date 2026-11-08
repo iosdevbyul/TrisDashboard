@@ -231,6 +231,7 @@ response.valuation = {
 retry.callback();
 assert.equal(byId("quotes-summary").textContent, "1/1 quotes reported");
 assert.match(byId("quotes-list").children[0].textContent, /3\.5h old/);
+assert.match(byId("quotes-summary").textContent, /Oldest reading 3\.5h ago/);
 response.quotes.quotes[0].outdated = true;
 handlers["document:visibilitychange"]();
 assert.match(byId("quotes-summary").textContent, /1 outdated/);
