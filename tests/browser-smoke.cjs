@@ -286,6 +286,11 @@ clockOffset += 3000;
 handlers["document:visibilitychange"]();
 assert.equal(byId("connection").textContent, "Server online");
 
+byId("setting-high-contrast").checked = true;
+handlers["setting-high-contrast:change"].call(byId("setting-high-contrast"));
+assert.match(document.body.className, /high-contrast/);
+assert.match(state["tris.dashboard.display.v1"], /"highContrast":true/);
+
 byId("setting-large-text").checked = true;
 handlers["setting-large-text:change"].call(byId("setting-large-text"));
 assert.match(document.body.className, /large-text/);
