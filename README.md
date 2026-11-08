@@ -406,3 +406,7 @@ After installing the optional inbox LaunchAgent, its `run-once` command now reco
 ## One-command MacBook readiness summary
 
 Run `.venv/bin/python -m macos.readiness --json` from the repository on your MacBook to inspect Python setup, whether the local server responds, and the optional workout inbox agent and its last-run state. If you already created a private settings file, append `--settings ~/tris-private/settings.json` to check the configured data sources too. It **does not install or reconfigure anything**, print secret values or personal file paths, or contact external GitHub/Trello/Twelve Data servers. A nonrunning dashboard or an optional uninstalled inbox is shown explicitly, rather than treated as proof of an error in setup. This is a local diagnostics summary, not a replacement for actual MacBook login-agent, market provider and iPad Safari acceptance testing.
+
+### Complete eight-source live smoke contract
+
+The MacBook's local smoke test now requires all **eight** dashboard source keys including optional `quotes`, rather than silently accepting a server that lacks the market-data card. Unconfigured quote sources remain valid when explicitly reported as unavailable. This adds a contract test only; it does not make a remote market-data request.

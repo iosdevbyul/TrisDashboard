@@ -57,3 +57,22 @@ def test_smoke_unreachable_local_server():
 def test_smoke_checks_all_three_local_assets():
     assert len(ASSETS) == 3
     assert "/static/preferences.js" in ASSETS
+
+
+def test_smoke_includes_market_quotes_in_contract(monkeypatch):
+    from macos.smoke import SOURCE_NAMES
+    assert "quotes" in SOURCE_NAMES
+    assert len(SOURCE_NAMES) == 8
+
+
+def test_smoke_rejects_missing_market_source(monkeypatch):
+    def missing_quotes(path):
+        status, headers, body = fetch(path)
+        if path == "/api/overview":
+            import json
+            payload = json.loads(body)
+            payload.pop("quotes", None)
+            return status, headers, json.dumps(payload).encode("utf-8")
+        return status, headers, body
+    assert check_deployment(missing_quotes)["overview"] is False
+    assert check_deployment(missing_quotes)["passed"] is False
