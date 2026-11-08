@@ -22,6 +22,8 @@ def test_unified_readiness_reports_optional_components_without_false_failure(tmp
         "python_ready": True, "server_reachable": False,
         "settings_ready": True, "inbox_agent_installed": False,
         "inbox_last_run_known": False,
+        "deployment_ready": True,
+        "unmet_requirements": [],
     }
     assert result["settings"] == {"checked": False}
 
