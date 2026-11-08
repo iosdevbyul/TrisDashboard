@@ -93,3 +93,20 @@ def test_reject_nonstandard_json_numeric_constant_anywhere(tmp_path, constant):
     path.write_text('{"metadata":' + constant + ',"as_of":"2026-11-07T12:00:00+00:00","positions":[]}')
     with pytest.raises(ValueError, match="Non-standard JSON"):
         load_portfolio(path)
+
+
+def test_duplicate_symbol_currency_holdings_rejected(tmp_path):
+    path = write_snapshot(tmp_path, [
+        {"symbol": "JEPQ", "currency": "USD", "quantity": 2},
+        {"symbol": "JEPQ", "currency": "USD", "quantity": 3},
+    ])
+    with pytest.raises(ValueError, match="Duplicate portfolio holding"):
+        load_portfolio(path)
+
+
+def test_same_symbol_different_currencies_are_distinct(tmp_path):
+    path = write_snapshot(tmp_path, [
+        {"symbol": "TEST", "currency": "USD", "quantity": 2},
+        {"symbol": "TEST", "currency": "KRW", "quantity": 3},
+    ])
+    assert len(load_portfolio(path)["positions"]) == 2
