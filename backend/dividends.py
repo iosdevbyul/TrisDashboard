@@ -79,7 +79,9 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             "six_month_totals": {key: str(value) for key, value in sorted(history_totals.items())},
             "observed_monthly_average": monthly_average,
             "six_month_by_symbol": [
-                {"symbol": symbol, "currency": currency, "amount": str(amount)}
+                {"symbol": symbol, "currency": currency, "amount": str(amount),
+                 "currency_share_percent": str((amount * Decimal(100) / history_totals[currency]).quantize(
+                     Decimal("0.1"), rounding=ROUND_HALF_UP)) if history_totals[currency] else "0.0"}
                 for (symbol, currency), amount in sorted(
                     by_symbol.items(), key=lambda item: (item[0][1], -item[1], item[0][0]))
             ],
