@@ -398,3 +398,7 @@ The helper creates the settings file with owner-only permissions, never overwrit
 ## Check Twelve Data readiness without spending API credits
 
 Run `.venv/bin/python -m macos.market_check --settings ~/tris-private/settings.json` to check the allowed settings JSON and whether your logged-in Mac Keychain contains the optional `ai.tris.dashboard.twelvedata` credential. This command **never calls Twelve Data or sends market-data requests**, so it cannot consume provider credits. It prints only booleans and ticker count, not tokens, ticker symbols, paths or quote values. A positive result indicates local configuration readiness, **not** that your account is entitled to those symbols, the API is accessible, or the returned quotes are recent. The market card stays optional.
+
+## Workout inbox last-run diagnostics
+
+After installing the optional inbox LaunchAgent, its `run-once` command now records a small, owner-only status file at `~/Library/Logs/TrisDashboard/inbox-status.json`. The read-only `status` command reports the most recent attempt's UTC timestamp, success/failure and (when successful) newly imported workout count, without printing source files, individual workout data, personal identifiers, credentials or exception strings. If a source import fails, the status is set to failed and existing workout history is preserved. This status tracks **attempted runs only**, not proof of future scheduling or Mac uptime; a missing status file is reported as unknown.
