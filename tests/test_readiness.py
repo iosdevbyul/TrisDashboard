@@ -51,3 +51,54 @@ def test_unified_readiness_does_not_touch_external_services(tmp_path):
                        inbox_check=inbox)
     assert called == ["localhost", "local-agent"]
     assert "TRIS_TWELVEDATA_API_KEY" not in str(result)
+
+
+def test_strict_deployment_requires_server_if_requested(tmp_path):
+    report = readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                       inbox_check=inbox_missing, require_server=True)
+    assert not report["summary"]["deployment_ready"]
+    assert report["summary"]["unmet_requirements"] == ["server"]
+
+
+def test_strict_inbox_requires_agent_configuration(tmp_path):
+    report = readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                       inbox_check=inbox_missing, require_inbox=True)
+    assert not report["summary"]["deployment_ready"]
+    assert "inbox-configuration" in report["summary"]["unmet_requirements"]
+
+
+def test_recent_inbox_validates_time_and_success(tmp_path):
+    from datetime import datetime, timezone, timedelta
+    now = datetime(2026, 11, 8, 9, tzinfo=timezone.utc)
+    good = {
+        "installed": True, "configuration_valid": True,
+        "inbox_available": True, "last_run_success": True,
+        "last_run_utc": (now - timedelta(minutes=25)).isoformat(),
+    }
+    ok = readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                   inbox_check=lambda home: good,
+                   require_recent_inbox=True, now=now)
+    assert ok["summary"]["deployment_ready"]
+    late = dict(good, last_run_utc=(now - timedelta(hours=2)).isoformat())
+    failed = readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                       inbox_check=lambda home: late,
+                       require_recent_inbox=True, now=now)
+    assert failed["summary"]["unmet_requirements"] == ["inbox-last-run"]
+    bad = dict(good, last_run_success=False)
+    failed2 = readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                        inbox_check=lambda home: bad,
+                        require_recent_inbox=True, now=now)
+    assert "inbox-last-run" in failed2["summary"]["unmet_requirements"]
+
+
+def test_strict_mode_only_exposes_safe_failure_identifiers(tmp_path):
+    status = {
+        "installed": True, "configuration_valid": True,
+        "inbox_available": True, "last_run_success": True,
+        "last_run_utc": "not-a-date",
+    }
+    report = readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                       inbox_check=lambda home: status,
+                       require_recent_inbox=True)
+    assert report["summary"]["unmet_requirements"] == ["inbox-last-run"]
+    assert "private" not in str(report["summary"]).lower()

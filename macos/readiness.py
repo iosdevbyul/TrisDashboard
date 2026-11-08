@@ -1,6 +1,7 @@
 """Read-only MacBook operations status: no private values or external API calls."""
 import argparse
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from macos.doctor import inspect as inspect_mac
@@ -9,6 +10,8 @@ from macos.periodic_inbox import inspect as inspect_inbox
 
 
 def readiness(project: Path, home: Path, *, settings: Path | None = None,
+              require_server: bool = False, require_inbox: bool = False,
+              require_recent_inbox: bool = False, now: datetime | None = None,
               mac_check=inspect_mac, settings_check=inspect_settings,
               inbox_check=inspect_inbox) -> dict:
     host = mac_check(project, home)
@@ -33,6 +36,33 @@ def readiness(project: Path, home: Path, *, settings: Path | None = None,
         "inbox_agent_installed": bool(import_status.get("installed")),
         "inbox_last_run_known": bool(import_status.get("last_run_known")),
     }
+    failures = []
+    if not result["summary"]["python_ready"]:
+        failures.append("python")
+    if settings is not None and not result["summary"]["settings_ready"]:
+        failures.append("settings")
+    if require_server and not result["summary"]["server_reachable"]:
+        failures.append("server")
+    if require_inbox or require_recent_inbox:
+        if not (import_status.get("installed") and
+                import_status.get("configuration_valid") and
+                import_status.get("inbox_available")):
+            failures.append("inbox-configuration")
+    if require_recent_inbox:
+        latest = import_status.get("last_run_utc")
+        recent = False
+        if import_status.get("last_run_success") is True and isinstance(latest, str):
+            try:
+                observed = datetime.fromisoformat(latest)
+                if observed.tzinfo is not None:
+                    elapsed = ((now or datetime.now(timezone.utc)) - observed).total_seconds()
+                    recent = 0 <= elapsed <= 45 * 60
+            except (ValueError, TypeError, OverflowError):
+                pass
+        if not recent:
+            failures.append("inbox-last-run")
+    result["summary"]["deployment_ready"] = not failures
+    result["summary"]["unmet_requirements"] = failures
     return result
 
 
@@ -40,9 +70,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Privacy-safe MacBook dashboard readiness check")
     parser.add_argument("--settings", type=Path, help="Optional private settings file to validate")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--require-server", action="store_true",
+                        help="Fail unless the MacBook localhost server responds")
+    parser.add_argument("--require-inbox", action="store_true",
+                        help="Fail unless the optional workout inbox agent is configured")
+    parser.add_argument("--require-recent-inbox", action="store_true",
+                        help="Fail unless the workout inbox succeeded within 45 minutes")
     args = parser.parse_args()
     project = Path(__file__).resolve().parent.parent
-    result = readiness(project, Path.home(), settings=args.settings)
+    result = readiness(project, Path.home(), settings=args.settings,
+                       require_server=args.require_server,
+                       require_inbox=args.require_inbox,
+                       require_recent_inbox=args.require_recent_inbox)
     if args.json:
         print(json.dumps(result, sort_keys=True))
     else:
@@ -51,8 +90,12 @@ def main() -> None:
         print("Configured private files ready: " + str(result["summary"]["settings_ready"]))
         print("Workout inbox agent installed: " + str(result["summary"]["inbox_agent_installed"]))
         print("Workout inbox last run known: " + str(result["summary"]["inbox_last_run_known"]))
+        print("Deployment ready: " + str(result["summary"]["deployment_ready"]))
+        if result["summary"]["unmet_requirements"]:
+            print("Unmet requirements: " +
+                  ", ".join(result["summary"]["unmet_requirements"]))
         print("This check never contacts external data providers or modifies settings.")
-    if not result["summary"]["python_ready"] or not result["summary"]["settings_ready"]:
+    if not result["summary"]["deployment_ready"]:
         parser.exit(1)
 
 

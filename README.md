@@ -418,3 +418,14 @@ The quote parser now has representative regression tests for the documented `/qu
 ### Controlled market provider outage retries
 
 If every configured Twelve Data quote request fails (including HTTP 429/credit exhaustion), the MacBook temporarily **pauses new requests for 10 minutes** for that credential/ticker set. During the cooldown, an earlier successful response may be displayed only as clearly stale reference information and cannot be used for portfolio valuation. No raw token, remote error text, or provider response body is returned to clients. Switching a key or set of tickers gets its own cache/cooldown scope. This deliberately conservative pause protects API credit usage; the provider's actual quota/reset window can differ by plan.
+
+## Strict MacBook deployment readiness (optional)
+
+The existing `macos.readiness` check stays permissive for users intentionally running without an inbox or with the server offline. After installation, you can instead require specific operational conditions:
+
+```sh
+.venv/bin/python -m macos.readiness --require-server --json
+.venv/bin/python -m macos.readiness --require-server --require-inbox --require-recent-inbox --json
+```
+
+The flags require respectively: reachable localhost dashboard, installed/valid workout inbox configuration, and a successful inbox run **within 45 minutes**. Failed conditions return exit code 1 and short non-sensitive identifiers. A sleeping Mac can legitimately fail the recent-run criterion. No credentials, private paths, remote API calls or source values are needed for these checks; a strict result is not a substitute for actual iPad Safari testing or long-duration device acceptance.
