@@ -362,6 +362,12 @@
       (typeof info.active_days === "number" ? "Active " + info.active_days + "/7 days · " : "") +
       info.period_start + " to " + info.period_end;
     list.appendChild(total);
+    if (typeof info.average_active_day_minutes === "number") {
+      var averageLine = document.createElement("div");
+      averageLine.className = "repo-row";
+      averageLine.textContent = "Average on active days · " + info.average_active_day_minutes + " min";
+      list.appendChild(averageLine);
+    }
     if (typeof info.longest_streak_days === "number") {
       var streak = document.createElement("div");
       streak.className = "repo-row";
