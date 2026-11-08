@@ -26,6 +26,8 @@ def receive(directory: Path, output: Path, *, apply: bool = False) -> dict:
 
     sessions = []
     records = []
+    seen = {}
+    incoming_count = 0
     for path in candidates:
         if path.is_symlink() or not path.is_file():
             raise ValueError("Unsafe workout export file")
@@ -36,23 +38,22 @@ def receive(directory: Path, output: Path, *, apply: bool = False) -> dict:
         if not isinstance(payload, dict) or type(payload.get("schema_version")) is not int or payload["schema_version"] != 2:
             raise ValueError("Inbox accepts only WakTrainer version 2 exports")
         validated = parse_export(path)["workouts"]
-        sessions.extend(payload["sessions"])
-        records.extend(validated)
-        if len(sessions) > MAX_SESSIONS:
-            raise ValueError("Too many workouts to import")
-
-    # Reject conflicts between separate incoming exports before changing history.
-    unique_records, _ = merged_workouts([], records)
-    # Repeated exports can contain the same completed workout. Preserve the
-    # first matching source record and stage unique IDs only.
-    unique_ids = {item["session_id"] for item in unique_records}
-    staged_sessions = []
-    staged_ids = set()
-    for session in sessions:
-        session_id = session["session_id"]
-        if session_id in unique_ids and session_id not in staged_ids:
-            staged_sessions.append(session)
-            staged_ids.add(session_id)
+        # Each iOS share is a full snapshot. Repeated snapshots overlap heavily;
+        # enforce the cap on unique sessions, not the sum of duplicate records.
+        for session, item in zip(payload["sessions"], validated):
+            incoming_count += 1
+            session_id = item["session_id"]
+            previous = seen.get(session_id)
+            if previous is not None:
+                if previous != item:
+                    raise ValueError("Conflicting workout session ID across exports")
+                continue
+            seen[session_id] = item
+            sessions.append(session)
+            records.append(item)
+            if len(records) > MAX_SESSIONS:
+                raise ValueError("Too many unique workouts to import")
+    staged_sessions = sessions
     existing = []
     if output.exists():
         load_fitness(output)
@@ -60,9 +61,9 @@ def receive(directory: Path, output: Path, *, apply: bool = False) -> dict:
         existing = previous["workouts"]
     combined, added = merged_workouts(existing, records)
     summary = {
-        "files": len(candidates), "incoming": len(records),
+        "files": len(candidates), "incoming": incoming_count,
         "existing": len(existing), "new": added,
-        "duplicates": len(records) - added,
+        "duplicates": incoming_count - added,
         "total": len(combined), "written": False,
     }
     if not apply or added == 0:
