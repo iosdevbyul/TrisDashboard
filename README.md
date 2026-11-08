@@ -306,3 +306,13 @@ Both scheduled and manual WakTrainer JSON imports now acquire an exclusive advis
 ## Import preflight and lock file safety
 
 WakTrainer `--dry-run` validates the source without creating a new output directory or lock file. A real import opens its persistent advisory lock using owner-only file permissions, verifies regular-file ownership and refuses unsafe or symlinked lock files. The scheduled importer always selects merge semantics under that lock, even when two scheduled invocations race to create the first JSON file. These protections are for a single trusted Mac user and are not a replacement for account permissions or encrypted storage.
+
+## Workout import preview before transferring to dashboard
+
+After exporting completed workout history from WakTrainer and saving the shared JSON file onto the MacBook (AirDrop/Files), preview it without modifying any records:
+
+```sh
+.venv/bin/python -m macos.preview_workouts --input ~/Downloads/waktrainer-export.json --output ~/tris-private/fitness.json
+```
+
+The preview validates both inputs, checks session-ID conflicts and reports only new/duplicate counts, combined total and earliest/latest dates. It never creates destination directories or writes output. If the summary is correct, use `.venv/bin/python -m macos.import_waktrainer --input ~/Downloads/waktrainer-export.json --output ~/tris-private/fitness.json --merge` to import. This remains user-controlled file transfer; there is no iPhone background upload.
