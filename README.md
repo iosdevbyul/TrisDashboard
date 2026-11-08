@@ -414,3 +414,7 @@ The MacBook's local smoke test now requires all **eight** dashboard source keys 
 ### Twelve Data quote response contract
 
 The quote parser now has representative regression tests for the documented `/quote` response shape, including `symbol`, `currency`, `close`, `timestamp`, `datetime`, and optional `last_quote_at`. We distinguish the **bar timestamp** used for price freshness from the optional **last-minute quote timestamp**; the latter is kept as labeled metadata, never used to overstate real-time quality. Malformed, future, mismatched and provider-error values are rejected. This is an offline contract test, **not a successful live request** against an owner-supplied Twelve Data account.
+
+### Controlled market provider outage retries
+
+If every configured Twelve Data quote request fails (including HTTP 429/credit exhaustion), the MacBook temporarily **pauses new requests for 10 minutes** for that credential/ticker set. During the cooldown, an earlier successful response may be displayed only as clearly stale reference information and cannot be used for portfolio valuation. No raw token, remote error text, or provider response body is returned to clients. Switching a key or set of tickers gets its own cache/cooldown scope. This deliberately conservative pause protects API credit usage; the provider's actual quota/reset window can differ by plan.
