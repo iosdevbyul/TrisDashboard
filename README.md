@@ -381,3 +381,16 @@ The optional MacBook inbox LaunchAgent can apply the same calendar timezone as m
 ```
 
 The timezone name is a non-secret IANA identifier stored in the per-user launchd arguments. Existing installations without a timezone continue to work unchanged. To change an installed agent's timezone, first uninstall and then reinstall it with the desired flag; changing a timezone after data has been imported can yield stable-ID date conflicts that must be handled deliberately. The status command validates the configured timezone without disclosing private file paths or workouts. This does not run an iOS background synchronization service.
+
+## Guided first settings file (opt in)
+
+To create a non-secret private launchd configuration template, first create a private folder on your Mac and run:
+
+```sh
+mkdir -p ~/tris-private
+chmod 700 ~/tris-private
+.venv/bin/python -m macos.configure --output ~/tris-private/settings.json --fitness ~/tris-private/fitness.json
+.venv/bin/python -m macos.preflight --settings ~/tris-private/settings.json --json
+```
+
+The helper creates the settings file with owner-only permissions, never overwrites an existing file, and does not create fake workout records. It contains no API keys. The fitness file will appear only after a real import; until then, preflight appropriately reports it missing. To install the login agent after manual verification, run `.venv/bin/python -m macos.service install --lan --settings ~/tris-private/settings.json` only if your trusted Wi-Fi clients need access. This step is optional and does not open a router port.
