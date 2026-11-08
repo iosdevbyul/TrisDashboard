@@ -2,7 +2,7 @@
 import json
 import os
 import re
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 _DATE_PATTERN = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
@@ -30,7 +30,9 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
     events = payload.get("events") if isinstance(payload, dict) else None
     if not isinstance(events, list) or len(events) > 300:
         raise ValueError("Invalid agenda")
-    reference = today or date.today()
+    if today is not None and (not isinstance(today, date) or isinstance(today, datetime)):
+        raise ValueError("Invalid agenda reference date")
+    reference = date.today() if today is None else today
     end = reference + timedelta(days=14)
     upcoming = []
     for item in events:
