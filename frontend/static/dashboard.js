@@ -120,11 +120,13 @@
     }
     var rows = info.quotes || [];
     var successful = 0;
+    var outdated = 0;
     for (var i = 0; i < rows.length; i++) {
       var line = document.createElement("div");
       line.className = "repo-row";
       if (rows[i].price && rows[i].reported_at_utc) {
         successful++;
+        if (rows[i].outdated) { outdated++; }
         line.textContent = rows[i].symbol + " · " + rows[i].price + " " + rows[i].currency +
           " · " + rows[i].reported_at_utc.replace("T", " ").slice(0, 16) + " UTC" +
           (rows[i].outdated ? " · OUTDATED" : "");
@@ -133,7 +135,8 @@
       }
       list.appendChild(line);
     }
-    text("quotes-summary", successful + "/" + rows.length + " quotes reported");
+    text("quotes-summary", successful + "/" + rows.length + " quotes reported" +
+      (outdated ? " · " + outdated + " outdated" : ""));
     text("quotes-updated", "Twelve Data · Provider timestamps · not guaranteed real-time" +
       (info.stale ? " · Cached stale" : ""));
   }
