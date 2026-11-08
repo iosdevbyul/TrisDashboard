@@ -121,6 +121,14 @@ assert.match(byId("glance-sources").textContent, /2\/8 ready/);
 assert.equal(byId("server-uptime").textContent, "30m online");
 assert.ok(byId("panel-visibility").children.length >= 8);
 
+handlers["focus-panels:click"]();
+assert.equal(byId("panel-weather").hidden, true);
+assert.equal(byId("panel-portfolio").hidden, false);
+assert.equal(byId("panel-github").hidden, false);
+assert.equal(byId("panel-fitness").hidden, false);
+handlers["show-all-panels:click"]();
+assert.equal(byId("panel-weather").hidden, false);
+
 byId("setting-compact").checked = true;
 handlers["setting-compact:change"].call(byId("setting-compact"));
 assert.match(document.body.className, /compact/);
