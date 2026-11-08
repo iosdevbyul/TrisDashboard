@@ -37,3 +37,34 @@ def test_missing_or_invalid_file_is_safe(tmp_path, monkeypatch):
     path.write_text("{invalid")
     monkeypatch.setenv("TRIS_FITNESS_FILE", str(path))
     assert fitness() == {"available": False, "configured": True, "stale": True}
+
+
+def test_duplicate_stable_ids_are_rejected_before_summary(tmp_path):
+    workout = {"session_id": "wak-session-001", "date": "2026-11-08",
+               "type": "Running", "duration_minutes": 30, "distance_km": 5}
+    path = snapshot(tmp_path, [workout, dict(workout, duration_minutes=40)])
+    with pytest.raises(ValueError, match="Duplicate workout session ID"):
+        load_fitness(path, today=date(2026, 11, 8))
+
+
+def test_legacy_workouts_and_v2_identity_coverage(tmp_path):
+    path = snapshot(tmp_path, [
+        {"date": "2026-11-08", "type": "Strength", "duration_minutes": 45},
+        {"session_id": "stable-101", "date": "2026-11-08",
+         "type": "Running", "duration_minutes": 30, "distance_km": 4.5},
+    ])
+    data = load_fitness(path, today=date(2026, 11, 8))
+    assert data["summary"]["sessions"] == 2
+    assert data["total_history_count"] == 2
+    assert data["stable_id_count"] == 1
+
+
+def test_duplicate_id_outside_seven_day_window_is_still_invalid(tmp_path):
+    path = snapshot(tmp_path, [
+        {"session_id": "same", "date": "2025-10-08",
+         "type": "Running", "duration_minutes": 20},
+        {"session_id": "same", "date": "2026-11-08",
+         "type": "Running", "duration_minutes": 30},
+    ])
+    with pytest.raises(ValueError, match="Duplicate"):
+        load_fitness(path, today=date(2026, 11, 8))
