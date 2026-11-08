@@ -182,3 +182,18 @@ def test_best_completed_month_excludes_current_and_separates_currencies(tmp_path
         "USD":{"month":"2026-09","amount":"45"},
         "KRW":{"month":"2026-08","amount":"3000"}}
     assert load_dividends(snapshot(tmp_path, []), today=date(2026, 11, 9))["best_completed_months"] == {}
+
+
+def test_completed_month_change_compares_only_finished_months_by_currency(tmp_path):
+    data = load_dividends(snapshot(tmp_path, [
+        {"symbol":"JEPQ","currency":"USD","amount":"100","paid_on":"2026-11-01"},
+        {"symbol":"JEPQ","currency":"USD","amount":"20","paid_on":"2026-10-02"},
+        {"symbol":"JEPQ","currency":"USD","amount":"40","paid_on":"2026-09-02"},
+        {"symbol":"KR","currency":"KRW","amount":"1000","paid_on":"2026-10-04"},
+    ]), today=date(2026, 11, 9))
+    assert data["completed_month_change"]["USD"] == {
+        "latest_month":"2026-10","previous_month":"2026-09",
+        "difference":"-20","percentage":"-50.0"}
+    assert data["completed_month_change"]["KRW"]["difference"] == "1000"
+    assert data["completed_month_change"]["KRW"]["percentage"] is None
+    assert load_dividends(snapshot(tmp_path, []), today=date(2026, 11, 9))["completed_month_change"] == {}
