@@ -119,3 +119,19 @@ def test_market_valuation_handles_malformed_payloads_without_crashing():
     assert quote_valuation(good_portfolio, malformed)["totals"] == {"USD": "100"}
     bad_portfolio = {"available": True, "positions": [{"symbol": ["JEPQ"], "currency": "USD", "quantity": "2"}]}
     assert quote_valuation(bad_portfolio, good_quotes)["available"] is False
+
+
+def test_valuation_excludes_duplicate_holdings_instead_of_double_counting():
+    portfolio = {"available": True, "positions": [
+        {"symbol": "JEPQ", "currency": "USD", "quantity": "2"},
+        {"symbol": "JEPQ", "currency": "USD", "quantity": "2"},
+        {"symbol": "SCHD", "currency": "USD", "quantity": "3"},
+    ]}
+    quotes = {"available": True, "quotes": [
+        {"symbol": "JEPQ", "currency": "USD", "price": "50", "reported_at_utc": "stamp"},
+        {"symbol": "SCHD", "currency": "USD", "price": "10", "reported_at_utc": "stamp"},
+    ]}
+    result = quote_valuation(portfolio, quotes)
+    assert result["matched_count"] == 1
+    assert result["totals"] == {"USD": "30"}
+    assert result["partial"] is True
