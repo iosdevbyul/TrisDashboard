@@ -68,7 +68,8 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
             "next_seven_busy_days": next_seven_busy_days,
             "next_event_in_days": next_event_days,
             "next_event": next_event,
-            "events": upcoming[:8], "stale": False}
+            "events": upcoming[:30], "events_truncated": len(upcoming) > 30,
+            "stale": False
 
 
 def agenda() -> dict:
