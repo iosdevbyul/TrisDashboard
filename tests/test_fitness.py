@@ -167,8 +167,8 @@ def test_weekly_activity_breakdown_separates_categories_and_excludes_old(tmp_pat
     ])
     result = load_fitness(source, today=date(2026, 11, 8))
     assert result["activity_breakdown"] == [
-        {"type": "Running", "sessions": 2, "duration_minutes": 45, "distance_km": 7},
-        {"type": "Strength", "sessions": 1, "duration_minutes": 40, "distance_km": 0},
+        {"type": "Running", "sessions": 2, "duration_minutes": 45, "distance_km": 7, "session_share_percent": 66.7},
+        {"type": "Strength", "sessions": 1, "duration_minutes": 40, "distance_km": 0, "session_share_percent": 33.3},
     ]
     assert result["summary"]["sessions"] == 3
 
@@ -243,5 +243,18 @@ def test_dominant_activity_uses_duration_not_session_count(tmp_path):
     ]
     data = load_fitness(snapshot(tmp_path, workouts), today=date(2026, 11, 9))
     assert data["dominant_activity"] == {
-        "type":"Strength","sessions":1,"duration_minutes":70,"distance_km":0}
+        "type":"Strength","sessions":1,"duration_minutes":70,"distance_km":0,"session_share_percent":33.3}
     assert load_fitness(snapshot(tmp_path, []), today=date(2026, 11, 9))["dominant_activity"] is None
+
+
+def test_workout_category_session_shares_and_empty_week(tmp_path):
+    source = snapshot(tmp_path, [
+        {"date":"2026-11-09","type":"Strength","duration_minutes":60},
+        {"date":"2026-11-08","type":"Running","duration_minutes":30},
+        {"date":"2026-11-07","type":"Running","duration_minutes":20},
+        {"date":"2026-10-31","type":"Cycling","duration_minutes":10},
+    ])
+    result = load_fitness(source, today=date(2026,11,9))
+    shares = {item["type"]: item["session_share_percent"] for item in result["activity_breakdown"]}
+    assert shares == {"Strength":33.3,"Running":66.7}
+    assert load_fitness(snapshot(tmp_path, []), today=date(2026,11,9))["activity_breakdown"] == []
