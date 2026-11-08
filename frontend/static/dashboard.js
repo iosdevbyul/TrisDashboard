@@ -321,6 +321,35 @@
       list.appendChild(activityLine);
     }
     var daily = info.daily || [];
+    var peakMinutes = 0;
+    for (var peak = 0; peak < daily.length; peak++) {
+      if (typeof daily[peak].duration_minutes === "number" &&
+          isFinite(daily[peak].duration_minutes) && daily[peak].duration_minutes > peakMinutes) {
+        peakMinutes = daily[peak].duration_minutes;
+      }
+    }
+    if (daily.length) {
+      var chart = document.createElement("div");
+      chart.className = "workout-bars";
+      for (var day = 0; day < daily.length; day++) {
+        var value = daily[day].duration_minutes;
+        var safeMinutes = typeof value === "number" && isFinite(value) && value > 0 ? value : 0;
+        var line = document.createElement("div");
+        line.className = "workout-bar-row";
+        var label = document.createElement("span");
+        label.textContent = daily[day].date.slice(5) + " · " + safeMinutes + " min";
+        var track = document.createElement("span");
+        track.className = "workout-bar-track";
+        var fill = document.createElement("span");
+        fill.className = "workout-bar-fill";
+        fill.style.width = (peakMinutes ? Math.round(safeMinutes * 100 / peakMinutes) : 0) + "%";
+        track.appendChild(fill);
+        line.appendChild(label);
+        line.appendChild(track);
+        chart.appendChild(line);
+      }
+      list.appendChild(chart);
+    }
     for (var d = 0; d < daily.length; d++) {
       var dayLine = document.createElement("div");
       dayLine.className = "repo-row";
@@ -422,6 +451,16 @@
       row.textContent = repos[i].repository + " · " + repos[i].open_pr_count +
         (repos[i].open_pr_count_truncated ? "+ open PRs" : " open PRs") + " · " + ciText;
       list.appendChild(row);
+      var repoName = repos[i].repository;
+      if (typeof repoName === "string" && /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(repoName)) {
+        var repositoryLink = document.createElement("a");
+        repositoryLink.className = "github-pr-link";
+        repositoryLink.href = "https://github.com/" + repoName;
+        repositoryLink.target = "_blank";
+        repositoryLink.rel = "noopener noreferrer";
+        repositoryLink.textContent = "Open repository · " + repoName;
+        list.appendChild(repositoryLink);
+      }
       var previews = repos[i].open_prs || [];
       for (var k = 0; k < previews.length; k++) {
         if (typeof previews[k].url === "string" &&
