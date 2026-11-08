@@ -76,3 +76,17 @@ def test_inbox_leaves_unmatched_files_untouched(tmp_path):
     result = receive(inbox, tmp_path / "out.json", apply=True)
     assert result["files"] == 0 and result["new"] == 0
     assert ignored.read_text() == '{"private":true}'
+
+
+def test_overlapping_airdrop_exports_with_same_workout_are_deduplicated(tmp_path):
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    write_export(inbox, "one", "same-id")
+    write_export(inbox, "two", "same-id")
+    output = tmp_path / "fitness.json"
+    first = receive(inbox, output, apply=True)
+    assert first["files"] == 2
+    assert first["new"] == 1
+    assert first["duplicates"] == 1
+    assert len(json.loads(output.read_text())["workouts"]) == 1
+    assert receive(inbox, output, apply=True)["new"] == 0
