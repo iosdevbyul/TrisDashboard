@@ -10,7 +10,7 @@ def quote_symbols(raw: str) -> list[str]:
     names = []
     for item in raw.split(","):
         symbol = item.strip().upper()
-        if not symbol or len(symbol) > 20 or any(not (c.isalnum() or c in ".-_") for c in symbol):
+        if not symbol or len(symbol) > 20 or any(c not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_" for c in symbol):
             raise ValueError("Invalid quote symbol")
         if symbol not in names:
             names.append(symbol)
