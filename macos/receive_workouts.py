@@ -21,6 +21,8 @@ def receive(directory: Path, output: Path, *, apply: bool = False,
     output = output.expanduser().resolve()
     if not directory.is_dir():
         raise ValueError("Workout inbox directory is missing")
+    if output.parent == directory and output.name.startswith(PREFIX) and output.suffix.lower() == ".json":
+        raise ValueError("Output must not match inbox export filename pattern")
     candidates = sorted(directory.glob(PREFIX + "*.json"), key=lambda item: item.name)
     if len(candidates) > MAX_FILES:
         raise ValueError("Too many exported files in inbox")
