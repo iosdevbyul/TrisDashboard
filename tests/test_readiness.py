@@ -146,3 +146,16 @@ def test_required_inbox_with_overfull_directory_is_not_deployment_ready(tmp_path
     assert readiness(tmp_path, tmp_path, mac_check=mac_ok,
                      inbox_check=lambda home: status,
                      require_inbox=True)["summary"]["deployment_ready"] is True
+
+
+def test_optional_mac_autostart_agent_can_be_required_for_strict_deployment(tmp_path):
+    unavailable = readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                            inbox_check=inbox_missing, require_agent=True)
+    assert unavailable["summary"]["deployment_ready"] is False
+    assert unavailable["summary"]["unmet_requirements"] == ["launch-agent"]
+    def installed(project, home):
+        return dict(mac_ok(project, home), launch_agent_installed=True)
+    ready = readiness(tmp_path, tmp_path, mac_check=installed,
+                      inbox_check=inbox_missing, require_agent=True)
+    assert ready["summary"]["deployment_ready"] is True
+    assert ready["summary"]["unmet_requirements"] == []
