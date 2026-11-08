@@ -59,7 +59,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
         session_id = workout.get("session_id")
         if session_id is not None and (
                 not isinstance(session_id, str) or not 1 <= len(session_id) <= 100
-                or not all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_:. " for c in session_id)):
+                or not all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_:." for c in session_id)):
             raise ValueError("Invalid session ID")
         if session_id is not None:
             if session_id in seen_ids:
