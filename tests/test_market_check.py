@@ -50,3 +50,23 @@ def test_market_preflight_keychain_error_is_not_fatal(tmp_path):
                             lookup=unavailable)
     assert result["keychain_key_present"] is False
     assert "sensitive-keychain-path" not in str(result)
+
+
+def test_market_preflight_without_symbols_does_not_touch_keychain(tmp_path):
+    def forbidden_lookup(service):
+        raise AssertionError("Unconfigured market data must not access Keychain")
+    report = inspect_market(write_settings(tmp_path), lookup=forbidden_lookup)
+    assert report["settings_valid"] is True
+    assert report["symbols_configured"] is False
+    assert report["keychain_key_present"] is False
+    assert report["network_requests"] == 0
+
+
+def test_configured_symbols_still_check_keychain(tmp_path):
+    calls = []
+    def lookup(service):
+        calls.append(service)
+        return "present"
+    report = inspect_market(write_settings(tmp_path, TRIS_QUOTE_SYMBOLS="JEPQ"), lookup=lookup)
+    assert report["ready_for_optional_api_test"] is True
+    assert calls == [SERVICE_NAMES["TRIS_TWELVEDATA_API_KEY"]]
