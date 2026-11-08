@@ -84,8 +84,11 @@ def load_quotes(symbols: list[str], token: str, fetcher) -> dict:
             readings.append(parse_quote(payload, symbol))
         except (OSError, ValueError, TypeError, KeyError):
             readings.append({"symbol": symbol, "available": False})
+    if not any(item.get("price") for item in readings):
+        # Do not cache a total upstream outage for thirty minutes.
+        raise ValueError("Market quote provider returned no usable prices")
     return {
-        "available": any(item.get("price") for item in readings),
+        "available": True,
         "configured": True,
         "provider": "Twelve Data",
         "quotes": readings,
