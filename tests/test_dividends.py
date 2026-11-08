@@ -55,3 +55,32 @@ def test_six_month_history_crosses_new_year(tmp_path):
     data = load_dividends(snapshot(tmp_path, []), today=date(2026, 2, 4))
     assert [item["month"] for item in data["history"]] == [
         "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02"]
+
+
+@pytest.mark.parametrize("paid_on", ["20261108", "2026-11-8", "2026-02-30", 20261108, None, "２０２６-11-08"])
+def test_reject_noncanonical_payment_date(tmp_path, paid_on):
+    source = snapshot(tmp_path, [{"symbol": "JEPQ", "currency": "USD",
+                                  "paid_on": paid_on, "amount": "1"}])
+    with pytest.raises(ValueError):
+        load_dividends(source, today=date(2026, 11, 8))
+
+
+def test_reject_ambiguous_duplicate_payment_keys(tmp_path):
+    source = tmp_path / "dividends.json"
+    source.write_text('{"payments":[{"symbol":"JEPQ","currency":"USD","paid_on":"2026-11-01","amount":"1","amount":"99"}]}')
+    with pytest.raises(ValueError, match="Duplicate"):
+        load_dividends(source, today=date(2026, 11, 8))
+
+
+def test_reject_unicode_ticker_confusable(tmp_path):
+    source = snapshot(tmp_path, [{"symbol": "ＪＥＰＱ", "currency": "USD",
+                                  "paid_on": "2026-11-01", "amount": "1"}])
+    with pytest.raises(ValueError):
+        load_dividends(source, today=date(2026, 11, 8))
+
+
+def test_invalid_dividends_fall_back_without_crash(tmp_path, monkeypatch):
+    source = snapshot(tmp_path, [{"symbol": "JEPQ", "currency": "USD",
+                                  "paid_on": "20261101", "amount": "1"}])
+    monkeypatch.setenv("TRIS_DIVIDENDS_FILE", str(source))
+    assert dividends() == {"available": False, "configured": True, "stale": True}
