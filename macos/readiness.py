@@ -14,6 +14,8 @@ def readiness(project: Path, home: Path, *, settings: Path | None = None,
               require_recent_inbox: bool = False, now: datetime | None = None,
               mac_check=inspect_mac, settings_check=inspect_settings,
               inbox_check=inspect_inbox) -> dict:
+    if now is not None and (not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None):
+        raise ValueError("Readiness reference requires a timezone-aware datetime")
     host = mac_check(project, home)
     import_status = inbox_check(home)
     result = {
