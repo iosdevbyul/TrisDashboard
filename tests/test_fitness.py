@@ -197,3 +197,15 @@ def test_average_workout_minutes_counts_only_active_days(tmp_path):
     assert result["average_active_day_minutes"] == 60.0
     empty = load_fitness(snapshot(tmp_path, []), today=date(2026, 11, 9))
     assert empty["average_active_day_minutes"] == 0.0
+
+
+def test_average_per_session_differs_from_average_per_active_day(tmp_path):
+    source = snapshot(tmp_path, [
+        {"date":"2026-11-09","type":"Strength","duration_minutes":60},
+        {"date":"2026-11-09","type":"Running","duration_minutes":30},
+        {"date":"2026-11-08","type":"Walking","duration_minutes":30}
+    ])
+    value = load_fitness(source, today=date(2026, 11, 9))
+    assert value["average_session_minutes"] == 40.0
+    assert value["average_active_day_minutes"] == 60.0
+    assert load_fitness(snapshot(tmp_path, []), today=date(2026, 11, 9))["average_session_minutes"] == 0.0

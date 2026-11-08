@@ -386,6 +386,12 @@
       averageLine.textContent = "Average on active days · " + info.average_active_day_minutes + " min";
       list.appendChild(averageLine);
     }
+    if (typeof info.average_session_minutes === "number") {
+      var perSession = document.createElement("div");
+      perSession.className = "repo-row";
+      perSession.textContent = "Average per workout session · " + info.average_session_minutes + " min";
+      list.appendChild(perSession);
+    }
     if (typeof info.longest_streak_days === "number") {
       var streak = document.createElement("div");
       streak.className = "repo-row";
