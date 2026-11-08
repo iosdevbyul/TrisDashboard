@@ -77,6 +77,10 @@
   document.getElementById("setting-glance").addEventListener("change", function () {
     settings.glance = this.checked; apply(); store();
   });
+  document.getElementById("show-all-panels").addEventListener("click", function () {
+    settings.hidden = [];
+    apply(); store();
+  });
   document.getElementById("reset-settings").addEventListener("click", function () {
     settings = {compact: false, dim: false, glance: false, hidden: []}; apply(); store();
   });

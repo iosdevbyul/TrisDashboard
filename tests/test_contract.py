@@ -34,3 +34,11 @@ def test_dashboard_asset_links_resolve():
     assert client.get("/static/preferences.js").status_code == 200
     assert client.get("/static/style.css").status_code == 200
     assert "https://" not in html
+
+
+def test_show_all_panels_control_is_served_and_wired():
+    html = client.get("/").text
+    js = client.get("/static/preferences.js").text
+    assert 'id="show-all-panels"' in html
+    assert 'getElementById("show-all-panels").addEventListener("click"' in js
+    assert "settings.hidden = [];" in js
