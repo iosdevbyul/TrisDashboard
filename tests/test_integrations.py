@@ -323,3 +323,15 @@ def test_cache_can_retain_recent_snapshot_on_temporary_error(monkeypatch):
     restored = integrations.cached("weather:recent", down, ttl=60)
     assert restored["available"] is True and restored["stale"] is True
     integrations._cache.clear()
+
+
+def test_provider_cache_does_not_mutate_loader_owned_response():
+    integrations._cache.clear()
+    upstream = {"available": True, "location": "Seoul"}
+    result = integrations.cached("isolated-upstream-payload", lambda: upstream)
+    assert result["available"] is True
+    assert result["stale"] is False
+    assert "updated_at" not in upstream
+    assert "stale" not in upstream
+    assert integrations.cached("isolated-upstream-payload", lambda: None)["available"] is True
+    integrations._cache.clear()
