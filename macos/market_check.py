@@ -25,10 +25,11 @@ def inspect_market(settings_file: Path, *, lookup=keychain_value) -> dict:
             result["symbols_configured"] = bool(symbols)
         except ValueError:
             return result
-    try:
-        result["keychain_key_present"] = bool(lookup(SERVICE_NAMES["TRIS_TWELVEDATA_API_KEY"]))
-    except OSError:
-        pass
+    if result["symbols_configured"]:
+        try:
+            result["keychain_key_present"] = bool(lookup(SERVICE_NAMES["TRIS_TWELVEDATA_API_KEY"]))
+        except OSError:
+            pass
     result["ready_for_optional_api_test"] = (
         result["symbols_configured"] and result["keychain_key_present"]
     )
