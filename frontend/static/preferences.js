@@ -81,6 +81,14 @@
   document.getElementById("setting-glance").addEventListener("change", function () {
     settings.glance = this.checked; apply(); store();
   });
+  document.getElementById("focus-panels").addEventListener("click", function () {
+    var focus = ["portfolio", "quotes", "dividends", "github", "fitness"];
+    settings.hidden = [];
+    for (var i = 0; i < panelNames.length; i++) {
+      if (focus.indexOf(panelNames[i]) === -1) { settings.hidden.push(panelNames[i]); }
+    }
+    apply(); store();
+  });
   document.getElementById("show-all-panels").addEventListener("click", function () {
     settings.hidden = [];
     apply(); store();
