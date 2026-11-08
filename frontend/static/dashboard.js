@@ -513,7 +513,9 @@
       activityLine.className = "repo-row";
       activityLine.textContent = activities[a].type + " · " + activities[a].sessions +
         " sessions · " + activities[a].duration_minutes + " min · " +
-        activities[a].distance_km + " km";
+        activities[a].distance_km + " km" +
+        (typeof activities[a].session_share_percent === "number" ?
+          " · " + activities[a].session_share_percent + "% of sessions" : "");
       list.appendChild(activityLine);
     }
     var daily = info.daily || [];
