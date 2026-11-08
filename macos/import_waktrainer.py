@@ -103,7 +103,7 @@ def parse_export(path: Path, *, timezone_name: str | None = None) -> dict:
         if version == 2:
             session_id = session.get("session_id")
             if (not isinstance(session_id, str) or not 1 <= len(session_id) <= 100
-                    or not all(char.isalnum() or char in "-_:." for char in session_id)):
+                    or not all(char in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_:." for char in session_id)):
                 raise ValueError("Version 2 requires stable session_id")
             workout["session_id"] = session_id
         workouts.append(workout)
