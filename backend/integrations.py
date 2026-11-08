@@ -60,7 +60,7 @@ def cached(key: str, loader, *, ttl: int = TTL_SECONDS) -> dict:
         if previous and now - previous["time"] < ttl:
             return dict(previous["data"])
     try:
-        fresh = loader()
+        fresh = dict(loader())
         fresh["updated_at"] = datetime.now(timezone.utc).isoformat()
         fresh["stale"] = False
     except (OSError, ValueError, KeyError, TypeError, HTTPError, URLError) as error:
