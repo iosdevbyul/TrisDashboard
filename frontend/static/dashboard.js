@@ -276,6 +276,9 @@
       list.appendChild(row);
     }
     var updated = "Local export · Refreshes on page data update";
+    if (typeof info.total_history_count === "number") {
+      updated += " · " + info.total_history_count + " total recorded sessions";
+    }
     if (info.file_updated_utc) {
       updated = "Local file updated " + info.file_updated_utc.replace("T", " ").slice(0, 16) +
         " UTC" + (info.file_older_than_week ? " · FILE OVER 7 DAYS OLD" : "");
