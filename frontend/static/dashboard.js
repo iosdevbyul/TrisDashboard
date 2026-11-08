@@ -135,11 +135,15 @@
     var rows = info.quotes || [];
     var successful = 0;
     var outdated = 0;
+    var oldestHours = null;
     for (var i = 0; i < rows.length; i++) {
       var line = document.createElement("div");
       line.className = "repo-row";
       if (rows[i].price && rows[i].reported_at_utc) {
         successful++;
+        if (typeof rows[i].age_hours === "number" && isFinite(rows[i].age_hours) && rows[i].age_hours >= 0) {
+          oldestHours = oldestHours === null ? rows[i].age_hours : Math.max(oldestHours, rows[i].age_hours);
+        }
         if (rows[i].outdated) { outdated++; }
         line.textContent = rows[i].symbol + " · " + rows[i].price + " " + rows[i].currency +
           " · " + rows[i].reported_at_utc.replace("T", " ").slice(0, 16) + " UTC" +
@@ -152,7 +156,8 @@
       list.appendChild(line);
     }
     text("quotes-summary", successful + "/" + rows.length + " quotes reported" +
-      (outdated ? " · " + outdated + " outdated" : ""));
+      (outdated ? " · " + outdated + " outdated" : "") +
+      (oldestHours !== null ? " · Oldest reading " + oldestHours + "h ago" : ""));
     text("quotes-updated", "Twelve Data · Provider timestamps · not guaranteed real-time" +
       (info.stale ? " · Cached stale" : ""));
   }
