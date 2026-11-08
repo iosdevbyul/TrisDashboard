@@ -8,7 +8,7 @@ import json
 import math
 import os
 import plistlib
-from macos.agent_files import write_private_agent
+from macos.agent_files import write_private_agent, remove_failed_agent
 import subprocess
 import sys
 from pathlib import Path
@@ -122,11 +122,11 @@ def install(project: Path, home: Path, lan: bool, settings_path: Path | None = N
     path.parent.mkdir(parents=True, exist_ok=True)
     (home / "Library" / "Logs" / "TrisDashboard").mkdir(parents=True, exist_ok=True)
     settings = read_public_settings(settings_path) if settings_path else {}
-    write_private_agent(path, service_config(project, home, lan, settings, keychain=keychain))
+    identity = write_private_agent(path, service_config(project, home, lan, settings, keychain=keychain))
     try:
         run_launchctl("bootstrap", "gui/" + str(os.getuid()), str(path))
     except Exception:
-        path.unlink()
+        remove_failed_agent(path, identity)
         raise
     print("Installed " + LABEL + " (LAN access " + ("enabled" if lan else "disabled") + ")")
 

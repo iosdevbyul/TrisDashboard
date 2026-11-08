@@ -465,3 +465,7 @@ The MacBook settings reader now refuses duplicate JSON object keys and non-stand
 ### Virtual environment required for Mac deployment readiness
 
 The combined `macos.readiness` check now requires both Python 3.11+ and the project's created `.venv/bin/python`. Previously a supported system Python could make a MacBook appear deployment-ready even with no installed virtual environment. The report exposes `venv_ready` and returns the non-sensitive `venv` unmet-requirement identifier until `scripts/setup-mac.sh` has created the environment. Optional workout inbox and LAN server settings stay opt-in.
+
+### Safe cleanup after launchd bootstrap failures
+
+If `launchctl bootstrap` fails during dashboard or workout scheduler installation, the installer now attempts to remove **only its own newly created** LaunchAgent plist. It compares device/inode identity before cleanup, so a file that another process replaced in the meantime is not intentionally deleted. As with other filesystem operations, this is a best-effort race mitigation, not an atomic OS transaction. LaunchAgent files remain owner-only and cannot be silently overwritten.
