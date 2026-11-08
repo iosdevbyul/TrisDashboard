@@ -677,7 +677,8 @@
         showSummary(payload);
         consecutiveOverviewFailures = 0;
         var refreshedAt = new Date();
-        lastSuccessfulOverview = pad(refreshedAt.getHours()) + ":" + pad(refreshedAt.getMinutes());
+        lastSuccessfulOverview = pad(refreshedAt.getHours()) + ":" + pad(refreshedAt.getMinutes()) +
+          " on " + refreshedAt.getFullYear() + "-" + pad(refreshedAt.getMonth() + 1) + "-" + pad(refreshedAt.getDate());
         text("data-refresh-state", "Last overview refresh succeeded at " + lastSuccessfulOverview + ".");
       } catch (error) {
         retryOverview();
