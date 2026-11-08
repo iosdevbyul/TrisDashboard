@@ -133,3 +133,16 @@ def test_readiness_rejects_naive_or_invalid_reference_clock(tmp_path, clock):
     with pytest.raises(ValueError, match="timezone-aware"):
         readiness(tmp_path, tmp_path, mac_check=mac_ok,
                   inbox_check=inbox_missing, require_recent_inbox=True, now=clock)
+
+
+def test_required_inbox_with_overfull_directory_is_not_deployment_ready(tmp_path):
+    status = {"installed": True, "configuration_valid": True,
+              "inbox_available": True, "over_file_limit": True}
+    result = readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                       inbox_check=lambda home: status, require_inbox=True)
+    assert result["summary"]["deployment_ready"] is False
+    assert result["summary"]["unmet_requirements"] == ["inbox-configuration"]
+    status["over_file_limit"] = False
+    assert readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                     inbox_check=lambda home: status,
+                     require_inbox=True)["summary"]["deployment_ready"] is True
