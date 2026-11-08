@@ -9,6 +9,10 @@ _DATE_PATTERN = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 _TIME_PATTERN = re.compile(r"(?:[01][0-9]|2[0-3]):[0-5][0-9]")
 
 
+def _reject_nonstandard_constant(value):
+    raise ValueError("Non-standard JSON numeric constant: " + value)
+
+
 def _unique_keys(pairs):
     result = {}
     for key, value in pairs:
@@ -21,7 +25,8 @@ def _unique_keys(pairs):
 def load_agenda(path: Path, today: date | None = None) -> dict:
     if path.stat().st_size > 65536:
         raise ValueError("Agenda file too large")
-    payload = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys)
+    payload = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys,
+                         parse_constant=_reject_nonstandard_constant)
     events = payload.get("events") if isinstance(payload, dict) else None
     if not isinstance(events, list) or len(events) > 300:
         raise ValueError("Invalid agenda")

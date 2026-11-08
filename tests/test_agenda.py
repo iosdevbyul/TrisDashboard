@@ -61,3 +61,11 @@ def test_malformed_agenda_returns_unavailable(tmp_path, monkeypatch):
 def test_unconfigured(monkeypatch):
     monkeypatch.delenv("TRIS_AGENDA_FILE", raising=False)
     assert agenda()["configured"] is False
+
+
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_reject_nonstandard_json_numeric_constant_anywhere(tmp_path, constant):
+    path = tmp_path / "invalid-agenda.json"
+    path.write_text('{"metadata":' + constant + ',"events":[]}')
+    with pytest.raises(ValueError, match="Non-standard JSON"):
+        load_agenda(path, today=date(2026, 11, 8))
