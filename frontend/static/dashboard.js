@@ -645,11 +645,13 @@
       }
       var previews = repos[i].open_prs || [];
       for (var k = 0; k < previews.length; k++) {
-        if (typeof previews[k].url === "string" &&
-            previews[k].url.indexOf("https://github.com/") === 0) {
+        if (typeof repoName === "string" &&
+            /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(repoName) &&
+            typeof previews[k].number === "number" && isFinite(previews[k].number) &&
+            previews[k].number > 0 && Math.floor(previews[k].number) === previews[k].number) {
           var link = document.createElement("a");
           link.className = "github-pr-link";
-          link.href = previews[k].url;
+          link.href = "https://github.com/" + repoName + "/pull/" + previews[k].number;
           link.target = "_blank";
           link.rel = "noopener noreferrer";
           link.textContent = "#" + previews[k].number + " " + previews[k].title;
