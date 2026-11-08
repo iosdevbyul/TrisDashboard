@@ -225,6 +225,13 @@ response.quotes.quotes[0].outdated = false;
 assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
 assert.match(byId("portfolio-quote-values").textContent, /Not guaranteed live/);
 assert.match(byId("glance-sources").textContent, /4\/8 ready/);
+response.weather.stale = true;
+response.trello = {available:false, configured:true};
+handlers["document:visibilitychange"]();
+assert.match(byId("source-health-details").textContent, /weather stale/);
+assert.match(byId("source-health-details").textContent, /trello unavailable/);
+response.weather.stale = false;
+response.trello = {available:false,configured:false};
 assert.match(byId("data-refresh-state").textContent, /succeeded at \d\d:\d\d on \d{4}-\d\d-\d\d/i);
 
 // Manual holdings allocation must render independent, bounded percentages.
