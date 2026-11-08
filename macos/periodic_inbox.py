@@ -1,6 +1,8 @@
 """Opt-in per-user macOS LaunchAgent for shared WakTrainer workout files."""
 import argparse
 import json
+import tempfile
+from datetime import datetime, timezone
 import os
 import plistlib
 import stat
@@ -14,6 +16,54 @@ from macos.import_waktrainer import validated_timezone
 
 LABEL = "ai.tris.dashboard.waktrainer-inbox"
 INTERVAL_SECONDS = 900
+
+
+def state_path(home: Path) -> Path:
+    return home / "Library" / "Logs" / "TrisDashboard" / "inbox-status.json"
+
+
+def write_run_state(home: Path, *, success: bool, files: int = 0, added: int = 0) -> None:
+    """Store only a timestamp and aggregate counts, never source paths or errors."""
+    destination = state_path(home)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", prefix=".tris-inbox-status-",
+            suffix=".json", dir=destination.parent, delete=False
+        ) as stream:
+            temporary = Path(stream.name)
+            json.dump({
+                "checked_at_utc": datetime.now(timezone.utc).isoformat(),
+                "success": success,
+                "candidate_files": files if success else None,
+                "new_workouts": added if success else None,
+            }, stream)
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, destination)
+        temporary = None
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def read_run_state(home: Path) -> dict:
+    path = state_path(home)
+    if not path.is_file() or path.is_symlink() or path.stat().st_size > 2048:
+        return {"last_run_known": False}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if (not isinstance(data, dict) or type(data.get("success")) is not bool
+                or not isinstance(data.get("checked_at_utc"), str)):
+            return {"last_run_known": False}
+        datetime.fromisoformat(data["checked_at_utc"])
+        return {"last_run_known": True,
+                "last_run_success": data["success"],
+                "last_run_utc": data["checked_at_utc"],
+                "last_new_workouts": data.get("new_workouts") if data["success"] else None}
+    except (OSError, ValueError, TypeError):
+        return {"last_run_known": False}
+
 
 
 def agent_path(home: Path) -> Path:
@@ -89,7 +139,8 @@ def inspect(home: Path) -> dict:
     result = {"installed": False, "configuration_valid": False,
               "inbox_available": False, "candidate_files": 0,
               "over_file_limit": False, "output_configured": False,
-              "timezone_configured": False}
+              "timezone_configured": False,
+              **read_run_state(home)}
     if not agent.is_file() or agent.is_symlink() or agent.stat().st_size > 16 * 1024:
         return result
     result["installed"] = True
@@ -150,8 +201,15 @@ def main() -> None:
                         timezone_name=args.timezone_name)
             else:
                 # Runs only after explicit install or user invocation; no iPhone polling.
-                receive(directory, output, apply=True,
-                        timezone_name=args.timezone_name)
+                try:
+                    summary = receive(directory, output, apply=True,
+                                      timezone_name=args.timezone_name)
+                except (OSError, ValueError, TypeError, KeyError):
+                    write_run_state(home, success=False)
+                    raise
+                else:
+                    write_run_state(home, success=True,
+                                    files=summary["files"], added=summary["new"])
     except (OSError, ValueError, RuntimeError, TypeError, subprocess.CalledProcessError):
         parser.exit(1, "Inbox scheduler failed: check permissions and private paths.\n")
 

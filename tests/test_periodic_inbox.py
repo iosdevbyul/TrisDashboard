@@ -160,3 +160,34 @@ def test_legacy_inbox_agent_without_timezone_remains_valid(tmp_path):
     status = inspect(home)
     assert status["configuration_valid"] is True
     assert status["timezone_configured"] is False
+
+
+def test_run_state_stores_only_counts_and_timestamp(tmp_path):
+    from macos.periodic_inbox import write_run_state, read_run_state, state_path
+    home = tmp_path / "Home"
+    write_run_state(home, success=True, files=3, added=2)
+    state = read_run_state(home)
+    assert state["last_run_known"]
+    assert state["last_run_success"]
+    assert state["last_new_workouts"] == 2
+    content = state_path(home).read_text()
+    assert "fitness.json" not in content
+    assert "error" not in content
+    assert state_path(home).stat().st_mode & 0o077 == 0
+
+
+def test_failed_run_does_not_reveal_exception_or_stale_success(tmp_path):
+    from macos.periodic_inbox import write_run_state, read_run_state
+    write_run_state(tmp_path, success=True, files=2, added=5)
+    write_run_state(tmp_path, success=False)
+    state = read_run_state(tmp_path)
+    assert state["last_run_success"] is False
+    assert state["last_new_workouts"] is None
+
+
+def test_corrupted_status_file_returns_unknown(tmp_path):
+    from macos.periodic_inbox import read_run_state, state_path
+    file = state_path(tmp_path)
+    file.parent.mkdir(parents=True)
+    file.write_text("invalid JSON")
+    assert read_run_state(tmp_path) == {"last_run_known": False}
