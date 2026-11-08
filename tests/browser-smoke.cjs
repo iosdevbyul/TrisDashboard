@@ -182,6 +182,16 @@ handlers["document:visibilitychange"]();
 assert.match(byId("github-summary").textContent, /20\+ known open PRs/);
 assert.match(byId("github-list").children[0].textContent, /20\+ open PRs/);
 
+// Trello glance summary separates actionable work from completed cards.
+response.trello = { available: true, lists: [
+  { name: "Next", count: 3, cards: [] },
+  { name: "In Progress", count: 1, cards: [] },
+  { name: "Done", count: 12, cards: [] }
+] };
+handlers["document:visibilitychange"]();
+assert.match(byId("trello-summary").textContent, /3 Next · 1 In Progress/);
+assert.match(byId("trello-summary").textContent, /16 cards/);
+
 // Invalid response JSON must not erase the previous successful market display.
 overviewBody = "{invalid-json";
 handlers["document:visibilitychange"]();
