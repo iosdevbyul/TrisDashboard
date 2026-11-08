@@ -17,7 +17,10 @@ MAX_FILES = 50
 
 def receive(directory: Path, output: Path, *, apply: bool = False,
             timezone_name: str | None = None) -> dict:
-    directory = directory.expanduser().resolve()
+    directory = directory.expanduser()
+    if directory.is_symlink():
+        raise ValueError("Workout inbox must not be a symlink")
+    directory = directory.resolve()
     output = output.expanduser().resolve()
     if not directory.is_dir():
         raise ValueError("Workout inbox directory is missing")
