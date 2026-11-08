@@ -22,3 +22,20 @@ def test_future_snapshot_rejected():
 def test_timezone_required():
     with pytest.raises(ValueError):
         snapshot_quality(datetime(2026, 11, 8), NOW)
+
+
+@pytest.mark.parametrize("limit", [0, -1, True, float("nan"), float("inf"), "72"])
+def test_invalid_freshness_threshold_rejected(limit):
+    with pytest.raises(ValueError):
+        snapshot_quality(NOW, NOW, limit_hours=limit)
+
+
+def test_naive_reference_rejected():
+    with pytest.raises(ValueError, match="Reference"):
+        snapshot_quality(NOW, datetime(2026, 11, 8, 12))
+
+
+def test_aware_reference_and_custom_threshold():
+    result = snapshot_quality(NOW - timedelta(hours=10), NOW, limit_hours=8)
+    assert result["outdated"] is True
+    assert result["threshold_hours"] == 8
