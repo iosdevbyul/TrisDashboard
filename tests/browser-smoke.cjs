@@ -113,6 +113,9 @@ vm.runInContext(fs.readFileSync(path.join(root, "frontend/static/preferences.js"
 assert.ok(paths.some((url) => url.startsWith("/healthz")));
 assert.ok(paths.some((url) => url.startsWith("/api/overview")));
 assert.equal(byId("weather-temp").textContent, "22 °C");
+response.weather.weather_code = 2;
+handlers["document:visibilitychange"]();
+assert.match(byId("weather-details").textContent, /Partly cloudy/);
 assert.equal(byId("connection").textContent, "Server online");
 assert.match(byId("glance-sources").textContent, /2\/8 ready/);
 assert.equal(byId("server-uptime").textContent, "30m online");

@@ -281,13 +281,28 @@
     text("fitness-updated", updated);
   }
 
+  function weatherDescription(code) {
+    if (code === 0) { return "Clear sky"; }
+    if (code === 1 || code === 2) { return "Partly cloudy"; }
+    if (code === 3) { return "Overcast"; }
+    if (code === 45 || code === 48) { return "Fog"; }
+    if (code >= 51 && code <= 57) { return "Drizzle"; }
+    if (code >= 61 && code <= 67) { return "Rain"; }
+    if (code >= 71 && code <= 77) { return "Snow"; }
+    if (code >= 80 && code <= 82) { return "Rain showers"; }
+    if (code >= 85 && code <= 86) { return "Snow showers"; }
+    if (code >= 95 && code <= 99) { return "Thunderstorm"; }
+    return "Conditions unavailable";
+  }
+
   function showWeather(info) {
     if (!info || !info.available) {
       text("weather-temp", "Unavailable");
       text("weather-details", "No weather data yet");
     } else {
       text("weather-temp", info.temperature_c + " °C");
-      var details = info.location + " · Humidity " + info.humidity_percent + "%";
+      var details = info.location + " · " + weatherDescription(info.weather_code) +
+        " · Humidity " + info.humidity_percent + "%";
       if (info.feels_like_c !== null && typeof info.feels_like_c !== "undefined") {
         details += " · Feels " + info.feels_like_c + " °C";
       }
