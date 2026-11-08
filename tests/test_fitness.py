@@ -156,3 +156,18 @@ def test_workout_active_days_count_unique_dates_not_sessions(tmp_path):
     assert result["summary"]["sessions"] == 3
     assert result["active_days"] == 2
     assert len(result["daily"]) == 7
+
+
+def test_weekly_activity_breakdown_separates_categories_and_excludes_old(tmp_path):
+    source = snapshot(tmp_path, [
+        {"date": "2026-11-08", "type": "Running", "duration_minutes": 20, "distance_km": 3},
+        {"date": "2026-11-07", "type": "Strength", "duration_minutes": 40},
+        {"date": "2026-11-06", "type": "Running", "duration_minutes": 25, "distance_km": 4},
+        {"date": "2026-10-01", "type": "Cycling", "duration_minutes": 120},
+    ])
+    result = load_fitness(source, today=date(2026, 11, 8))
+    assert result["activity_breakdown"] == [
+        {"type": "Running", "sessions": 2, "duration_minutes": 45, "distance_km": 7},
+        {"type": "Strength", "sessions": 1, "duration_minutes": 40, "distance_km": 0},
+    ]
+    assert result["summary"]["sessions"] == 3

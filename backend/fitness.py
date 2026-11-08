@@ -41,6 +41,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
     totals = {"sessions": 0, "minutes": 0, "distance_km": 0.0}
     seen_ids = set()
     stable_id_count = 0
+    by_type = {}
     for workout in workouts:
         if not isinstance(workout, dict):
             raise ValueError("Invalid workout")
@@ -78,6 +79,10 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             totals["sessions"] += 1
             totals["minutes"] += minutes
             totals["distance_km"] += distance
+            activity = by_type.setdefault(kind, {"sessions": 0, "duration_minutes": 0.0, "distance_km": 0.0})
+            activity["sessions"] += 1
+            activity["duration_minutes"] += minutes
+            activity["distance_km"] += distance
             day_summary = daily[workout_day.isoformat()]
             day_summary["sessions"] += 1
             day_summary["duration_minutes"] += minutes
@@ -86,6 +91,11 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
         day_summary["duration_minutes"] = round(day_summary["duration_minutes"], 1)
         day_summary["distance_km"] = round(day_summary["distance_km"], 2)
     weekly.sort(key=lambda item: item["date"], reverse=True)
+    activity_breakdown = [{"type": kind, "sessions": values["sessions"],
+                           "duration_minutes": round(values["duration_minutes"], 1),
+                           "distance_km": round(values["distance_km"], 2)}
+                          for kind, values in by_type.items()]
+    activity_breakdown.sort(key=lambda entry: (-entry["duration_minutes"], entry["type"]))
     active_days = sum(1 for day in daily.values() if day["sessions"] > 0)
     modified = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
     age_hours = max(0.0, (datetime.now(timezone.utc) - modified).total_seconds()) / 3600
@@ -95,6 +105,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "file_older_than_week": age_hours > 168,
             "period_start": start.isoformat(), "period_end": reference.isoformat(),
             "active_days": active_days,
+            "activity_breakdown": activity_breakdown,
             "summary": {"sessions": totals["sessions"], "duration_minutes": round(totals["minutes"], 1),
                         "distance_km": round(totals["distance_km"], 2)},
             "recent": weekly[:5], "daily": [

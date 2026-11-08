@@ -277,6 +277,15 @@
       (typeof info.active_days === "number" ? "Active " + info.active_days + "/7 days · " : "") +
       info.period_start + " to " + info.period_end;
     list.appendChild(total);
+    var activities = info.activity_breakdown || [];
+    for (var a = 0; a < activities.length; a++) {
+      var activityLine = document.createElement("div");
+      activityLine.className = "repo-row";
+      activityLine.textContent = activities[a].type + " · " + activities[a].sessions +
+        " sessions · " + activities[a].duration_minutes + " min · " +
+        activities[a].distance_km + " km";
+      list.appendChild(activityLine);
+    }
     var daily = info.daily || [];
     for (var d = 0; d < daily.length; d++) {
       var dayLine = document.createElement("div");
