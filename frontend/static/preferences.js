@@ -40,7 +40,9 @@
     document.getElementById("setting-high-contrast").checked = settings.highContrast;
     document.getElementById("setting-refresh-minutes").value = String(settings.refreshMinutes);
     document.getElementById("setting-pause-refresh").checked = settings.pauseRefresh;
-    document.getElementById("refresh-cadence").textContent = "Data refreshes every " + settings.refreshMinutes + " minutes";
+    document.getElementById("refresh-cadence").textContent = settings.pauseRefresh ?
+      "Automatic data refresh paused · Manual refresh available" :
+      "Data refreshes every " + settings.refreshMinutes + " minutes";
     window.trisDashboardRefreshMinutes = settings.refreshMinutes;
     window.trisDashboardRefreshPaused = settings.pauseRefresh;
     for (var i = 0; i < panelNames.length; i++) {
