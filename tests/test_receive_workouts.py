@@ -158,3 +158,15 @@ def test_inbox_output_cannot_match_incoming_export_pattern(tmp_path):
     with pytest.raises(ValueError, match="Output must not match"):
         receive(inbox, output, apply=True)
     assert not output.exists()
+
+
+def test_inbox_rejects_symlink_directory_even_for_preview(tmp_path):
+    real = tmp_path / "private-inbox"
+    real.mkdir()
+    write_export(real, "one", "sample")
+    alias = tmp_path / "public-link"
+    alias.symlink_to(real, target_is_directory=True)
+    target = tmp_path / "history.json"
+    with pytest.raises(ValueError, match="symlink"):
+        receive(alias, target)
+    assert not target.exists()
