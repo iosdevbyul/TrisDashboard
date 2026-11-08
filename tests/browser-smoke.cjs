@@ -223,6 +223,11 @@ response.github = { available: true, repositories: [{
 handlers["document:visibilitychange"]();
 assert.match(byId("github-summary").textContent, /20\+ known open PRs/);
 assert.match(byId("github-list").children[0].textContent, /20\+ open PRs/);
+assert.equal(byId("github-list").children[1].href, "https://github.com/owner/busy");
+response.github.repositories[0].repository = "owner/evil?access_token=secret";
+handlers["document:visibilitychange"]();
+assert.equal(byId("github-list").children.length, 1);
+response.github.repositories[0].repository = "owner/busy";
 
 // Trello glance summary separates actionable work from completed cards.
 response.trello = { available: true, lists: [
