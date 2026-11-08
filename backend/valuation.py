@@ -33,6 +33,8 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
         quote = None if key in ambiguous else latest.get(key)
         if quote is None:
             continue
+        if isinstance(item.get("quantity"), bool) or isinstance(quote.get("price"), bool):
+            continue
         try:
             qty = Decimal(str(item["quantity"]))
             price = Decimal(str(quote["price"]))
