@@ -53,6 +53,8 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
         if not _DATE_RE.fullmatch(day_text):
             raise ValueError("Invalid workout date")
         workout_day = date.fromisoformat(day_text)
+        if workout_day > reference:
+            raise ValueError("Future workout dates are not allowed")
         if any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ -_" for c in kind):
             raise ValueError("Invalid workout type")
         if isinstance(minutes, bool) or not isinstance(minutes, (int, float)) or not 0 <= minutes <= 1440:
