@@ -7,6 +7,7 @@ from backend.access import validate_allowlist
 import json
 import os
 import plistlib
+from macos.agent_files import write_private_agent
 import subprocess
 import sys
 from pathlib import Path
@@ -114,7 +115,7 @@ def install(project: Path, home: Path, lan: bool, settings_path: Path | None = N
     path.parent.mkdir(parents=True, exist_ok=True)
     (home / "Library" / "Logs" / "TrisDashboard").mkdir(parents=True, exist_ok=True)
     settings = read_public_settings(settings_path) if settings_path else {}
-    path.write_bytes(plistlib.dumps(service_config(project, home, lan, settings, keychain=keychain)))
+    write_private_agent(path, service_config(project, home, lan, settings, keychain=keychain))
     try:
         run_launchctl("bootstrap", "gui/" + str(os.getuid()), str(path))
     except Exception:

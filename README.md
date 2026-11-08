@@ -433,3 +433,7 @@ The flags require respectively: reachable localhost dashboard, installed/valid w
 ### Bounded shared-file parsing
 
 The MacBook workout inbox rejects an individual shared JSON larger than 128 KiB **before decoding the file**, even if it is owned by the current Mac user. Oversized or invalid exports fail the entire batch without intentionally replacing existing workout history; originals remain untouched. Per-file and combined record limits are independent, to limit memory use when an unexpected export lands in the inbox.
+
+### Owner-only macOS login-agent configuration
+
+New dashboard, scheduled workout, and AirDrop inbox LaunchAgent plists are now created exclusively with `0600` permissions. Existing files and symlink targets are never silently overwritten, even if the user's default umask is permissive. These configurations may contain private local file paths, so store and run them only in the Mac's logged-in user account; this does not encrypt data or authorize untrusted Wi-Fi access.

@@ -5,6 +5,7 @@ import tempfile
 from datetime import datetime, timezone
 import os
 import plistlib
+from macos.agent_files import write_private_agent
 import stat
 import subprocess
 import sys
@@ -117,7 +118,7 @@ def install(project: Path, home: Path, directory: Path, output: Path,
         raise ValueError("Inbox LaunchAgent already installed")
     agent.parent.mkdir(parents=True, exist_ok=True)
     (home / "Library" / "Logs" / "TrisDashboard").mkdir(parents=True, exist_ok=True)
-    agent.write_bytes(plistlib.dumps(agent_config(project, home, directory, output, timezone_name=timezone_name)))
+    write_private_agent(agent, agent_config(project, home, directory, output, timezone_name=timezone_name))
     try:
         subprocess.run(["launchctl", "bootstrap", "gui/" + str(os.getuid()), str(agent)], check=True)
     except Exception:
