@@ -137,3 +137,16 @@ def test_normal_json_configuration_still_parses(tmp_path):
     file = tmp_path / "settings.json"
     file.write_text('{"TRIS_LOCATION_NAME":"Seoul","TRIS_LATITUDE":37.5}')
     assert read_public_settings(file)["TRIS_LATITUDE"] == "37.5"
+
+
+import pytest
+
+
+@pytest.mark.parametrize("key", ["TRIS_LOCATION_NAME", "TRIS_GITHUB_REPOS", "TRIS_TRELLO_BOARD_ID"])
+def test_public_settings_reject_whitespace_only_configurations(tmp_path, key):
+    from macos.service import read_public_settings
+    import json
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({key: "   "}))
+    with pytest.raises(ValueError, match="supported length"):
+        read_public_settings(path)
