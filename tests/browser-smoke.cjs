@@ -132,6 +132,7 @@ overviewStatus = 503;
 handlers["document:visibilitychange"]();
 assert.equal(byId("weather-temp").textContent, priorWeather);
 assert.match(byId("data-refresh-state").textContent, /failed/i);
+assert.match(byId("data-refresh-state").textContent, /Last successful update at \d\d:\d\d/);
 const retry = scheduled.find((item) => item.delay === 30000 && !item.cancelled);
 assert.ok(retry, "First failed overview should retry after 30 seconds");
 
@@ -158,7 +159,7 @@ assert.equal(byId("quotes-summary").textContent, "1/1 quotes reported");
 assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
 assert.match(byId("portfolio-quote-values").textContent, /Not guaranteed live/);
 assert.match(byId("glance-sources").textContent, /4\/8 ready/);
-assert.match(byId("data-refresh-state").textContent, /succeeded/i);
+assert.match(byId("data-refresh-state").textContent, /succeeded at \d\d:\d\d/i);
 
 // A 20-result GitHub API page is only a lower bound, not an exact PR count.
 response.github = { available: true, repositories: [{
