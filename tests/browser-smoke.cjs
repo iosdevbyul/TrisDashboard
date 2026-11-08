@@ -149,6 +149,11 @@ handlers["show-all-panels:click"]();
 assert.equal(byId("panel-weather").hidden, false);
 assert.equal(byId("panel-portfolio").hidden, false);
 
+byId("setting-large-text").checked = true;
+handlers["setting-large-text:change"].call(byId("setting-large-text"));
+assert.match(document.body.className, /large-text/);
+assert.match(state["tris.dashboard.display.v1"], /"largeText":true/);
+
 byId("setting-compact").checked = true;
 handlers["setting-compact:change"].call(byId("setting-compact"));
 assert.match(document.body.className, /compact/);
