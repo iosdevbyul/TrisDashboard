@@ -111,3 +111,29 @@ def test_private_file_outside_repo_remains_valid(tmp_path):
     config = tmp_path / "settings.json"
     config.write_text(json.dumps({"TRIS_PORTFOLIO_FILE": str(path)}))
     assert read_public_settings(config)["TRIS_PORTFOLIO_FILE"] == str(path)
+
+
+def test_duplicate_settings_keys_rejected(tmp_path):
+    from macos.service import read_public_settings
+    import pytest
+    file = tmp_path / "settings.json"
+    file.write_text('{"TRIS_LOCATION_NAME":"Seoul","TRIS_LOCATION_NAME":"Busan"}')
+    with pytest.raises(ValueError, match="Duplicate settings key"):
+        read_public_settings(file)
+
+
+def test_json_non_finite_literals_rejected_before_launch(tmp_path):
+    from macos.service import read_public_settings
+    import pytest
+    file = tmp_path / "settings.json"
+    for invalid in ("NaN", "Infinity", "-Infinity"):
+        file.write_text('{"TRIS_LATITUDE":' + invalid + '}')
+        with pytest.raises(ValueError, match="Non-finite settings value"):
+            read_public_settings(file)
+
+
+def test_normal_json_configuration_still_parses(tmp_path):
+    from macos.service import read_public_settings
+    file = tmp_path / "settings.json"
+    file.write_text('{"TRIS_LOCATION_NAME":"Seoul","TRIS_LATITUDE":37.5}')
+    assert read_public_settings(file)["TRIS_LATITUDE"] == "37.5"

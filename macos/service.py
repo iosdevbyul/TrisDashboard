@@ -24,9 +24,21 @@ def agent_path(home: Path) -> Path:
 ALLOWED_SETTINGS = ("TRIS_LATITUDE", "TRIS_LONGITUDE", "TRIS_LOCATION_NAME", "TRIS_GITHUB_REPOS", "TRIS_PORTFOLIO_FILE", "TRIS_FITNESS_FILE", "TRIS_DIVIDENDS_FILE", "TRIS_AGENDA_FILE", "TRIS_ALLOWED_CLIENT_IPS", "TRIS_TRELLO_BOARD_ID", "TRIS_QUOTE_SYMBOLS")
 
 
+def _unique_settings_pairs(pairs: list[tuple[str, object]]) -> dict:
+    settings = {}
+    for key, value in pairs:
+        if key in settings:
+            raise ValueError("Duplicate settings key")
+        settings[key] = value
+    return settings
+
+
 def read_public_settings(path: Path) -> dict[str, str]:
     """Explicitly allow public display settings only; never load secrets into launchd plist."""
-    data = json.loads(path.read_text(encoding="utf-8"))
+    data = json.loads(path.read_text(encoding="utf-8"),
+                      object_pairs_hook=_unique_settings_pairs,
+                      parse_constant=lambda value: (_ for _ in ()).throw(
+                          ValueError("Non-finite settings value")))
     if not isinstance(data, dict):
         raise ValueError("Settings must be a JSON object")
     if any(key not in ALLOWED_SETTINGS for key in data):
