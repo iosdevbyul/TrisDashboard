@@ -325,6 +325,13 @@
       (typeof info.active_days === "number" ? "Active " + info.active_days + "/7 days · " : "") +
       info.period_start + " to " + info.period_end;
     list.appendChild(total);
+    if (typeof info.longest_streak_days === "number") {
+      var streak = document.createElement("div");
+      streak.className = "repo-row";
+      streak.textContent = "7-day window: longest " + info.longest_streak_days +
+        " consecutive active days · Through today " + (info.ongoing_streak_days || 0) + " days";
+      list.appendChild(streak);
+    }
     var activities = info.activity_breakdown || [];
     for (var a = 0; a < activities.length; a++) {
       var activityLine = document.createElement("div");
