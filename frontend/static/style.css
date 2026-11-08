@@ -103,3 +103,5 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .allocation-track{height:9px;background:#304155;border-radius:5px;overflow:hidden}
 .allocation-fill{display:block;height:9px;background:#7fc6a9}
 .large-text .allocation-row{font-size:15px}
+
+#source-health-details{margin-top:0;margin-bottom:7px;overflow-wrap:break-word}
