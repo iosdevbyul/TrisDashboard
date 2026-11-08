@@ -70,3 +70,19 @@ def test_failed_bootstrap_preserves_symlink_replacement(tmp_path):
     path.symlink_to(target)
     assert remove_failed_agent(path, identity) is False
     assert target.read_text() == "private"
+
+
+def test_failed_agent_write_preserves_concurrent_replacement(tmp_path, monkeypatch):
+    from macos import agent_files
+    path = tmp_path / "agent.plist"
+    original_chmod = agent_files.os.chmod
+    def replace_during_chmod(target, mode):
+        if target == path:
+            path.unlink()
+            path.write_text("replacement")
+            raise OSError("simulated write failure")
+        return original_chmod(target, mode)
+    monkeypatch.setattr(agent_files.os, "chmod", replace_during_chmod)
+    with pytest.raises(OSError, match="simulated write failure"):
+        write_private_agent(path, {"Label": "test.local"})
+    assert path.read_text() == "replacement"
