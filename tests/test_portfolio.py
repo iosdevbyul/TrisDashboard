@@ -65,3 +65,23 @@ def test_snapshot_age_metadata(tmp_path):
     data = load_portfolio(path)
     assert data["quality"]["outdated"] is True
     assert data["quality"]["threshold_hours"] == 72
+
+
+def test_reject_duplicate_portfolio_keys(tmp_path):
+    path = tmp_path / "portfolio.json"
+    path.write_text('{"as_of":"2026-11-07T12:00:00+00:00","positions":[{"symbol":"JEPQ","currency":"USD","quantity":1,"quantity":100}]}')
+    with pytest.raises(ValueError, match="Duplicate"):
+        load_portfolio(path)
+
+
+def test_reject_non_ascii_ticker_confusables(tmp_path):
+    path = write_snapshot(tmp_path, [{"symbol":"ＪＥＰＱ","currency":"USD","quantity":1}])
+    with pytest.raises(ValueError, match="ticker"):
+        load_portfolio(path)
+
+
+def test_duplicate_keys_produce_safe_unavailable_state(tmp_path, monkeypatch):
+    path = tmp_path / "portfolio.json"
+    path.write_text('{"as_of":"2026-11-07T12:00:00+00:00","positions":[],"positions":[]}')
+    monkeypatch.setenv("TRIS_PORTFOLIO_FILE", str(path))
+    assert portfolio() == {"available": False, "configured": True, "stale": True}
