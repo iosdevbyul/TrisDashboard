@@ -143,3 +143,68 @@ def test_quote_rejects_wrong_symbol_and_currency():
     data["currency"] = "EUR"
     with pytest.raises(ValueError):
         parse_quote(data, "JEPQ")
+
+
+def test_market_outage_backoff_prevents_repeated_provider_calls(monkeypatch):
+    integrations._cache.clear()
+    integrations._QUOTE_RETRY_AT.clear()
+    monkeypatch.setenv("TRIS_QUOTE_SYMBOLS", "JEPQ")
+    monkeypatch.setenv("TRIS_TWELVEDATA_API_KEY", "key-one")
+    calls = []
+    def fail(url, headers=None):
+        calls.append(url)
+        return {"status": "error", "code": 429}
+    monkeypatch.setattr(integrations, "get_json", fail)
+    first = integrations.quotes()
+    second = integrations.quotes()
+    assert first["available"] is False
+    assert second["rate_limited_retry"] is True
+    assert len(calls) == 1
+    assert "key-one" not in str(second)
+    integrations._QUOTE_RETRY_AT.clear()
+
+
+def test_market_backoff_scopes_to_credential_and_expires(monkeypatch):
+    integrations._cache.clear()
+    integrations._QUOTE_RETRY_AT.clear()
+    monkeypatch.setenv("TRIS_QUOTE_SYMBOLS", "JEPQ")
+    monkeypatch.setenv("TRIS_TWELVEDATA_API_KEY", "key-one")
+    requests = []
+    def fail(url, headers=None):
+        requests.append(headers["Authorization"])
+        return {"status": "error"}
+    monkeypatch.setattr(integrations, "get_json", fail)
+    integrations.quotes()
+    integrations.quotes()
+    assert len(requests) == 1
+    key = next(k for k in integrations._QUOTE_RETRY_AT)
+    integrations._QUOTE_RETRY_AT[key] = 0
+    integrations.quotes()
+    assert len(requests) == 2
+    monkeypatch.setenv("TRIS_TWELVEDATA_API_KEY", "key-two")
+    integrations.quotes()
+    assert len(requests) == 3
+    integrations._QUOTE_RETRY_AT.clear()
+
+
+def test_outage_cooldown_keeps_previous_data_stale_and_blocks_valuation(monkeypatch):
+    integrations._cache.clear()
+    integrations._QUOTE_RETRY_AT.clear()
+    monkeypatch.setenv("TRIS_QUOTE_SYMBOLS", "JEPQ")
+    monkeypatch.setenv("TRIS_TWELVEDATA_API_KEY", "backoff-key")
+    monkeypatch.setattr(integrations, "get_json",
+                        lambda url, headers=None: sample())
+    assert integrations.quotes()["available"]
+    key = next(k for k in integrations._cache if k.startswith("quotes:"))
+    integrations._cache[key]["time"] -= 1801
+    monkeypatch.setattr(integrations, "get_json",
+                        lambda url, headers=None: {"status": "error", "code": 429})
+    integrations.quotes()
+    delayed = integrations.quotes()
+    assert delayed["stale"] is True
+    assert delayed["rate_limited_retry"] is True
+    from backend.valuation import quote_valuation
+    result = quote_valuation({"available": True, "positions": [
+        {"symbol": "JEPQ", "currency": "USD", "quantity": "5"}]}, delayed)
+    assert result["available"] is False
+    integrations._QUOTE_RETRY_AT.clear()

@@ -22,6 +22,10 @@ TTL_SECONDS = 300
 _PROVIDER_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="dashboard-provider")
 _PROVIDER_INFLIGHT = {}
 _PROVIDER_LOCK = threading.Lock()
+# A total market-provider outage should not trigger a fresh, potentially
+# credit-consuming request on every dashboard refresh.
+_QUOTE_RETRY_AT = {}
+_QUOTE_RETRY_SECONDS = 600
 
 
 def _future_for(name, loader):
@@ -200,7 +204,29 @@ def quotes() -> dict:
         return {"available": False, "configured": True, "stale": True}
     scope = hashlib.sha256(token.encode("utf-8")).hexdigest()
     key = "quotes:" + ",".join(symbols) + ":" + scope
-    result = cached(key, lambda: load_quotes(symbols, token, get_json), ttl=1800)
+    now = time.monotonic()
+    with _lock:
+        blocked = _QUOTE_RETRY_AT.get(key, 0) > now
+        previous = _cache.get(key)
+    if blocked:
+        if previous:
+            snapshot = dict(previous["data"])
+            snapshot["stale"] = True
+            snapshot["rate_limited_retry"] = True
+            return refresh_quote_freshness(snapshot)
+        return {"available": False, "configured": True, "stale": True,
+                "rate_limited_retry": True}
+    def load():
+        try:
+            result = load_quotes(symbols, token, get_json)
+        except (OSError, ValueError, TypeError, KeyError, HTTPError, URLError):
+            with _lock:
+                _QUOTE_RETRY_AT[key] = time.monotonic() + _QUOTE_RETRY_SECONDS
+            raise
+        with _lock:
+            _QUOTE_RETRY_AT.pop(key, None)
+        return result
+    result = cached(key, load, ttl=1800)
     return refresh_quote_freshness(result)
 
 
