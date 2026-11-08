@@ -241,3 +241,16 @@ def test_cached_quote_without_source_time_is_outdated():
         {"symbol": "QQQI", "outdated": False},
     ]})
     assert all(item["outdated"] for item in result["quotes"])
+
+
+@pytest.mark.parametrize("rows", [None, {}, "invalid", 123])
+def test_quote_cache_rejects_invalid_quote_collections(rows):
+    from backend.quotes import refresh_quote_freshness
+    with pytest.raises(ValueError, match="Invalid quote cache rows"):
+        refresh_quote_freshness({"available": True, "quotes": rows})
+
+
+def test_quote_cache_rejects_naive_display_reference():
+    from backend.quotes import refresh_quote_freshness
+    with pytest.raises(ValueError, match="Quote reference"):
+        refresh_quote_freshness({"available": True, "quotes": []}, datetime(2026, 11, 8))
