@@ -298,3 +298,17 @@ def test_future_waktrainer_session_fails_before_writing(tmp_path):
     with pytest.raises(ValueError, match="Future workout session"):
         import_export(source, target, dry_run=True)
     assert not target.exists()
+
+
+def test_import_validation_uses_requested_timezone_day(tmp_path, monkeypatch):
+    from datetime import datetime, timezone
+    from zoneinfo import ZoneInfo
+    from macos import import_waktrainer as bridge
+    started = datetime.now(timezone.utc).replace(microsecond=0)
+    source = export(tmp_path, [{"started_at": started.isoformat(),
+                                "activity_type": "walking", "duration_seconds": 60}])
+    captured = []
+    monkeypatch.setattr(bridge, "load_fitness", lambda path, today=None: captured.append(today))
+    assert bridge.import_export(source, tmp_path / "private" / "history.json",
+                                timezone_name="Asia/Seoul")["written"]
+    assert captured == [datetime.now(ZoneInfo("Asia/Seoul")).date()]
