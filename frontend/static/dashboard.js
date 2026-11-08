@@ -200,6 +200,18 @@
       label.push(currencies[i] + " " + totals[currencies[i]]);
     }
     text("dividend-summary", label.length ? label.join(" / ") : "No recorded payments this month");
+    var sixMonthTotals = info.six_month_totals || {};
+    var historicCurrencies = Object.keys(sixMonthTotals);
+    if (historicCurrencies.length) {
+      var sixMonth = document.createElement("div");
+      sixMonth.className = "portfolio-total";
+      var sixMonthParts = [];
+      for (var s = 0; s < historicCurrencies.length; s++) {
+        sixMonthParts.push(historicCurrencies[s] + " " + sixMonthTotals[historicCurrencies[s]]);
+      }
+      sixMonth.textContent = "Confirmed last 6 months: " + sixMonthParts.join(" / ");
+      list.appendChild(sixMonth);
+    }
     var history = info.history || [];
     for (var h = 0; h < history.length; h++) {
       var monthlyRow = document.createElement("div");
