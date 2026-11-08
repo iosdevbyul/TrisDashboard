@@ -383,8 +383,13 @@
     }
     var columns = info.lists || [];
     var total = 0;
+    var nextCount = 0;
+    var progressCount = 0;
     for (var i = 0; i < columns.length; i++) {
       total += columns[i].count;
+      var listName = String(columns[i].name || "").toLowerCase().replace(/^\s+|\s+$/g, "");
+      if (listName === "next") { nextCount += columns[i].count; }
+      if (listName === "in progress") { progressCount += columns[i].count; }
       var row = document.createElement("div");
       row.className = "repo-row";
       row.textContent = columns[i].name + " · " + columns[i].count +
@@ -402,7 +407,8 @@
     for (var t = 0; t < columns.length; t++) {
       if (columns[t].count_truncated) { anyTruncated = true; }
     }
-    text("trello-summary", total + (anyTruncated ? "+ known cards" : " cards"));
+    text("trello-summary", total + (anyTruncated ? "+ known cards" : " cards") +
+      " · " + nextCount + " Next · " + progressCount + " In Progress");
     text("trello-updated", statusText(info));
   }
 
