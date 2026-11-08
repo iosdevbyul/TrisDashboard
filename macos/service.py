@@ -5,6 +5,7 @@ This tool never changes power settings or opens firewall/router ports.
 import argparse
 from backend.access import validate_allowlist
 import json
+import math
 import os
 import plistlib
 from macos.agent_files import write_private_agent
@@ -43,7 +44,7 @@ def read_public_settings(path: Path) -> dict[str, str]:
                 number = float(settings[key])
             except ValueError as error:
                 raise ValueError("Invalid coordinate") from error
-            if not minimum <= number <= maximum:
+            if not math.isfinite(number) or not minimum <= number <= maximum:
                 raise ValueError("Invalid coordinate")
     if "TRIS_PORTFOLIO_FILE" in settings:
         portfolio_path = Path(settings["TRIS_PORTFOLIO_FILE"])
