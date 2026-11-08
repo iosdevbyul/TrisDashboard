@@ -46,22 +46,16 @@ def read_public_settings(path: Path) -> dict[str, str]:
                 raise ValueError("Invalid coordinate") from error
             if not math.isfinite(number) or not minimum <= number <= maximum:
                 raise ValueError("Invalid coordinate")
-    if "TRIS_PORTFOLIO_FILE" in settings:
-        portfolio_path = Path(settings["TRIS_PORTFOLIO_FILE"])
-        if not portfolio_path.is_absolute() or portfolio_path.suffix.lower() != ".json":
-            raise ValueError("TRIS_PORTFOLIO_FILE must be an absolute JSON path")
-    if "TRIS_FITNESS_FILE" in settings:
-        fitness_path = Path(settings["TRIS_FITNESS_FILE"])
-        if not fitness_path.is_absolute() or fitness_path.suffix.lower() != ".json":
-            raise ValueError("TRIS_FITNESS_FILE must be an absolute JSON path")
-    if "TRIS_DIVIDENDS_FILE" in settings:
-        dividend_path = Path(settings["TRIS_DIVIDENDS_FILE"])
-        if not dividend_path.is_absolute() or dividend_path.suffix.lower() != ".json":
-            raise ValueError("TRIS_DIVIDENDS_FILE must be an absolute JSON path")
-    if "TRIS_AGENDA_FILE" in settings:
-        agenda_path = Path(settings["TRIS_AGENDA_FILE"])
-        if not agenda_path.is_absolute() or agenda_path.suffix.lower() != ".json":
-            raise ValueError("TRIS_AGENDA_FILE must be an absolute JSON path")
+    project = Path(__file__).resolve().parent.parent
+    for key in ("TRIS_PORTFOLIO_FILE", "TRIS_FITNESS_FILE",
+                "TRIS_DIVIDENDS_FILE", "TRIS_AGENDA_FILE"):
+        if key in settings:
+            private_path = Path(settings[key])
+            if not private_path.is_absolute() or private_path.suffix.lower() != ".json":
+                raise ValueError(key + " must be an absolute JSON path")
+            resolved = private_path.resolve()
+            if resolved == project or project in resolved.parents:
+                raise ValueError(key + " must be outside the repository")
     if "TRIS_QUOTE_SYMBOLS" in settings:
         from backend.quotes import quote_symbols
         settings["TRIS_QUOTE_SYMBOLS"] = ",".join(quote_symbols(settings["TRIS_QUOTE_SYMBOLS"]))

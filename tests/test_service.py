@@ -76,3 +76,38 @@ def test_coordinates_reject_non_finite_values(tmp_path):
             read_public_settings(file)
     file.write_text(json.dumps({"TRIS_LATITUDE": 37.56, "TRIS_LONGITUDE": 126.97}))
     assert read_public_settings(file)["TRIS_LATITUDE"] == "37.56"
+
+
+def test_private_files_are_rejected_inside_repository(tmp_path):
+    import json
+    import pytest
+    from macos.service import read_public_settings
+    project = Path(__file__).resolve().parent.parent
+    settings = tmp_path / "settings.json"
+    for key in ("TRIS_PORTFOLIO_FILE", "TRIS_FITNESS_FILE",
+                "TRIS_DIVIDENDS_FILE", "TRIS_AGENDA_FILE"):
+        settings.write_text(json.dumps({key: str(project / "private-data.json")}))
+        with pytest.raises(ValueError, match="outside the repository"):
+            read_public_settings(settings)
+
+
+def test_private_file_symlink_into_repo_is_rejected(tmp_path):
+    import json
+    import pytest
+    from macos.service import read_public_settings
+    project = Path(__file__).resolve().parent.parent
+    alias = tmp_path / "private.json"
+    alias.symlink_to(project / "frontend" / "private.json")
+    settings = tmp_path / "settings.json"
+    settings.write_text(json.dumps({"TRIS_FITNESS_FILE": str(alias)}))
+    with pytest.raises(ValueError, match="outside the repository"):
+        read_public_settings(settings)
+
+
+def test_private_file_outside_repo_remains_valid(tmp_path):
+    import json
+    from macos.service import read_public_settings
+    path = tmp_path / "portfolio.json"
+    config = tmp_path / "settings.json"
+    config.write_text(json.dumps({"TRIS_PORTFOLIO_FILE": str(path)}))
+    assert read_public_settings(config)["TRIS_PORTFOLIO_FILE"] == str(path)

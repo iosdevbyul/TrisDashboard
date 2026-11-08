@@ -453,3 +453,7 @@ Workout-inbox status now verifies the installed agent's expected label, fixed 15
 ### Non-finite location values
 
 Dashboard launchd settings now refuse invalid latitude/longitude values such as NaN and Infinity, even when those strings can be parsed as Python floating-point values. Only finite values in normal latitude/longitude ranges are accepted. This guards MacBook first-run deployment against malformed weather URLs and keeps the original settings file unchanged when validation fails.
+
+### Keep private data out of Git
+
+All four optional user-data settings (portfolio, fitness, dividends, agenda) now reject a local JSON path inside the public source repository, including a symbolic link pointing back into it. Files must be absolute paths under a private location outside the repository. This is a precaution against accidental commits, not a substitute for disk encryption or a complete privacy audit.
