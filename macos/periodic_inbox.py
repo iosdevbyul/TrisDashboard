@@ -159,9 +159,19 @@ def inspect(home: Path) -> dict:
     try:
         payload = plistlib.loads(agent.read_bytes())
         arguments = payload["ProgramArguments"]
-        if (not isinstance(arguments, list) or len(arguments) not in (8, 10)
+        if (not isinstance(payload, dict) or payload.get("Label") != LABEL
+                or payload.get("RunAtLoad") is not True
+                or type(payload.get("StartInterval")) is not int
+                or payload["StartInterval"] != INTERVAL_SECONDS
+                or not isinstance(payload.get("WorkingDirectory"), str)
+                or not isinstance(arguments, list) or len(arguments) not in (8, 10)
                 or arguments[1:4] != ["-m", "macos.periodic_inbox", "run-once"]
                 or arguments[4] != "--directory" or arguments[6] != "--output"
+                or not isinstance(arguments[0], str)
+                or not Path(arguments[0]).is_absolute()
+                or not arguments[0].endswith("/.venv/bin/python")
+                or not Path(payload["WorkingDirectory"]).is_absolute()
+                or str(Path(payload["WorkingDirectory"]) / ".venv" / "bin" / "python") != arguments[0]
                 or not isinstance(arguments[5], str)
                 or not isinstance(arguments[7], str)):
             return result

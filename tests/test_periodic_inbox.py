@@ -229,3 +229,41 @@ def test_status_broken_symlink_is_safe(tmp_path):
     file.parent.mkdir(parents=True)
     file.symlink_to(tmp_path / "missing-target.json")
     assert read_run_state(tmp_path) == {"last_run_known": False}
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda config: config.update(Label="unexpected.agent"),
+    lambda config: config.update(StartInterval=0),
+    lambda config: config.update(StartInterval=True),
+    lambda config: config.update(RunAtLoad=False),
+    lambda config: config["ProgramArguments"].__setitem__(0, "/bin/sh"),
+    lambda config: config.update(WorkingDirectory="/other/directory"),
+])
+def test_inbox_status_rejects_incorrect_launchagent_contract(tmp_path, mutation):
+    from macos.periodic_inbox import inspect, agent_path
+    home = tmp_path / "Home"
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    config = agent_config(tmp_path / "repo", home, inbox,
+                          tmp_path / "private" / "fitness.json")
+    mutation(config)
+    agent = agent_path(home)
+    agent.parent.mkdir(parents=True)
+    agent.write_bytes(plistlib.dumps(config))
+    state = inspect(home)
+    assert state["installed"] is True
+    assert state["configuration_valid"] is False
+    assert "private" not in str(state)
+
+
+def test_inbox_status_accepts_original_exact_agent_configuration(tmp_path):
+    from macos.periodic_inbox import inspect, agent_path
+    home = tmp_path / "Home"
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    config = agent_config(tmp_path / "repo", home, inbox,
+                          tmp_path / "private" / "fitness.json")
+    agent = agent_path(home)
+    agent.parent.mkdir(parents=True)
+    agent.write_bytes(plistlib.dumps(config))
+    assert inspect(home)["configuration_valid"] is True

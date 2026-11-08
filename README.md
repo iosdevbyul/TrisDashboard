@@ -445,3 +445,7 @@ The diagnostic command now treats a status record as unknown when its timestamp 
 ## Offline WakTrainer-to-dashboard end-to-end contract check
 
 Run `.venv/bin/python -m macos.workout_bridge_check --json` on a MacBook to exercise the entire **synthetic** WakTrainer schema-v2 file pipeline. The check builds two overlapping exports in a temporary directory, previews them, imports with `Asia/Seoul` calendar dates, verifies the persisted stable workout ID and dashboard fitness totals, and confirms a repeated import is a no-op. It deletes the temporary files and reports only pass/fail booleans and counts. No real fitness files, iPhone devices, Apple health permissions, external network or paid subscriptions are used. The same test is part of CI; it is **not proof of physical AirDrop, iOS share-sheet or Safari-9 device behavior**.
+
+### Validate complete workout LaunchAgent configuration
+
+Workout-inbox status now verifies the installed agent's expected label, fixed 15-minute interval, `RunAtLoad`, Python executable under the configured virtual environment and matching working directory. A file whose settings were altered or corrupted no longer appears as a correctly configured scheduler merely because it names the expected import command. The check inspects the plist only; actual launchd process execution still requires MacBook operational acceptance.
