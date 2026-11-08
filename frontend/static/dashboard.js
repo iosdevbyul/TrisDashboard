@@ -130,6 +130,8 @@
         if (rows[i].outdated) { outdated++; }
         line.textContent = rows[i].symbol + " · " + rows[i].price + " " + rows[i].currency +
           " · " + rows[i].reported_at_utc.replace("T", " ").slice(0, 16) + " UTC" +
+          (typeof rows[i].age_hours === "number" && isFinite(rows[i].age_hours) && rows[i].age_hours >= 0 ?
+            " · " + rows[i].age_hours + "h old" : "") +
           (rows[i].outdated ? " · OUTDATED" : "");
       } else {
         line.textContent = rows[i].symbol + " · Quote unavailable";
