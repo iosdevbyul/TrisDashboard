@@ -38,3 +38,11 @@ def test_invalid_later_allowlist_rule_never_grants_access():
 
 def test_valid_later_rule_still_matches():
     assert allowed_client("192.168.1.42", "127.0.0.1,192.168.1.0/24")
+
+
+def test_invalid_allowlist_types_fail_closed():
+    for policy in (123, ["127.0.0.1"]):
+        assert allowed_client("127.0.0.1", policy) is False
+    for value in (None, 123, ["127.0.0.1"]):
+        with pytest.raises(ValueError, match="Invalid client allowlist"):
+            validate_allowlist(value)
