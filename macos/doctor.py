@@ -13,7 +13,12 @@ from macos.secure_launch import credential_status
 def probe_server(url: str = "http://127.0.0.1:8080/healthz") -> bool:
     try:
         with urlopen(url, timeout=2) as response:
-            return response.status == 200 and json.load(response) == {"status": "ok"}
+            if response.status != 200:
+                return False
+            data = response.read(513)
+            if len(data) > 512:
+                return False
+            return json.loads(data) == {"status": "ok"}
     except (OSError, ValueError, URLError):
         return False
 
