@@ -238,3 +238,27 @@ def test_import_rejects_symlink_sidecar_lock(tmp_path):
     with pytest.raises((OSError, ValueError)):
         import_export(source, tmp_path / "history.json")
     assert victim.read_text() == "unrelated file"
+
+
+def test_utc_waktrainer_export_can_use_seoul_calendar_day(tmp_path):
+    source = export(tmp_path, [{
+        "session_id": "late-evening", "started_at": "2026-11-07T16:30:00Z",
+        "activity_type": "walking", "duration_seconds": 1200
+    }], version=2)
+    assert parse_export(source)["workouts"][0]["date"] == "2026-11-07"
+    assert parse_export(source, timezone_name="Asia/Seoul")["workouts"][0]["date"] == "2026-11-08"
+    target = tmp_path / "history.json"
+    result = import_export(source, target, timezone_name="Asia/Seoul")
+    assert result["added"] == 1
+    assert json.loads(target.read_text())["workouts"][0]["date"] == "2026-11-08"
+
+
+def test_unknown_import_timezone_rejected_without_output(tmp_path):
+    source = export(tmp_path, [{
+        "session_id": "fail-zone", "started_at": "2026-11-07T16:30:00Z",
+        "activity_type": "walking", "duration_seconds": 1200
+    }], version=2)
+    target = tmp_path / "fitness.json"
+    with pytest.raises(ValueError, match="timezone"):
+        import_export(source, target, dry_run=True, timezone_name="Mars/Phobos")
+    assert not target.exists()

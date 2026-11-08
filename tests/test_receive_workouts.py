@@ -111,3 +111,16 @@ def test_many_overlapping_exports_only_count_unique_sessions(tmp_path):
     assert result["duplicates"] == 400
     assert len(json.loads(output.read_text())["workouts"]) == 200
     assert receive(inbox, output, apply=True)["new"] == 0
+
+
+def test_received_utc_exports_use_explicit_seoul_calendar_date(tmp_path):
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    source = write_export(inbox, "utc-date", "seoul-id")
+    payload = json.loads(source.read_text())
+    payload["sessions"][0]["started_at"] = "2026-11-07T16:30:00Z"
+    source.write_text(json.dumps(payload))
+    target = tmp_path / "fitness.json"
+    result = receive(inbox, target, apply=True, timezone_name="Asia/Seoul")
+    assert result["new"] == 1
+    assert json.loads(target.read_text())["workouts"][0]["date"] == "2026-11-08"

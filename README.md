@@ -359,3 +359,14 @@ WakTrainer exports complete history snapshots, so two or more shared JSON files 
 ## Check the automatic workout inbox without exposing personal data
 
 Run `.venv/bin/python -m macos.periodic_inbox status` to see whether the optional per-user workout inbox LaunchAgent is installed, whether its configured folder is accessible, the number of matching shared JSON files, and whether the inbox has exceeded the 50-file limit. This is a **configuration and file-count inspection only**, not proof that launchd is currently executing or that all exports are valid. The summary intentionally omits workout names, file paths, profile details and access credentials. No scheduler is installed or modified by this status command.
+
+## Choose workout calendar timezone at import
+
+WakTrainer's iOS export records workout start times in UTC. If your local calendar day differs from UTC (for example an evening workout in Seoul), pass the **same optional IANA timezone** through preview and import:
+
+```sh
+.venv/bin/python -m macos.receive_workouts --directory ~/Downloads --output ~/tris-private/fitness.json --timezone Asia/Seoul
+.venv/bin/python -m macos.receive_workouts --directory ~/Downloads --output ~/tris-private/fitness.json --timezone Asia/Seoul --apply
+```
+
+The `macos.import_waktrainer` and `macos.preview_workouts` commands also accept `--timezone`. With no flag, the original ISO timestamp's own date is preserved for backwards compatibility. Use a consistent timezone for future imports: changing it after previous imports may cause correctly detected stable-ID conflicts, requiring deliberate migration rather than silent history rewrites. No changes to workout UTC timestamps or device settings are made.

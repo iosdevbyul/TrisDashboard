@@ -45,3 +45,13 @@ def test_preview_rejects_same_id_different_workout(tmp_path):
     with pytest.raises(ValueError, match="Conflicting"):
         preview(source, target)
     assert target.read_bytes() == before
+
+
+def test_preview_timezone_matches_imported_calendar_day(tmp_path):
+    source = export(tmp_path, [session("seoul-evening")])
+    data = json.loads(source.read_text())
+    data["sessions"][0]["started_at"] = "2026-11-07T16:45:00Z"
+    source.write_text(json.dumps(data))
+    report = preview(source, tmp_path / "fitness.json", timezone_name="Asia/Seoul")
+    assert report["earliest_day"] == "2026-11-08"
+    assert report["latest_day"] == "2026-11-08"

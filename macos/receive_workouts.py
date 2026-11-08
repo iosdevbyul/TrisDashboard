@@ -15,7 +15,8 @@ PREFIX = "waktrainer-dashboard-"
 MAX_FILES = 50
 
 
-def receive(directory: Path, output: Path, *, apply: bool = False) -> dict:
+def receive(directory: Path, output: Path, *, apply: bool = False,
+            timezone_name: str | None = None) -> dict:
     directory = directory.expanduser().resolve()
     output = output.expanduser().resolve()
     if not directory.is_dir():
@@ -37,7 +38,7 @@ def receive(directory: Path, output: Path, *, apply: bool = False) -> dict:
         payload = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict) or type(payload.get("schema_version")) is not int or payload["schema_version"] != 2:
             raise ValueError("Inbox accepts only WakTrainer version 2 exports")
-        validated = parse_export(path)["workouts"]
+        validated = parse_export(path, timezone_name=timezone_name)["workouts"]
         # Each iOS share is a full snapshot. Repeated snapshots overlap heavily;
         # enforce the cap on unique sessions, not the sum of duplicate records.
         for session, item in zip(payload["sessions"], validated):
@@ -80,7 +81,7 @@ def receive(directory: Path, output: Path, *, apply: bool = False) -> dict:
         ) as handle:
             staged = Path(handle.name)
             json.dump({"schema_version": 2, "sessions": staged_sessions}, handle)
-        result = import_export(staged, output, merge=True)
+        result = import_export(staged, output, merge=True, timezone_name=timezone_name)
         summary["written"] = result["written"]
         return summary
     finally:
@@ -93,9 +94,12 @@ def main() -> None:
     parser.add_argument("--directory", type=Path, required=True, help="Mac inbox for shared JSON files")
     parser.add_argument("--output", type=Path, required=True, help="Private dashboard fitness JSON")
     parser.add_argument("--apply", action="store_true", help="Validate and merge into output; otherwise preview only")
+    parser.add_argument("--timezone", dest="timezone_name",
+                        help="Optional IANA timezone for workout calendar dates")
     args = parser.parse_args()
     try:
-        report = receive(args.directory, args.output, apply=args.apply)
+        report = receive(args.directory, args.output, apply=args.apply,
+                         timezone_name=args.timezone_name)
     except (OSError, ValueError, TypeError, KeyError):
         parser.exit(1, "Workout inbox validation failed; existing history was not intentionally replaced.\n")
     print(json.dumps(report, sort_keys=True))
