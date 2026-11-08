@@ -17,6 +17,9 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
     reference = today or date.today()
     start = reference - timedelta(days=6)
     weekly = []
+    daily = {(start + timedelta(days=index)).isoformat():
+             {"sessions": 0, "duration_minutes": 0, "distance_km": 0.0}
+             for index in range(7)}
     totals = {"sessions": 0, "minutes": 0, "distance_km": 0.0}
     seen_ids = set()
     stable_id_count = 0
@@ -53,12 +56,21 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             totals["sessions"] += 1
             totals["minutes"] += minutes
             totals["distance_km"] += distance
+            day_summary = daily[workout_day.isoformat()]
+            day_summary["sessions"] += 1
+            day_summary["duration_minutes"] += minutes
+            day_summary["distance_km"] += distance
+    for day_summary in daily.values():
+        day_summary["duration_minutes"] = round(day_summary["duration_minutes"], 1)
+        day_summary["distance_km"] = round(day_summary["distance_km"], 2)
     weekly.sort(key=lambda item: item["date"], reverse=True)
     return {"available": True, "configured": True, "source": "manual_export",
             "period_start": start.isoformat(), "period_end": reference.isoformat(),
             "summary": {"sessions": totals["sessions"], "duration_minutes": round(totals["minutes"], 1),
                         "distance_km": round(totals["distance_km"], 2)},
-            "recent": weekly[:5], "stale": False,
+            "recent": weekly[:5], "daily": [
+                {"date": day, **summary} for day, summary in sorted(daily.items())
+            ], "stale": False,
             "total_history_count": len(workouts),
             "stable_id_count": stable_id_count}
 
