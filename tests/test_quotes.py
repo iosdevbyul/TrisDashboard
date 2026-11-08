@@ -285,3 +285,25 @@ def test_cached_quotes_with_invalid_prices_cannot_become_fresh(price):
     updated = refresh_quote_freshness(payload, now)
     assert updated["quotes"][0]["outdated"] is True
     assert payload["quotes"][0]["outdated"] is False
+
+
+def test_quote_retry_cooldown_does_not_resurrect_expired_prices(monkeypatch):
+    integrations._cache.clear()
+    integrations._QUOTE_RETRY_AT.clear()
+    monkeypatch.setenv("TRIS_QUOTE_SYMBOLS", "JEPQ")
+    monkeypatch.setenv("TRIS_TWELVEDATA_API_KEY", "offline-test-key")
+    calls = []
+    def fetch(url, headers=None):
+        calls.append(url)
+        return sample()
+    monkeypatch.setattr(integrations, "get_json", fetch)
+    assert integrations.quotes()["available"]
+    key = next(k for k in integrations._cache if k.startswith("quotes:"))
+    integrations._cache[key]["time"] -= integrations.MAX_STALE_SECONDS + 5
+    integrations._QUOTE_RETRY_AT[key] = integrations.time.monotonic() + 300
+    blocked = integrations.quotes()
+    assert blocked["available"] is False
+    assert blocked["rate_limited_retry"] is True
+    assert len(calls) == 1
+    integrations._cache.clear()
+    integrations._QUOTE_RETRY_AT.clear()
