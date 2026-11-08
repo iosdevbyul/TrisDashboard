@@ -53,3 +53,29 @@ def test_stale_provider_cache_cannot_produce_actionable_holdings_value():
         "reported_at_utc": "2026-11-08T00:00:00+00:00", "outdated": False}]}
     assert quote_valuation(portfolio, quotes) == {
         "available": False, "reason": "provider-cache-stale"}
+
+
+def test_duplicate_market_quotes_cannot_override_one_another():
+    portfolio = {"available": True, "positions": [
+        {"symbol": "JEPQ", "currency": "USD", "quantity": "2"},
+        {"symbol": "SCHD", "currency": "USD", "quantity": "3"},
+    ]}
+    quotes = {"available": True, "quotes": [
+        {"symbol": "JEPQ", "currency": "USD", "price": "50", "reported_at_utc": "t"},
+        {"symbol": "JEPQ", "currency": "USD", "price": "500", "reported_at_utc": "t"},
+        {"symbol": "SCHD", "currency": "USD", "price": "10", "reported_at_utc": "t"},
+    ]}
+    result = quote_valuation(portfolio, quotes)
+    assert result["matched_count"] == 1
+    assert result["totals"] == {"USD": "30"}
+    assert result["partial"] is True
+
+
+def test_duplicate_only_market_quotes_produce_no_valuation():
+    portfolio = {"available": True, "positions": [
+        {"symbol": "JEPQ", "currency": "USD", "quantity": "2"}]}
+    quotes = {"available": True, "quotes": [
+        {"symbol": "JEPQ", "currency": "USD", "price": "50", "reported_at_utc": "t"},
+        {"symbol": "JEPQ", "currency": "USD", "price": "60", "reported_at_utc": "t"},
+    ]}
+    assert quote_valuation(portfolio, quotes)["available"] is False
