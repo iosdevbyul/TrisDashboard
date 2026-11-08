@@ -285,3 +285,10 @@ def test_weather_retains_current_conditions_if_optional_daily_is_malformed(monke
         "daily": None,
     })
     assert integrations.weather()["available"] is True
+
+
+def test_invalid_github_repository_configuration_is_unavailable(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_GITHUB_REPOS", "invalid,owner/space repo,")
+    monkeypatch.setattr(integrations, "get_json", lambda url: pytest.fail("unexpected GitHub request"))
+    assert integrations.github() == {"available": False, "configured": True, "stale": True}
