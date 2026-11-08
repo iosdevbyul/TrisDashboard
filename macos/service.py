@@ -48,7 +48,7 @@ def read_public_settings(path: Path) -> dict[str, str]:
         if not isinstance(value, (str, int, float)) or isinstance(value, bool):
             raise ValueError("Settings values must be strings or numbers")
         settings[key] = str(value)
-        if not settings[key] or len(settings[key]) > 300:
+        if not settings[key].strip() or len(settings[key]) > 300:
             raise ValueError("Settings value outside supported length")
     for key, minimum, maximum in (("TRIS_LATITUDE", -90, 90), ("TRIS_LONGITUDE", -180, 180)):
         if key in settings:
