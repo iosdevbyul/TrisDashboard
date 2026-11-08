@@ -272,3 +272,16 @@ def test_cached_quote_rejects_timezone_without_usable_offset():
     result = refresh_quote_freshness(payload)
     assert result["quotes"][0]["outdated"] is True
     assert payload["quotes"][0]["outdated"] is False
+
+
+@pytest.mark.parametrize("price", ["NaN", "Infinity", "-2", "0", True, None, "not-a-price"])
+def test_cached_quotes_with_invalid_prices_cannot_become_fresh(price):
+    from backend.quotes import refresh_quote_freshness
+    now = datetime(2026, 11, 8, 12, tzinfo=timezone.utc)
+    payload = {"available": True, "quotes": [{
+        "symbol": "JEPQ", "price": price,
+        "reported_at_utc": now.isoformat(), "outdated": False,
+    }]}
+    updated = refresh_quote_freshness(payload, now)
+    assert updated["quotes"][0]["outdated"] is True
+    assert payload["quotes"][0]["outdated"] is False
