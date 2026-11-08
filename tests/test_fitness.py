@@ -221,3 +221,15 @@ def test_average_distance_per_active_day_accounts_for_zero_distance_strength(tmp
     assert result["average_active_day_km"] == 3.0
     assert result["active_days"] == 2
     assert load_fitness(snapshot(tmp_path, []), today=date(2026, 11, 9))["average_active_day_km"] == 0.0
+
+
+def test_weekly_peak_activity_day_and_empty_week(tmp_path):
+    workouts = [
+        {"date":"2026-11-08","type":"Running","duration_minutes":30},
+        {"date":"2026-11-08","type":"Strength","duration_minutes":40},
+        {"date":"2026-11-09","type":"Walking","duration_minutes":25},
+        {"date":"2026-10-30","type":"Cycling","duration_minutes":120},
+    ]
+    data = load_fitness(snapshot(tmp_path, workouts), today=date(2026, 11, 9))
+    assert data["peak_active_day"] == {"date":"2026-11-08","duration_minutes":70}
+    assert load_fitness(snapshot(tmp_path, []), today=date(2026, 11, 9))["peak_active_day"] is None

@@ -97,6 +97,10 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
                           for kind, values in by_type.items()]
     activity_breakdown.sort(key=lambda entry: (-entry["duration_minutes"], entry["type"]))
     active_days = sum(1 for day in daily.values() if day["sessions"] > 0)
+    peak_day = max(daily.items(), key=lambda item: (item[1]["duration_minutes"], item[0]))
+    peak_active_day = {"date": peak_day[0], "duration_minutes": peak_day[1]["duration_minutes"]}
+    if not active_days:
+        peak_active_day = None
     average_active_day_minutes = round(totals["minutes"] / active_days, 1) if active_days else 0.0
     average_session_minutes = round(totals["minutes"] / totals["sessions"], 1) if totals["sessions"] else 0.0
     average_active_day_km = round(totals["distance_km"] / active_days, 2) if active_days else 0.0
@@ -118,6 +122,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "file_older_than_week": age_hours > 168,
             "period_start": start.isoformat(), "period_end": reference.isoformat(),
             "active_days": active_days,
+            "peak_active_day": peak_active_day,
             "average_active_day_minutes": average_active_day_minutes,
             "average_session_minutes": average_session_minutes,
             "average_active_day_km": average_active_day_km,

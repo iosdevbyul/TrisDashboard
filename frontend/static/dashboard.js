@@ -413,6 +413,13 @@
       (typeof info.active_days === "number" ? "Active " + info.active_days + "/7 days · " : "") +
       info.period_start + " to " + info.period_end;
     list.appendChild(total);
+    if (info.peak_active_day && typeof info.peak_active_day.duration_minutes === "number") {
+      var peakInfo = document.createElement("div");
+      peakInfo.className = "repo-row";
+      peakInfo.textContent = "Most active day (last 7): " + info.peak_active_day.date +
+        " · " + info.peak_active_day.duration_minutes + " min";
+      list.appendChild(peakInfo);
+    }
     if (typeof info.average_active_day_minutes === "number") {
       var averageLine = document.createElement("div");
       averageLine.className = "repo-row";
