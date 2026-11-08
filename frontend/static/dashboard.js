@@ -215,6 +215,18 @@
       sixMonth.textContent = "Confirmed last 6 months: " + sixMonthParts.join(" / ");
       list.appendChild(sixMonth);
     }
+    var observed = info.observed_monthly_average || {};
+    var observedCurrencies = Object.keys(observed);
+    if (observedCurrencies.length) {
+      var observedRow = document.createElement("div");
+      observedRow.className = "repo-row";
+      var observedParts = [];
+      for (var o = 0; o < observedCurrencies.length; o++) {
+        observedParts.push(observedCurrencies[o] + " " + observed[observedCurrencies[o]]);
+      }
+      observedRow.textContent = "Recorded monthly average (6 calendar months, current month partial): " + observedParts.join(" / ");
+      list.appendChild(observedRow);
+    }
     var history = info.history || [];
     for (var h = 0; h < history.length; h++) {
       var monthlyRow = document.createElement("div");
