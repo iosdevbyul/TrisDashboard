@@ -96,6 +96,8 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
                            "distance_km": round(values["distance_km"], 2)}
                           for kind, values in by_type.items()]
     activity_breakdown.sort(key=lambda entry: (-entry["duration_minutes"], entry["type"]))
+    for activity in activity_breakdown:
+        activity["session_share_percent"] = round(activity["sessions"] * 100 / totals["sessions"], 1) if totals["sessions"] else 0.0
     dominant_activity = dict(activity_breakdown[0]) if activity_breakdown else None
     active_days = sum(1 for day in daily.values() if day["sessions"] > 0)
     peak_day = max(daily.items(), key=lambda item: (item[1]["duration_minutes"], item[0]))
