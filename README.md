@@ -410,3 +410,7 @@ Run `.venv/bin/python -m macos.readiness --json` from the repository on your Mac
 ### Complete eight-source live smoke contract
 
 The MacBook's local smoke test now requires all **eight** dashboard source keys including optional `quotes`, rather than silently accepting a server that lacks the market-data card. Unconfigured quote sources remain valid when explicitly reported as unavailable. This adds a contract test only; it does not make a remote market-data request.
+
+### Twelve Data quote response contract
+
+The quote parser now has representative regression tests for the documented `/quote` response shape, including `symbol`, `currency`, `close`, `timestamp`, `datetime`, and optional `last_quote_at`. We distinguish the **bar timestamp** used for price freshness from the optional **last-minute quote timestamp**; the latter is kept as labeled metadata, never used to overstate real-time quality. Malformed, future, mismatched and provider-error values are rejected. This is an offline contract test, **not a successful live request** against an owner-supplied Twelve Data account.

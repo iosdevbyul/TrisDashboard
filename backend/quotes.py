@@ -1,5 +1,5 @@
 """Optional Twelve Data quote readings: source timestamp is NOT a real-time promise."""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlencode
 
@@ -36,6 +36,18 @@ def parse_quote(data: dict, expected_symbol: str, now: datetime | None = None) -
         raise ValueError("Malformed quote") from error
     current = now or datetime.now(timezone.utc)
     age_seconds = (current - reported_at).total_seconds()
+    # Twelve Data reports bar-open time in timestamp, while last_quote_at
+    # is the optional last-minute candle time. These are not interchangeable.
+    last_quote_at = None
+    if "last_quote_at" in data:
+        candidate = data["last_quote_at"]
+        if type(candidate) is int:
+            try:
+                observed = datetime.fromtimestamp(candidate, tz=timezone.utc)
+                if reported_at <= observed <= current + timedelta(minutes=10):
+                    last_quote_at = observed.isoformat()
+            except (ValueError, OverflowError, OSError):
+                pass
     if not value.is_finite() or value <= 0 or age_seconds < -600 or age_seconds > 365 * 86400:
         raise ValueError("Invalid quote price or timestamp")
     return {
@@ -43,6 +55,7 @@ def parse_quote(data: dict, expected_symbol: str, now: datetime | None = None) -
         "currency": currency,
         "price": str(value),
         "reported_at_utc": reported_at.isoformat(),
+        "last_quote_at_utc": last_quote_at,
         "age_hours": round(max(age_seconds, 0) / 3600, 1),
         "outdated": age_seconds > 72 * 3600,
         "provider": "Twelve Data",
