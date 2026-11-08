@@ -213,3 +213,18 @@ def test_backup_rejects_symlinked_directory(tmp_path):
     with pytest.raises(ValueError, match="symlink"):
         restore(settings, alias, force=True)
     assert holdings.exists() and agenda.exists()
+
+
+@pytest.mark.parametrize("created", ["not-a-date", "2026-11-08T08:00:00",
+                                      "2099-01-01T00:00:00+00:00", None])
+def test_backup_manifest_requires_valid_nonfuture_timezone_aware_timestamp(tmp_path, created):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    snapshot = tmp_path / "backup"
+    backup(settings, snapshot)
+    manifest_path = snapshot / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["created_utc"] = created
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="creation time"):
+        validate_backup(snapshot)
+    assert holdings.exists() and agenda.exists()
