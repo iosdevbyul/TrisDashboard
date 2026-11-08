@@ -143,3 +143,16 @@ def test_future_workout_rejected_before_weekly_summary(tmp_path):
     path = snapshot(tmp_path, [{"date": "2026-11-09", "type": "Running", "duration_minutes": 30}])
     with pytest.raises(ValueError, match="Future workout"):
         load_fitness(path, today=date(2026, 11, 8))
+
+
+def test_workout_active_days_count_unique_dates_not_sessions(tmp_path):
+    path = snapshot(tmp_path, [
+        {"date": "2026-11-08", "type": "Running", "duration_minutes": 20},
+        {"date": "2026-11-08", "type": "Strength", "duration_minutes": 40},
+        {"date": "2026-11-06", "type": "Walking", "duration_minutes": 10},
+        {"date": "2026-10-31", "type": "Cycling", "duration_minutes": 30},
+    ])
+    result = load_fitness(path, today=date(2026, 11, 8))
+    assert result["summary"]["sessions"] == 3
+    assert result["active_days"] == 2
+    assert len(result["daily"]) == 7
