@@ -82,3 +82,17 @@ def test_market_preflight_rejects_malformed_keychain_lookup_without_leaking(tmp_
         assert report["keychain_key_present"] is False
         assert report["ready_for_optional_api_test"] is False
         assert "private-key" not in str(report)
+
+
+import pytest
+
+
+@pytest.mark.parametrize("credential", [True, 123, ["secret"], {}, "  "])
+def test_market_preflight_rejects_noncredential_keychain_results(tmp_path, credential):
+    report = inspect_market(write_settings(tmp_path, TRIS_QUOTE_SYMBOLS="JEPQ"),
+                            lookup=lambda service: credential)
+    assert report["keychain_key_present"] is False
+    assert report["ready_for_optional_api_test"] is False
+    assert set(report) == {"settings_valid", "symbols_configured", "symbol_count",
+                           "keychain_key_present", "ready_for_optional_api_test",
+                           "network_requests"}
