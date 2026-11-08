@@ -88,3 +88,10 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .large-text .details,.large-text .repo-row,.large-text .agenda-row,.large-text .card small{font-size:16px;line-height:1.5}
 .large-text .glance-strip strong{font-size:18px}
 .large-text .workout-bar-row,.large-text .dividend-bar-row{font-size:14px}
+
+/* Higher contrast option without newer CSS features; usable in older Safari. */
+.high-contrast{background:#050505;color:#fff}
+.high-contrast .card,.high-contrast .glance-strip,.high-contrast .display-settings{background:#111;border-color:#ddd}
+.high-contrast .card h2,.high-contrast .card p,.high-contrast .details,.high-contrast .repo-row,.high-contrast .agenda-row,.high-contrast .card small,.high-contrast .glance-label,.high-contrast .glance-strip strong{color:#fff}
+.high-contrast button{border:1px solid #fff;color:#fff}
+.high-contrast a{color:#9bdbff;text-decoration:underline}
