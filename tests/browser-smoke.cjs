@@ -235,6 +235,17 @@ handlers["document:visibilitychange"]();
 assert.equal(byId("github-list").children.length, 1);
 response.github.repositories[0].repository = "owner/busy";
 
+// Recorded dividend history is charted separately by currency.
+response.dividends = {available:true,month:"2026-11",monthly_totals:{USD:"20"},
+  six_month_totals:{USD:"30"},history:[
+    {month:"2026-10",totals:{USD:"10"}},
+    {month:"2026-11",totals:{USD:"20"}}],recent:[]};
+handlers["document:visibilitychange"]();
+const dividendChart = byId("dividend-list").children.find((child) => child.className === "dividend-bars");
+assert.ok(dividendChart);
+assert.equal(dividendChart.children[1].children[1].children[0].style.width, "50%");
+assert.equal(dividendChart.children[2].children[1].children[0].style.width, "100%");
+
 // Trello glance summary separates actionable work from completed cards.
 response.trello = { available: true, lists: [
   { name: "Next", count: 3, cards: [] },
