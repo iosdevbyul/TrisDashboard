@@ -10,6 +10,7 @@ from pathlib import Path
 
 from macos.periodic_workout import safe_path, require_macos
 from macos.receive_workouts import receive, PREFIX, MAX_FILES
+from macos.import_waktrainer import validated_timezone
 
 LABEL = "ai.tris.dashboard.waktrainer-inbox"
 INTERVAL_SECONDS = 900
@@ -33,14 +34,16 @@ def private_inbox(value: Path) -> Path:
     return resolved
 
 
-def agent_config(project: Path, home: Path, directory: Path, output: Path) -> dict:
+def agent_config(project: Path, home: Path, directory: Path, output: Path,
+                 timezone_name: str | None = None) -> dict:
+    validated_timezone(timezone_name)
     return {
         "Label": LABEL,
         "ProgramArguments": [
             str(project / ".venv" / "bin" / "python"), "-m",
             "macos.periodic_inbox", "run-once", "--directory",
             str(directory), "--output", str(output),
-        ],
+        ] + (["--timezone", timezone_name] if timezone_name is not None else []),
         "WorkingDirectory": str(project),
         "RunAtLoad": True,
         "StartInterval": INTERVAL_SECONDS,
@@ -49,8 +52,10 @@ def agent_config(project: Path, home: Path, directory: Path, output: Path) -> di
     }
 
 
-def install(project: Path, home: Path, directory: Path, output: Path) -> None:
+def install(project: Path, home: Path, directory: Path, output: Path,
+            timezone_name: str | None = None) -> None:
     require_macos()
+    validated_timezone(timezone_name)
     directory = private_inbox(directory)
     output = safe_path(output)
     if output.parent == directory and output.name.startswith("waktrainer-dashboard-"):
@@ -62,7 +67,7 @@ def install(project: Path, home: Path, directory: Path, output: Path) -> None:
         raise ValueError("Inbox LaunchAgent already installed")
     agent.parent.mkdir(parents=True, exist_ok=True)
     (home / "Library" / "Logs" / "TrisDashboard").mkdir(parents=True, exist_ok=True)
-    agent.write_bytes(plistlib.dumps(agent_config(project, home, directory, output)))
+    agent.write_bytes(plistlib.dumps(agent_config(project, home, directory, output, timezone_name=timezone_name)))
     try:
         subprocess.run(["launchctl", "bootstrap", "gui/" + str(os.getuid()), str(agent)], check=True)
     except Exception:
@@ -83,19 +88,25 @@ def inspect(home: Path) -> dict:
     agent = agent_path(home)
     result = {"installed": False, "configuration_valid": False,
               "inbox_available": False, "candidate_files": 0,
-              "over_file_limit": False, "output_configured": False}
+              "over_file_limit": False, "output_configured": False,
+              "timezone_configured": False}
     if not agent.is_file() or agent.is_symlink() or agent.stat().st_size > 16 * 1024:
         return result
     result["installed"] = True
     try:
         payload = plistlib.loads(agent.read_bytes())
         arguments = payload["ProgramArguments"]
-        if (not isinstance(arguments, list) or len(arguments) != 8
+        if (not isinstance(arguments, list) or len(arguments) not in (8, 10)
                 or arguments[1:4] != ["-m", "macos.periodic_inbox", "run-once"]
                 or arguments[4] != "--directory" or arguments[6] != "--output"
                 or not isinstance(arguments[5], str)
                 or not isinstance(arguments[7], str)):
             return result
+        if len(arguments) == 10:
+            if arguments[8] != "--timezone" or not isinstance(arguments[9], str):
+                return result
+            validated_timezone(arguments[9])
+            result["timezone_configured"] = True
         directory = private_inbox(Path(arguments[5]))
         output = safe_path(Path(arguments[7]))
         if output.parent == directory and output.name.startswith(PREFIX):
@@ -116,26 +127,31 @@ def main() -> None:
     parser.add_argument("command", choices=("install", "uninstall", "run-once", "status"))
     parser.add_argument("--directory", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--timezone", dest="timezone_name",
+                        help="IANA calendar timezone for UTC WakTrainer exports")
     args = parser.parse_args()
     try:
         project, home = Path(__file__).resolve().parent.parent, Path.home()
         if args.command == "status":
-            if args.directory or args.output:
+            if args.directory or args.output or args.timezone_name:
                 raise ValueError("Status has no file arguments")
             print(json.dumps(inspect(home), sort_keys=True))
         elif args.command == "uninstall":
-            if args.directory or args.output:
+            if args.directory or args.output or args.timezone_name:
                 raise ValueError("Uninstall has no file arguments")
             uninstall(home)
         else:
             if args.directory is None or args.output is None:
                 raise ValueError("Inbox directory and output are required")
             directory, output = private_inbox(args.directory), safe_path(args.output)
+            validated_timezone(args.timezone_name)
             if args.command == "install":
-                install(project, home, directory, output)
+                install(project, home, directory, output,
+                        timezone_name=args.timezone_name)
             else:
                 # Runs only after explicit install or user invocation; no iPhone polling.
-                receive(directory, output, apply=True)
+                receive(directory, output, apply=True,
+                        timezone_name=args.timezone_name)
     except (OSError, ValueError, RuntimeError, TypeError, subprocess.CalledProcessError):
         parser.exit(1, "Inbox scheduler failed: check permissions and private paths.\n")
 

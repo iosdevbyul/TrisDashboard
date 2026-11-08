@@ -109,3 +109,54 @@ def test_inbox_status_identifies_overfull_folder(tmp_path):
     status = inspect(home)
     assert status["candidate_files"] == MAX_FILES + 1
     assert status["over_file_limit"]
+
+
+def test_scheduled_inbox_preserves_explicit_iana_timezone(tmp_path):
+    from macos.periodic_inbox import inspect, agent_path
+    home = tmp_path / "Home"
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    output = tmp_path / "private" / "fitness.json"
+    config = agent_config(tmp_path / "repo", home, inbox, output,
+                          timezone_name="Asia/Seoul")
+    assert config["ProgramArguments"][-2:] == ["--timezone", "Asia/Seoul"]
+    agent = agent_path(home)
+    agent.parent.mkdir(parents=True)
+    agent.write_bytes(plistlib.dumps(config))
+    status = inspect(home)
+    assert status["configuration_valid"] is True
+    assert status["timezone_configured"] is True
+    assert str(inbox) not in str(status)
+
+
+def test_scheduled_inbox_rejects_invalid_timezone(tmp_path):
+    from macos.periodic_inbox import inspect, agent_path
+    home = tmp_path / "Home"
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    output = tmp_path / "private" / "fitness.json"
+    with pytest.raises(ValueError, match="timezone"):
+        agent_config(tmp_path / "repo", home, inbox, output,
+                     timezone_name="Mars/Phobos")
+    config = agent_config(tmp_path / "repo", home, inbox, output)
+    config["ProgramArguments"].extend(["--timezone", "Mars/Phobos"])
+    agent = agent_path(home)
+    agent.parent.mkdir(parents=True)
+    agent.write_bytes(plistlib.dumps(config))
+    status = inspect(home)
+    assert status["configuration_valid"] is False
+
+
+def test_legacy_inbox_agent_without_timezone_remains_valid(tmp_path):
+    from macos.periodic_inbox import inspect, agent_path
+    home = tmp_path / "Home"
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    agent = agent_path(home)
+    agent.parent.mkdir(parents=True)
+    agent.write_bytes(plistlib.dumps(agent_config(
+        tmp_path / "repo", home, inbox, tmp_path / "private" / "fitness.json"
+    )))
+    status = inspect(home)
+    assert status["configuration_valid"] is True
+    assert status["timezone_configured"] is False

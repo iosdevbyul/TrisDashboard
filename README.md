@@ -370,3 +370,14 @@ WakTrainer's iOS export records workout start times in UTC. If your local calend
 ```
 
 The `macos.import_waktrainer` and `macos.preview_workouts` commands also accept `--timezone`. With no flag, the original ISO timestamp's own date is preserved for backwards compatibility. Use a consistent timezone for future imports: changing it after previous imports may cause correctly detected stable-ID conflicts, requiring deliberate migration rather than silent history rewrites. No changes to workout UTC timestamps or device settings are made.
+
+## Timezone-aware scheduled WakTrainer inbox
+
+The optional MacBook inbox LaunchAgent can apply the same calendar timezone as manual import. Set it when you explicitly install the agent:
+
+```sh
+.venv/bin/python -m macos.periodic_inbox install --directory ~/Downloads --output ~/tris-private/fitness.json --timezone Asia/Seoul
+.venv/bin/python -m macos.periodic_inbox status
+```
+
+The timezone name is a non-secret IANA identifier stored in the per-user launchd arguments. Existing installations without a timezone continue to work unchanged. To change an installed agent's timezone, first uninstall and then reinstall it with the desired flag; changing a timezone after data has been imported can yield stable-ID date conflicts that must be handled deliberately. The status command validates the configured timezone without disclosing private file paths or workouts. This does not run an iOS background synchronization service.
