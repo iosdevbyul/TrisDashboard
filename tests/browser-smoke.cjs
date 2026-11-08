@@ -153,6 +153,15 @@ assert.match(byId("portfolio-quote-values").textContent, /Not guaranteed live/);
 assert.match(byId("glance-sources").textContent, /4\/8 ready/);
 assert.match(byId("data-refresh-state").textContent, /succeeded/i);
 
+// A 20-result GitHub API page is only a lower bound, not an exact PR count.
+response.github = { available: true, repositories: [{
+  repository: "owner/busy", available: true, open_pr_count: 20,
+  open_pr_count_truncated: true, open_prs: [], latest_ci: null
+}] };
+handlers["document:visibilitychange"]();
+assert.match(byId("github-summary").textContent, /20\+ known open PRs/);
+assert.match(byId("github-list").children[0].textContent, /20\+ open PRs/);
+
 // Invalid response JSON must not erase the previous successful market display.
 overviewBody = "{invalid-json";
 handlers["document:visibilitychange"]();
