@@ -189,3 +189,18 @@ def test_inbox_validates_the_same_file_bytes_it_imports(tmp_path, monkeypatch):
     assert report["new"] == 1
     assert len(seen) == 1
     assert b"id-one" in seen[0]
+
+
+def test_inbox_rejects_symlink_output_before_preview_or_apply(tmp_path):
+    inbox = tmp_path / "inbox"
+    inbox.mkdir()
+    real = tmp_path / "private.json"
+    real.write_text('{"workouts": []}')
+    alias = tmp_path / "linked.json"
+    alias.symlink_to(real)
+    original = real.read_bytes()
+    with pytest.raises(ValueError, match="symlink"):
+        receive(inbox, alias)
+    with pytest.raises(ValueError, match="symlink"):
+        receive(inbox, alias, apply=True)
+    assert real.read_bytes() == original

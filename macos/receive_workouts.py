@@ -21,7 +21,10 @@ def receive(directory: Path, output: Path, *, apply: bool = False,
     if directory.is_symlink():
         raise ValueError("Workout inbox must not be a symlink")
     directory = directory.resolve()
-    output = output.expanduser().resolve()
+    output = output.expanduser()
+    if output.is_symlink():
+        raise ValueError("Workout output must not be a symlink")
+    output = output.resolve()
     if not directory.is_dir():
         raise ValueError("Workout inbox directory is missing")
     if output.parent == directory and output.name.startswith(PREFIX) and output.suffix.lower() == ".json":
