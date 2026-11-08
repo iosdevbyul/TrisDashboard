@@ -124,6 +124,12 @@ assert.match(byId("glance-sources").textContent, /2\/8 ready/);
 assert.equal(byId("server-uptime").textContent, "30m online");
 assert.ok(byId("panel-visibility").children.length >= 8);
 
+handlers["settings-button:click"].call(byId("settings-button"));
+assert.equal(byId("display-settings").hidden, false);
+handlers["document:keydown"]({keyCode: 27});
+assert.equal(byId("display-settings").hidden, true);
+assert.equal(byId("settings-button").attributes["aria-expanded"], "false");
+
 handlers["focus-panels:click"]();
 assert.equal(byId("panel-weather").hidden, true);
 assert.equal(byId("panel-portfolio").hidden, false);
