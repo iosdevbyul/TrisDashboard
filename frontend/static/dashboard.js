@@ -335,7 +335,9 @@
       " · Next " + (nextIn === 0 ? "today" : nextIn === 1 ? "tomorrow" : "in " + nextIn + " days") : "";
     var todayCount = typeof info.today_event_count === "number" ?
       " · " + info.today_event_count + " today" : "";
-    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + nextLabel);
+    var tomorrowCount = typeof info.tomorrow_event_count === "number" ?
+      " · " + info.tomorrow_event_count + " tomorrow" : "";
+    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + nextLabel);
     var events = info.events || [];
     var todayDate = info.window_start;
     var tomorrowDate = "";
