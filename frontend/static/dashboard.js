@@ -461,6 +461,13 @@
         " consecutive active days · Through today " + (info.ongoing_streak_days || 0) + " days";
       list.appendChild(streak);
     }
+    if (info.dominant_activity && typeof info.dominant_activity.type === "string") {
+      var dominant = document.createElement("div");
+      dominant.className = "repo-row";
+      dominant.textContent = "Most time spent on · " + info.dominant_activity.type +
+        " · " + info.dominant_activity.duration_minutes + " min (last 7 days)";
+      list.appendChild(dominant);
+    }
     var activities = info.activity_breakdown || [];
     for (var a = 0; a < activities.length; a++) {
       var activityLine = document.createElement("div");
