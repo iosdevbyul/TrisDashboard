@@ -461,3 +461,7 @@ All four optional user-data settings (portfolio, fitness, dividends, agenda) now
 ### Unambiguous launch settings JSON
 
 The MacBook settings reader now refuses duplicate JSON object keys and non-standard non-finite JSON literals (NaN, Infinity) before installing a dashboard login agent. This prevents the JSON parser from silently taking the last value for a duplicated field. Existing valid settings and the non-secret allowlist are unchanged.
+
+### Virtual environment required for Mac deployment readiness
+
+The combined `macos.readiness` check now requires both Python 3.11+ and the project's created `.venv/bin/python`. Previously a supported system Python could make a MacBook appear deployment-ready even with no installed virtual environment. The report exposes `venv_ready` and returns the non-sensitive `venv` unmet-requirement identifier until `scripts/setup-mac.sh` has created the environment. Optional workout inbox and LAN server settings stay opt-in.

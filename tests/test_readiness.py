@@ -19,7 +19,7 @@ def test_unified_readiness_reports_optional_components_without_false_failure(tmp
     result = readiness(tmp_path, tmp_path, mac_check=mac_ok,
                        inbox_check=inbox_missing)
     assert result["summary"] == {
-        "python_ready": True, "server_reachable": False,
+        "python_ready": True, "venv_ready": True, "server_reachable": False,
         "settings_ready": True, "inbox_agent_installed": False,
         "inbox_last_run_known": False,
         "deployment_ready": True,
@@ -104,3 +104,21 @@ def test_strict_mode_only_exposes_safe_failure_identifiers(tmp_path):
                        require_recent_inbox=True)
     assert report["summary"]["unmet_requirements"] == ["inbox-last-run"]
     assert "private" not in str(report["summary"]).lower()
+
+
+def test_missing_virtual_environment_is_not_ready_even_with_supported_python(tmp_path):
+    def mac_without_venv(project, home):
+        return dict(mac_ok(project, home), venv_created=False)
+    result = readiness(tmp_path, tmp_path, mac_check=mac_without_venv,
+                       inbox_check=inbox_missing)
+    assert result["summary"]["python_ready"] is True
+    assert result["summary"]["venv_ready"] is False
+    assert result["summary"]["deployment_ready"] is False
+    assert result["summary"]["unmet_requirements"] == ["venv"]
+
+
+def test_healthy_virtual_environment_passes_base_readiness(tmp_path):
+    result = readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                       inbox_check=inbox_missing)
+    assert result["summary"]["venv_ready"] is True
+    assert result["summary"]["deployment_ready"] is True
