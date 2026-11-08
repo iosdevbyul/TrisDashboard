@@ -310,6 +310,7 @@
     }
     var repos = info.repositories || [];
     var total = 0;
+    var truncated = false;
     for (var i = 0; i < repos.length; i++) {
       if (!repos[i].available) {
         var failed = document.createElement("div");
@@ -319,6 +320,7 @@
         continue;
       }
       total += repos[i].open_pr_count;
+      if (repos[i].open_pr_count_truncated) { truncated = true; }
       var row = document.createElement("div");
       row.className = "repo-row";
       var ci = repos[i].latest_ci;
@@ -345,7 +347,7 @@
         }
       }
     }
-    text("github-summary", total + (info.partial ? "+ known open PRs" : " open PRs"));
+    text("github-summary", total + (info.partial || truncated ? "+ known open PRs" : " open PRs"));
     text("github-updated", statusText(info));
   }
 
