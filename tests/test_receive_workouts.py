@@ -204,3 +204,17 @@ def test_inbox_rejects_symlink_output_before_preview_or_apply(tmp_path):
     with pytest.raises(ValueError, match="symlink"):
         receive(inbox, alias, apply=True)
     assert real.read_bytes() == original
+
+
+def test_existing_workout_validation_uses_inbox_timezone(tmp_path, monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from macos import receive_workouts as receiver
+    directory = tmp_path / "inbox"
+    directory.mkdir()
+    output = tmp_path / "fitness.json"
+    output.write_text('{"workouts":[]}')
+    checked = []
+    monkeypatch.setattr(receiver, "load_fitness", lambda path, today=None: checked.append(today))
+    assert receiver.receive(directory, output, timezone_name="Asia/Seoul")["new"] == 0
+    assert checked == [datetime.now(ZoneInfo("Asia/Seoul")).date()]
