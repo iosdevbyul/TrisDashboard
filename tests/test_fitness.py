@@ -108,3 +108,24 @@ def test_fitness_file_freshness_does_not_infer_last_workout(tmp_path):
     data = load_fitness(path, today=date(2026, 11, 8))
     assert data["file_older_than_week"] is False
     assert data["summary"]["sessions"] == 0
+
+
+@pytest.mark.parametrize("bad_date", ["20261108", "2026-11-8", "2026-02-30", "２０２６-11-08", 20261108])
+def test_reject_invalid_workout_date(tmp_path, bad_date):
+    path = snapshot(tmp_path, [{"date": bad_date, "type": "Running", "duration_minutes": 30}])
+    with pytest.raises(ValueError):
+        load_fitness(path, today=date(2026, 11, 8))
+
+
+def test_reject_ambiguous_workout_json_keys(tmp_path):
+    path = tmp_path / "fitness.json"
+    path.write_text('{"workouts":[{"date":"2026-11-08","type":"Running","type":"Cycling","duration_minutes":30}]}')
+    with pytest.raises(ValueError, match="Duplicate"):
+        load_fitness(path, today=date(2026, 11, 8))
+
+
+def test_reject_non_ascii_session_id(tmp_path):
+    path = snapshot(tmp_path, [{"date":"2026-11-08", "type":"Running",
+                                "duration_minutes":30, "session_id":"ｓｅｓｓｉｏｎ"}])
+    with pytest.raises(ValueError):
+        load_fitness(path, today=date(2026, 11, 8))
