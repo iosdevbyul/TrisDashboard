@@ -89,6 +89,14 @@
     }
     apply(); store();
   });
+  document.getElementById("minimal-panels").addEventListener("click", function () {
+    var minimal = ["weather", "agenda", "server"];
+    settings.hidden = [];
+    for (var i = 0; i < panelNames.length; i++) {
+      if (minimal.indexOf(panelNames[i]) === -1) { settings.hidden.push(panelNames[i]); }
+    }
+    apply(); store();
+  });
   document.getElementById("show-all-panels").addEventListener("click", function () {
     settings.hidden = [];
     apply(); store();
