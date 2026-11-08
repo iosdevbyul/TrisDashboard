@@ -15,6 +15,8 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
             continue
         if not quote.get("symbol") or quote.get("currency") not in ("USD", "KRW"):
             continue
+        if not isinstance(quote.get("reported_at_utc"), str) or not quote["reported_at_utc"]:
+            continue
         key = (quote["symbol"], quote["currency"])
         if key in latest:
             ambiguous.add(key)
