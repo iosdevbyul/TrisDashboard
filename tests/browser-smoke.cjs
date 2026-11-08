@@ -185,6 +185,10 @@ response.valuation = {
 };
 retry.callback();
 assert.equal(byId("quotes-summary").textContent, "1/1 quotes reported");
+response.quotes.quotes[0].outdated = true;
+handlers["document:visibilitychange"]();
+assert.match(byId("quotes-summary").textContent, /1 outdated/);
+response.quotes.quotes[0].outdated = false;
 assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
 assert.match(byId("portfolio-quote-values").textContent, /Not guaranteed live/);
 assert.match(byId("glance-sources").textContent, /4\/8 ready/);
