@@ -5,7 +5,7 @@ import json
 import os
 import shutil
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from macos.preflight import FILE_LOADERS
@@ -113,6 +113,17 @@ def validate_backup(directory: Path) -> dict:
                           parse_constant=_reject_manifest_constant)
     if not isinstance(manifest, dict) or type(manifest.get("version")) is not int or manifest["version"] != 1:
         raise ValueError("Unsupported backup manifest")
+    created_raw = manifest.get("created_utc")
+    if not isinstance(created_raw, str):
+        raise ValueError("Invalid backup creation time")
+    try:
+        created = datetime.fromisoformat(created_raw)
+        if created.tzinfo is None or created.utcoffset() is None:
+            raise ValueError("Missing backup creation timezone")
+        if created > datetime.now(timezone.utc) + timedelta(minutes=10):
+            raise ValueError("Future backup creation time")
+    except (ValueError, TypeError, OverflowError) as error:
+        raise ValueError("Invalid backup creation time") from error
     entries = manifest.get("files")
     if not isinstance(entries, dict) or not entries:
         raise ValueError("Backup manifest is empty")
