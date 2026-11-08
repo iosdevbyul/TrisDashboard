@@ -138,9 +138,9 @@ def test_dividends_group_confirmed_last_six_months_by_symbol_and_currency(tmp_pa
     ])
     result = load_dividends(source, today=date(2026, 11, 9))
     assert result["six_month_by_symbol"] == [
-        {"symbol":"KR","currency":"KRW","amount":"1000"},
-        {"symbol":"JEPQ","currency":"USD","amount":"15.75"},
-        {"symbol":"QQQI","currency":"USD","amount":"3"},
+        {"symbol":"KR","currency":"KRW","amount":"1000","currency_share_percent":"100.0"},
+        {"symbol":"JEPQ","currency":"USD","amount":"15.75","currency_share_percent":"84.0"},
+        {"symbol":"QQQI","currency":"USD","amount":"3","currency_share_percent":"16.0"},
     ]
 
 
