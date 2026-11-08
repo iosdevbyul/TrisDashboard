@@ -6,7 +6,7 @@ import math
 import os
 import stat
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -102,8 +102,10 @@ def parse_export(path: Path, *, timezone_name: str | None = None) -> dict:
         if not isinstance(started, str) or kind not in TYPES:
             raise ValueError("Invalid activity or time")
         timestamp = datetime.fromisoformat(started.replace("Z", "+00:00"))
-        if timestamp.tzinfo is None:
+        if timestamp.tzinfo is None or timestamp.utcoffset() is None:
             raise ValueError("Workout time requires a timezone")
+        if timestamp.astimezone(timezone.utc) > datetime.now(timezone.utc) + timedelta(minutes=10):
+            raise ValueError("Future workout session is not allowed")
         if (isinstance(seconds, bool) or not isinstance(seconds, (int, float))
                 or isinstance(meters, bool) or not isinstance(meters, (int, float))
                 or not math.isfinite(seconds) or not math.isfinite(meters)
