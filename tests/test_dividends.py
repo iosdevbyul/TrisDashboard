@@ -153,3 +153,16 @@ def test_dividend_symbol_share_is_calculated_within_each_currency(tmp_path):
     value = load_dividends(source, today=date(2026, 11, 9))
     assert [(item["symbol"], item["currency_share_percent"]) for item in value["six_month_by_symbol"]] == [
         ("KR","100.0"), ("JEPQ","75.0"), ("QQQI","25.0")]
+
+
+def test_completed_month_average_excludes_partial_current_month(tmp_path):
+    source = snapshot(tmp_path, [
+        {"symbol":"JEPQ","paid_on":"2026-11-01","currency":"USD","amount":"100"},
+        {"symbol":"JEPQ","paid_on":"2026-10-01","currency":"USD","amount":"10"},
+        {"symbol":"QQQI","paid_on":"2026-08-01","currency":"USD","amount":"15"},
+        {"symbol":"KR","paid_on":"2026-07-01","currency":"KRW","amount":"500"},
+    ])
+    data = load_dividends(source, today=date(2026, 11, 9))
+    assert data["completed_month_average"] == {"KRW":"100.00","USD":"5.00"}
+    assert data["observed_monthly_average"]["USD"] == "20.83"
+    assert load_dividends(snapshot(tmp_path, []), today=date(2026, 11, 9))["completed_month_average"] == {}

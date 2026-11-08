@@ -246,6 +246,18 @@
       observedRow.textContent = "Recorded monthly average (6 calendar months, current month partial): " + observedParts.join(" / ");
       list.appendChild(observedRow);
     }
+    var completed = info.completed_month_average || {};
+    var completedCurrencies = Object.keys(completed);
+    if (completedCurrencies.length) {
+      var completedLine = document.createElement("div");
+      completedLine.className = "repo-row";
+      var completedParts = [];
+      for (var ci = 0; ci < completedCurrencies.length; ci++) {
+        completedParts.push(completedCurrencies[ci] + " " + completed[completedCurrencies[ci]]);
+      }
+      completedLine.textContent = "Average of last 5 completed calendar months: " + completedParts.join(" / ");
+      list.appendChild(completedLine);
+    }
     var symbolTotals = info.six_month_by_symbol || [];
     if (symbolTotals.length) {
       var symbolHeading = document.createElement("div");
