@@ -122,6 +122,10 @@ assert.match(byId("weather-details").textContent, /Wind 12 km\/h/);
 assert.equal(byId("connection").textContent, "Server online");
 assert.match(byId("glance-sources").textContent, /2\/8 ready/);
 assert.equal(byId("server-uptime").textContent, "30m online");
+response.server.uptime_seconds = null;
+handlers["document:visibilitychange"]();
+assert.equal(byId("server-uptime").textContent, "Uptime unavailable");
+response.server.uptime_seconds = 1800;
 assert.ok(byId("panel-visibility").children.length >= 8);
 
 handlers["focus-panels:click"]();
