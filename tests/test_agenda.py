@@ -75,3 +75,19 @@ def test_reject_nonstandard_json_numeric_constant_anywhere(tmp_path, constant):
 def test_reject_invalid_agenda_reference_date(tmp_path, reference):
     with pytest.raises(ValueError, match="Invalid agenda reference date"):
         load_agenda(file_with(tmp_path, []), today=reference)
+
+
+def test_agenda_next_event_countdown_uses_local_calendar_dates(tmp_path):
+    import json
+    from datetime import date
+    from backend.agenda import load_agenda
+    path = tmp_path / "agenda.json"
+    path.write_text(json.dumps({"events": [
+        {"date": "2026-11-12", "title": "Later"},
+        {"date": "2026-11-09", "title": "Tomorrow"},
+        {"date": "2026-10-01", "title": "Old"}
+    ]}))
+    result = load_agenda(path, today=date(2026, 11, 8))
+    assert result["next_event_in_days"] == 1
+    path.write_text('{"events":[]}')
+    assert load_agenda(path, today=date(2026, 11, 8))["next_event_in_days"] is None
