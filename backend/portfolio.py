@@ -57,6 +57,7 @@ def load_portfolio(path: Path) -> dict:
     quality = snapshot_quality(parsed)
     positions = []
     totals = {}
+    seen_positions = set()
     for item in data["positions"]:
         if not isinstance(item, dict):
             raise ValueError("Invalid position")
@@ -65,6 +66,10 @@ def load_portfolio(path: Path) -> dict:
             raise ValueError("Invalid ticker")
         if currency not in CURRENCIES:
             raise ValueError("Unsupported currency")
+        key = (symbol, currency)
+        if key in seen_positions:
+            raise ValueError("Duplicate portfolio holding")
+        seen_positions.add(key)
         quantity = nonnegative(item.get("quantity"), "quantity")
         price = item.get("price")
         value = None
