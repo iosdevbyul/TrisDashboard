@@ -469,3 +469,7 @@ The combined `macos.readiness` check now requires both Python 3.11+ and the proj
 ### Safe cleanup after launchd bootstrap failures
 
 If `launchctl bootstrap` fails during dashboard or workout scheduler installation, the installer now attempts to remove **only its own newly created** LaunchAgent plist. It compares device/inode identity before cleanup, so a file that another process replaced in the meantime is not intentionally deleted. As with other filesystem operations, this is a best-effort race mitigation, not an atomic OS transaction. LaunchAgent files remain owner-only and cannot be silently overwritten.
+
+### Backup manifest validation before restore
+
+Offline restore now rejects oversized or symlinked manifests, malformed sizes/checksums (including booleans masquerading as numeric sizes), and individual backup files exceeding the documented size limit **before decoding their content**. The check runs for previews and explicit restores; failing validation leaves configured private data unmodified. Restores remain best-effort multi-file operations with rollback, rather than atomic power-loss transactions.

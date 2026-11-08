@@ -13,6 +13,7 @@ from macos.service import read_public_settings
 
 MANIFEST = "manifest.json"
 MAX_FILE_BYTES = 128 * 1024
+MAX_MANIFEST_BYTES = 16 * 1024
 
 
 def digest(content: bytes) -> str:
@@ -69,8 +70,12 @@ def backup(settings_file: Path, destination: Path) -> dict:
 
 def validate_backup(directory: Path) -> dict:
     directory = directory.expanduser().resolve()
-    manifest = json.loads((directory / MANIFEST).read_text(encoding="utf-8"))
-    if not isinstance(manifest, dict) or manifest.get("version") != 1:
+    manifest_path = directory / MANIFEST
+    if (manifest_path.is_symlink() or not manifest_path.is_file()
+            or manifest_path.stat().st_size > MAX_MANIFEST_BYTES):
+        raise ValueError("Invalid backup manifest file")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict) or type(manifest.get("version")) is not int or manifest["version"] != 1:
         raise ValueError("Unsupported backup manifest")
     entries = manifest.get("files")
     if not isinstance(entries, dict) or not entries:
@@ -78,10 +83,18 @@ def validate_backup(directory: Path) -> dict:
     if any(name not in FILE_LOADERS for name in entries):
         raise ValueError("Unknown backup file")
     for name, metadata in entries.items():
+        if (not isinstance(metadata, dict)
+                or type(metadata.get("bytes")) is not int
+                or not 0 <= metadata["bytes"] <= MAX_FILE_BYTES
+                or not isinstance(metadata.get("sha256"), str)
+                or len(metadata["sha256"]) != 64
+                or any(c not in "0123456789abcdef" for c in metadata["sha256"])):
+            raise ValueError("Invalid backup metadata")
         path = directory / (name + ".json")
-        if path.is_symlink():
-            raise ValueError("Backup file cannot be a symlink")
-        content = path.read_bytes()
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_FILE_BYTES:
+            raise ValueError("Invalid backup file")
+        with path.open("rb") as stream:
+            content = stream.read(MAX_FILE_BYTES + 1)
         if (len(content) > MAX_FILE_BYTES or len(content) != metadata["bytes"]
                 or digest(content) != metadata["sha256"]):
             raise ValueError("Backup data checksum mismatch")
