@@ -37,7 +37,7 @@ def test_invalid_date(tmp_path, bad_date):
         load_agenda(file, today=date(2026, 11, 8))
 
 
-@pytest.mark.parametrize("title", ["Bad\\nline", "Zero\\x00byte", "Delete\\x7fchar", "  "])
+@pytest.mark.parametrize("title", ["Bad" + chr(10) + "line", "Zero" + chr(0) + "byte", "Delete" + chr(127) + "char", "  "])
 def test_reject_control_characters_and_blank_titles(tmp_path, title):
     file = file_with(tmp_path, [{"date": "2026-11-09", "title": title}])
     with pytest.raises(ValueError):
