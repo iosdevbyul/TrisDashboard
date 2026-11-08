@@ -138,7 +138,18 @@ def test_dividends_group_confirmed_last_six_months_by_symbol_and_currency(tmp_pa
     ])
     result = load_dividends(source, today=date(2026, 11, 9))
     assert result["six_month_by_symbol"] == [
-        {"symbol":"KR","currency":"KRW","amount":"1000"},
-        {"symbol":"JEPQ","currency":"USD","amount":"15.75"},
-        {"symbol":"QQQI","currency":"USD","amount":"3"},
+        {"symbol":"KR","currency":"KRW","amount":"1000","currency_share_percent":"100.0"},
+        {"symbol":"JEPQ","currency":"USD","amount":"15.75","currency_share_percent":"84.0"},
+        {"symbol":"QQQI","currency":"USD","amount":"3","currency_share_percent":"16.0"},
     ]
+
+
+def test_dividend_symbol_share_is_calculated_within_each_currency(tmp_path):
+    source = snapshot(tmp_path, [
+        {"symbol":"JEPQ","currency":"USD","amount":"15","paid_on":"2026-11-01"},
+        {"symbol":"QQQI","currency":"USD","amount":"5","paid_on":"2026-11-02"},
+        {"symbol":"KR","currency":"KRW","amount":"1000","paid_on":"2026-10-02"},
+    ])
+    value = load_dividends(source, today=date(2026, 11, 9))
+    assert [(item["symbol"], item["currency_share_percent"]) for item in value["six_month_by_symbol"]] == [
+        ("KR","100.0"), ("JEPQ","75.0"), ("QQQI","25.0")]
