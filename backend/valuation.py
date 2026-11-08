@@ -6,6 +6,8 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
         return {"available": False, "reason": "portfolio-unavailable"}
     if not quotes.get("available"):
         return {"available": False, "reason": "quotes-unavailable"}
+    if quotes.get("stale"):
+        return {"available": False, "reason": "provider-cache-stale"}
     latest = {}
     for quote in quotes.get("quotes", []):
         if not isinstance(quote, dict) or quote.get("outdated") or not quote.get("price"):

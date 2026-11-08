@@ -70,3 +70,27 @@ def test_cached_quote_invalid_timestamp_is_not_trusted():
     original = {"available": True, "quotes": [{
         "symbol": "JEPQ", "price": "52", "reported_at_utc": "not-a-time", "outdated": False}]}
     assert refresh_quote_freshness(original)["quotes"][0]["outdated"] is True
+
+
+def test_all_failed_quotes_raise_so_outage_is_not_cached():
+    from backend.quotes import load_quotes
+    with pytest.raises(ValueError, match="no usable prices"):
+        load_quotes(["JEPQ"], "placeholder", lambda url, headers=None: {
+            "status": "error", "message": "not entitled"
+        })
+
+
+def test_provider_outage_preserves_old_cache_as_stale(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_QUOTE_SYMBOLS", "JEPQ")
+    monkeypatch.setenv("TRIS_TWELVEDATA_API_KEY", "private-test")
+    monkeypatch.setattr(integrations, "get_json", lambda url, headers=None: sample())
+    initial = integrations.quotes()
+    assert initial["available"] and initial["stale"] is False
+    # Force cache refresh without sleeping.
+    key = next(k for k in integrations._cache if k.startswith("quotes:"))
+    integrations._cache[key]["time"] -= 1801
+    monkeypatch.setattr(integrations, "get_json", lambda url, headers=None: {"status": "error"})
+    fallback = integrations.quotes()
+    assert fallback["available"] and fallback["stale"] is True
+    assert "private-test" not in str(fallback)

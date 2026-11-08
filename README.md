@@ -294,3 +294,7 @@ The Node.js fake-browser CI now exercises overview API HTTP failure, bounded ret
 ### Quote timestamp freshness during caching
 
 Each served quote re-evaluates the provider's original UTC timestamp against the current server time, even when the market response was loaded from the 30-minute cache. A stale quote cannot silently remain eligible for price-derived valuations simply because its cached `outdated` value was once false. Stored provider data is not modified by this check. The API remains optional and source-stamped; no paid market-data access is presumed.
+
+### Market-data outage isolation
+
+When **all** requested market symbols return unusable/error results, the failed response is not cached for a full 30 minutes. If a prior successful response exists, it may be shown as explicitly stale reference information; however **stale provider-cache results cannot be used for quote-based portfolio valuation**, regardless of the embedded quote timestamp. A partly failed batch still reports individual unavailable symbols and partial coverage. No new market data is fabricated during an outage.

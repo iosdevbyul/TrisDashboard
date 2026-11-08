@@ -43,3 +43,13 @@ def test_absent_market_provider_keeps_manual_snapshot_separate():
     portfolio = {"available": True, "positions": [{"symbol": "A", "currency": "USD", "quantity": "2"}]}
     assert quote_valuation(portfolio, {"available": False}) == {
         "available": False, "reason": "quotes-unavailable"}
+
+
+def test_stale_provider_cache_cannot_produce_actionable_holdings_value():
+    portfolio = {"available": True, "positions": [
+        {"symbol": "JEPQ", "currency": "USD", "quantity": "10"}]}
+    quotes = {"available": True, "stale": True, "quotes": [{
+        "symbol": "JEPQ", "currency": "USD", "price": "60",
+        "reported_at_utc": "2026-11-08T00:00:00+00:00", "outdated": False}]}
+    assert quote_valuation(portfolio, quotes) == {
+        "available": False, "reason": "provider-cache-stale"}
