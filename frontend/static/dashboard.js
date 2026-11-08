@@ -15,6 +15,7 @@
   var overviewSequence = 0;
   var overviewRetryTimer = null;
   var consecutiveOverviewFailures = 0;
+  var lastSuccessfulOverview = null;
 
   function pad(number) { return number < 10 ? "0" + number : String(number); }
   function text(id, value) { document.getElementById(id).textContent = String(value); }
@@ -414,7 +415,9 @@
   function retryOverview() {
     consecutiveOverviewFailures += 1;
     text("glance-updated", "Refresh failed · retry scheduled");
-    text("data-refresh-state", "Data refresh failed. Last successful values retained.");
+    text("data-refresh-state", "Data refresh failed. " +
+      (lastSuccessfulOverview ? "Last successful update at " + lastSuccessfulOverview + "." :
+       "No successful update yet."));
     clearOverviewRetry();
     // A bounded backoff prevents hammering an unavailable MacBook.
     var delays = [30000, 60000, 120000, 180000];
@@ -441,7 +444,9 @@
           throw new Error("Unexpected overview response");
         }
         consecutiveOverviewFailures = 0;
-        text("data-refresh-state", "Last overview refresh succeeded.");
+        var refreshedAt = new Date();
+        lastSuccessfulOverview = pad(refreshedAt.getHours()) + ":" + pad(refreshedAt.getMinutes());
+        text("data-refresh-state", "Last overview refresh succeeded at " + lastSuccessfulOverview + ".");
         showGithub(payload.github);
         showWeather(payload.weather);
         showTrello(payload.trello);
