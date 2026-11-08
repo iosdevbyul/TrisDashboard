@@ -101,3 +101,13 @@ def test_today_event_count_uses_full_source_not_preview_limit(tmp_path):
     assert data["upcoming_count"] == 11
     assert len(data["events"]) == 8
     assert load_agenda(file_with(tmp_path, []), today=date(2026, 11, 8))["today_event_count"] == 0
+
+
+def test_tomorrow_count_handles_month_boundary_and_preview_limit(tmp_path):
+    data = load_agenda(file_with(tmp_path, [
+        {"date": "2026-12-01", "title": "Tomorrow " + str(i)} for i in range(10)
+    ] + [{"date": "2026-11-30", "title": "Today"}]), today=date(2026, 11, 30))
+    assert data["today_event_count"] == 1
+    assert data["tomorrow_event_count"] == 10
+    assert data["upcoming_count"] == 11
+    assert len(data["events"]) == 8
