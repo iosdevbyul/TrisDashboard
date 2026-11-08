@@ -99,6 +99,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
     active_days = sum(1 for day in daily.values() if day["sessions"] > 0)
     average_active_day_minutes = round(totals["minutes"] / active_days, 1) if active_days else 0.0
     average_session_minutes = round(totals["minutes"] / totals["sessions"], 1) if totals["sessions"] else 0.0
+    average_active_day_km = round(totals["distance_km"] / active_days, 2) if active_days else 0.0
     longest_streak = 0
     current_streak = 0
     for day in daily.values():
@@ -119,6 +120,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "active_days": active_days,
             "average_active_day_minutes": average_active_day_minutes,
             "average_session_minutes": average_session_minutes,
+            "average_active_day_km": average_active_day_km,
             "longest_streak_days": longest_streak,
             "ongoing_streak_days": ongoing_streak,
             "activity_breakdown": activity_breakdown,
