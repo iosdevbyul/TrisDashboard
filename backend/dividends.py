@@ -42,6 +42,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     history = {month_key: {} for month_key in months}
     recent = []
     by_symbol = {}
+    symbol_paid_months = {}
     for entry in entries:
         if not isinstance(entry, dict):
             raise ValueError("Invalid payment")
@@ -63,6 +64,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         if paid_month in history:
             symbol_key = (ticker, currency)
             by_symbol[symbol_key] = by_symbol.get(symbol_key, Decimal("0")) + amount
+            symbol_paid_months.setdefault(symbol_key, set()).add(paid_month)
             monthly = history[paid_month]
             monthly[currency] = monthly.get(currency, Decimal("0")) + amount
         recent.append({"symbol": ticker, "currency": currency, "paid_on": paid_on.isoformat(), "amount": str(amount)})
@@ -106,6 +108,10 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             "completed_month_average": complete_month_average,
             "best_completed_months": best_completed_months,
             "completed_month_change": completed_change,
+            "six_month_payment_months": [
+                {"symbol": symbol, "currency": currency, "paid_months": len(months_paid)}
+                for (symbol, currency), months_paid in sorted(symbol_paid_months.items())
+            ],
             "six_month_by_symbol": [
                 {"symbol": symbol, "currency": currency, "amount": str(amount),
                  "currency_share_percent": str((amount * Decimal(100) / history_totals[currency]).quantize(
