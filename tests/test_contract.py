@@ -60,3 +60,12 @@ def test_display_settings_has_explicit_close_control_for_touch_devices():
     assert 'id="close-display-settings"' in html
     assert 'getElementById("close-display-settings").addEventListener("click"' in js
     assert 'setAttribute("aria-expanded", "false")' in js
+
+
+def test_hide_all_panels_control_is_wired_and_reversible():
+    html = client.get("/").text
+    js = client.get("/static/preferences.js").text
+    assert 'id="hide-all-panels"' in html
+    assert 'getElementById("hide-all-panels").addEventListener("click"' in js
+    assert "settings.hidden = panelNames.slice(0)" in js
+    assert 'id="show-all-panels"' in html
