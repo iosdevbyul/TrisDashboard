@@ -185,3 +185,18 @@ def test_backup_copy_failure_removes_incomplete_directory(tmp_path, monkeypatch)
         module.backup(settings, destination)
     assert not destination.exists()
     assert holdings.is_file() and agenda.is_file()
+
+
+@pytest.mark.parametrize("raw", [
+    '{"version":1,"version":2,"files":{}}',
+    '{"version":1,"files":{"portfolio":{"sha256":"x","bytes":1,"bytes":2}}}',
+    '{"version":1,"files":{},"metadata":NaN}',
+])
+def test_backup_manifest_rejects_duplicate_or_nonstandard_json(tmp_path, raw):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    snapshot = tmp_path / "snapshot"
+    backup(settings, snapshot)
+    (snapshot / "manifest.json").write_text(raw)
+    with pytest.raises(ValueError):
+        validate_backup(snapshot)
+    assert holdings.exists() and agenda.exists()

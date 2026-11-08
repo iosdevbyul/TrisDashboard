@@ -86,13 +86,28 @@ def backup(settings_file: Path, destination: Path) -> dict:
     return {"backed_up": len(originals), "created": True}
 
 
+def _unique_manifest_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate backup manifest key")
+        result[key] = value
+    return result
+
+
+def _reject_manifest_constant(value):
+    raise ValueError("Non-standard backup manifest constant")
+
+
 def validate_backup(directory: Path) -> dict:
     directory = directory.expanduser().resolve()
     manifest_path = directory / MANIFEST
     if (manifest_path.is_symlink() or not manifest_path.is_file()
             or manifest_path.stat().st_size > MAX_MANIFEST_BYTES):
         raise ValueError("Invalid backup manifest file")
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"),
+                          object_pairs_hook=_unique_manifest_keys,
+                          parse_constant=_reject_manifest_constant)
     if not isinstance(manifest, dict) or type(manifest.get("version")) is not int or manifest["version"] != 1:
         raise ValueError("Unsupported backup manifest")
     entries = manifest.get("files")
