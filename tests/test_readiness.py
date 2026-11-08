@@ -122,3 +122,14 @@ def test_healthy_virtual_environment_passes_base_readiness(tmp_path):
                        inbox_check=inbox_missing)
     assert result["summary"]["venv_ready"] is True
     assert result["summary"]["deployment_ready"] is True
+
+
+import pytest
+from datetime import datetime, timezone
+
+
+@pytest.mark.parametrize("clock", [datetime(2026, 11, 8), "2026-11-08", True])
+def test_readiness_rejects_naive_or_invalid_reference_clock(tmp_path, clock):
+    with pytest.raises(ValueError, match="timezone-aware"):
+        readiness(tmp_path, tmp_path, mac_check=mac_ok,
+                  inbox_check=inbox_missing, require_recent_inbox=True, now=clock)
