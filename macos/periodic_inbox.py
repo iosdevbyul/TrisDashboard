@@ -67,7 +67,9 @@ def read_run_state(home: Path) -> dict:
         if (stamp - datetime.now(timezone.utc)).total_seconds() > 300:
             return {"last_run_known": False}
         added = data.get("new_workouts")
-        if data["success"] and (type(added) is not int or not 0 <= added <= 500):
+        files = data.get("candidate_files")
+        if data["success"] and (type(files) is not int or not 0 <= files <= MAX_FILES
+                                or type(added) is not int or not 0 <= added <= 500):
             return {"last_run_known": False}
         return {"last_run_known": True,
                 "last_run_success": data["success"],

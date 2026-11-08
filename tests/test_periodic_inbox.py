@@ -267,3 +267,14 @@ def test_inbox_status_accepts_original_exact_agent_configuration(tmp_path):
     agent.parent.mkdir(parents=True)
     agent.write_bytes(plistlib.dumps(config))
     assert inspect(home)["configuration_valid"] is True
+
+
+@pytest.mark.parametrize("files", [-1, True, "2", 999999])
+def test_inbox_state_rejects_invalid_candidate_counts(tmp_path, files):
+    from datetime import datetime, timezone
+    from macos.periodic_inbox import state_path, read_run_state
+    path = state_path(tmp_path)
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps({"checked_at_utc": datetime.now(timezone.utc).isoformat(),
+                                "success": True, "candidate_files": files, "new_workouts": 1}))
+    assert read_run_state(tmp_path) == {"last_run_known": False}
