@@ -441,3 +441,7 @@ New dashboard, scheduled workout, and AirDrop inbox LaunchAgent plists are now c
 ### Validate inbox status timestamps before declaring success
 
 The diagnostic command now treats a status record as unknown when its timestamp has no timezone, lies more than five minutes in the future, or its successful import count is not a bounded integer. Missing/broken status files are also handled without exposing file paths or exception text. This prevents malformed status files from accidentally satisfying strict operational checks; it is not proof that launchd executed on a physical Mac.
+
+## Offline WakTrainer-to-dashboard end-to-end contract check
+
+Run `.venv/bin/python -m macos.workout_bridge_check --json` on a MacBook to exercise the entire **synthetic** WakTrainer schema-v2 file pipeline. The check builds two overlapping exports in a temporary directory, previews them, imports with `Asia/Seoul` calendar dates, verifies the persisted stable workout ID and dashboard fitness totals, and confirms a repeated import is a no-op. It deletes the temporary files and reports only pass/fail booleans and counts. No real fitness files, iPhone devices, Apple health permissions, external network or paid subscriptions are used. The same test is part of CI; it is **not proof of physical AirDrop, iOS share-sheet or Safari-9 device behavior**.
