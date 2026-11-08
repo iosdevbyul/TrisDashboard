@@ -52,9 +52,12 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
         if reference <= day <= end:
             upcoming.append({"date": day.isoformat(), "time": when, "title": title.strip()})
     upcoming.sort(key=lambda event: (event["date"], event["time"]))
+    next_event_days = ((date.fromisoformat(upcoming[0]["date"]) - reference).days
+                       if upcoming else None)
     return {"available": True, "configured": True, "source": "manual_local_calendar",
             "window_start": reference.isoformat(), "window_end": end.isoformat(),
-            "upcoming_count": len(upcoming), "events": upcoming[:8], "stale": False}
+            "upcoming_count": len(upcoming), "next_event_in_days": next_event_days,
+            "events": upcoming[:8], "stale": False}
 
 
 def agenda() -> dict:
