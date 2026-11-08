@@ -105,3 +105,47 @@ def test_restore_dry_run_also_validates_schema(tmp_path):
     manifest_path.write_text(json.dumps(manifest))
     with pytest.raises((ValueError, KeyError)):
         restore(settings, snapshot)
+
+
+@pytest.mark.parametrize("metadata", [
+    {"bytes": True, "sha256": "a" * 64},
+    {"bytes": -1, "sha256": "a" * 64},
+    {"bytes": 200000, "sha256": "a" * 64},
+    {"bytes": 5, "sha256": "INVALID"},
+    {"bytes": "12", "sha256": "a" * 64},
+    {},
+])
+def test_restore_rejects_malformed_manifest_metadata(tmp_path, metadata):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    snapshot = tmp_path / "backup"
+    backup(settings, snapshot)
+    previous = holdings.read_bytes()
+    manifest = snapshot / "manifest.json"
+    payload = json.loads(manifest.read_text())
+    payload["files"]["portfolio"] = metadata
+    manifest.write_text(json.dumps(payload))
+    with pytest.raises(ValueError, match="metadata"):
+        restore(settings, snapshot, force=True)
+    assert holdings.read_bytes() == previous
+
+
+def test_restore_rejects_manifest_symlink(tmp_path):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    snapshot = tmp_path / "backup"
+    backup(settings, snapshot)
+    manifest = snapshot / "manifest.json"
+    original = snapshot / "actual.json"
+    manifest.replace(original)
+    manifest.symlink_to(original)
+    with pytest.raises(ValueError, match="manifest"):
+        restore(settings, snapshot, force=True)
+
+
+def test_restore_rejects_large_manifest_without_decoding(tmp_path):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    snapshot = tmp_path / "backup"
+    backup(settings, snapshot)
+    manifest = snapshot / "manifest.json"
+    manifest.write_bytes(b" " * (16 * 1024 + 1))
+    with pytest.raises(ValueError, match="manifest"):
+        restore(settings, snapshot, force=True)
