@@ -209,12 +209,14 @@ assert.match(byId("data-refresh-state").textContent, /succeeded at \d\d:\d\d/i);
 response.fitness = {
   available: true, summary: {sessions: 2, duration_minutes: 50, distance_km: 5},
   active_days: 2, total_history_count: 48,
+  file_updated_utc: "2026-11-09T01:00:00+00:00",
   period_start: "2026-11-02", period_end: "2026-11-08",
   daily: [{date: "2026-11-07", sessions: 1, duration_minutes: 30, distance_km: 3},
           {date: "2026-11-08", sessions: 1, duration_minutes: 60, distance_km: 2}], recent: []
 };
 handlers["document:visibilitychange"]();
 assert.match(byId("fitness-updated").textContent, /48 total recorded sessions/);
+assert.match(byId("fitness-updated").textContent, /Local file updated/);
 assert.match(byId("fitness-summary").textContent, /2 sessions/);
 const bars = byId("fitness-list").children.find((child) => child.className === "workout-bars");
 assert.ok(bars);
