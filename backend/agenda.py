@@ -54,6 +54,7 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
     upcoming.sort(key=lambda event: (event["date"], event["time"]))
     seven_day_end = (reference + timedelta(days=6)).isoformat()
     next_seven_days_count = sum(1 for event in upcoming if event["date"] <= seven_day_end)
+    next_seven_busy_days = len({event["date"] for event in upcoming if event["date"] <= seven_day_end})
     today_event_count = sum(1 for event in upcoming if event["date"] == reference.isoformat())
     tomorrow_event_count = sum(1 for event in upcoming if event["date"] == (reference + timedelta(days=1)).isoformat())
     next_event_days = ((date.fromisoformat(upcoming[0]["date"]) - reference).days
@@ -64,6 +65,7 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
             "upcoming_count": len(upcoming), "today_event_count": today_event_count,
             "tomorrow_event_count": tomorrow_event_count,
             "next_seven_days_count": next_seven_days_count,
+            "next_seven_busy_days": next_seven_busy_days,
             "next_event_in_days": next_event_days,
             "next_event": next_event,
             "events": upcoming[:8], "stale": False}

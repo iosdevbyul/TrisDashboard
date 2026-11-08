@@ -387,9 +387,11 @@
       " · " + info.today_event_count + " today" : "";
     var tomorrowCount = typeof info.tomorrow_event_count === "number" ?
       " · " + info.tomorrow_event_count + " tomorrow" : "";
+    var busyDays = typeof info.next_seven_busy_days === "number" ?
+      " · " + info.next_seven_busy_days + " busy days" : "";
     var weekCount = typeof info.next_seven_days_count === "number" ?
       " · " + info.next_seven_days_count + " in next 7 days" : "";
-    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + nextLabel);
+    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + nextLabel);
     if (info.next_event && typeof info.next_event.title === "string") {
       var nextRow = document.createElement("div");
       nextRow.className = "repo-row";

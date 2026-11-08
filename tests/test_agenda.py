@@ -135,3 +135,16 @@ def test_next_event_preview_is_chronologically_earliest(tmp_path):
     result = load_agenda(source, today=date(2026, 11, 9))
     assert result["next_event"] == {"date":"2026-11-09","time":"","title":"Today"}
     assert load_agenda(file_with(tmp_path, []), today=date(2026, 11, 9))["next_event"] is None
+
+
+def test_seven_day_busy_days_count_unique_dates_not_events(tmp_path):
+    source = file_with(tmp_path, [
+        {"date":"2026-11-09","title":"Morning","time":"09:00"},
+        {"date":"2026-11-09","title":"Evening","time":"18:00"},
+        {"date":"2026-11-11","title":"Meeting"},
+        {"date":"2026-11-16","title":"Outside week"},
+    ])
+    data = load_agenda(source, today=date(2026, 11, 9))
+    assert data["next_seven_days_count"] == 3
+    assert data["next_seven_busy_days"] == 2
+    assert load_agenda(file_with(tmp_path, []), today=date(2026, 11, 9))["next_seven_busy_days"] == 0
