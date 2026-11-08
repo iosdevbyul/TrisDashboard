@@ -137,3 +137,9 @@ def test_reject_nonstandard_json_numeric_constant_anywhere(tmp_path, constant):
     path.write_text('{"metadata":' + constant + ',"workouts":[]}')
     with pytest.raises(ValueError, match="Non-standard JSON"):
         load_fitness(path, today=date(2026, 11, 8))
+
+
+def test_future_workout_rejected_before_weekly_summary(tmp_path):
+    path = snapshot(tmp_path, [{"date": "2026-11-09", "type": "Running", "duration_minutes": 30}])
+    with pytest.raises(ValueError, match="Future workout"):
+        load_fitness(path, today=date(2026, 11, 8))
