@@ -51,7 +51,8 @@ def readiness(project: Path, home: Path, *, settings: Path | None = None,
     if require_inbox or require_recent_inbox:
         if not (import_status.get("installed") and
                 import_status.get("configuration_valid") and
-                import_status.get("inbox_available")):
+                import_status.get("inbox_available") and
+                not import_status.get("over_file_limit")):
             failures.append("inbox-configuration")
     if require_recent_inbox:
         latest = import_status.get("last_run_utc")
