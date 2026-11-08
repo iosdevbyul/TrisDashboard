@@ -113,3 +113,16 @@ def test_six_month_dividend_totals_exclude_older_payments(tmp_path):
     data = load_dividends(path, today=date(2026, 11, 8))
     assert data["six_month_totals"] == {"USD": "16.00"}
     assert data["monthly_totals"] == {"USD": "10.25"}
+
+
+def test_observed_monthly_average_includes_empty_months_and_separates_currency(tmp_path):
+    source = snapshot(tmp_path, [
+        {"symbol": "JEPQ", "paid_on": "2026-11-04", "currency": "USD", "amount": "10"},
+        {"symbol": "QQQI", "paid_on": "2026-06-04", "currency": "USD", "amount": "6"},
+        {"symbol": "KR", "paid_on": "2026-10-04", "currency": "KRW", "amount": "600"},
+        {"symbol": "OLD", "paid_on": "2026-04-04", "currency": "USD", "amount": "100"},
+    ])
+    data = load_dividends(source, today=date(2026, 11, 8))
+    assert data["observed_monthly_average"] == {"KRW": "100.00", "USD": "2.67"}
+    assert data["six_month_totals"] == {"KRW": "600", "USD": "16"}
+    assert load_dividends(snapshot(tmp_path, []), today=date(2026, 11, 8))["observed_monthly_average"] == {}
