@@ -121,8 +121,10 @@ byId("setting-compact").checked = true;
 handlers["setting-compact:change"].call(byId("setting-compact"));
 assert.match(document.body.className, /compact/);
 assert.ok(state["tris.dashboard.display.v1"]);
+const beforeRefresh = paths.filter((url) => url.startsWith("/api/overview")).length;
 handlers["refresh-button:click"]();
-assert.ok(paths.includes("reload"));
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforeRefresh + 1);
+assert.equal(paths.includes("reload"), false);
 
 // API failure must retain the last rendered values and schedule a bounded retry.
 const priorWeather = byId("weather-temp").textContent;
