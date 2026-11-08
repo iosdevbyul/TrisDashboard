@@ -65,3 +65,33 @@ def test_invalid_future_portfolio_as_of_is_rejected(tmp_path):
     ])
     with pytest.raises(ValueError):
         import_finance(source, tmp_path / "out.json", kind="portfolio", as_of="2099-01-01T00:00:00+00:00")
+
+
+def test_import_refuses_concurrently_created_destination(tmp_path, monkeypatch):
+    import os
+    from macos import import_finance as finance_module
+    source = write_csv(tmp_path / "holdings.csv",
+                       ["symbol", "currency", "quantity"],
+                       [{"symbol": "SCHD", "currency": "USD", "quantity": "5"}])
+    output = tmp_path / "holdings.json"
+    original_link = os.link
+
+    def concurrent_writer(src, dst):
+        output.write_text("created by another process")
+        return original_link(src, dst)
+
+    monkeypatch.setattr(finance_module.os, "link", concurrent_writer)
+    with pytest.raises(FileExistsError):
+        import_finance(source, output, kind="portfolio")
+    assert output.read_text() == "created by another process"
+    assert not list(tmp_path.glob(".tris-finance-*"))
+
+
+def test_import_overwrite_only_with_explicit_force(tmp_path):
+    source = write_csv(tmp_path / "holdings.csv",
+                       ["symbol", "currency", "quantity"],
+                       [{"symbol": "SCHD", "currency": "USD", "quantity": "5"}])
+    output = tmp_path / "holdings.json"
+    output.write_text("older data")
+    assert import_finance(source, output, kind="portfolio", overwrite=True)["written"] is True
+    assert json.loads(output.read_text())["positions"][0]["symbol"] == "SCHD"
