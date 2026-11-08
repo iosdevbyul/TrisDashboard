@@ -290,3 +290,12 @@ def test_inbox_state_rejects_ambiguous_json(tmp_path, payload):
     path.parent.mkdir(parents=True)
     path.write_text(payload)
     assert read_run_state(tmp_path) == {"last_run_known": False}
+
+
+def test_inbox_status_rejects_world_readable_state(tmp_path):
+    from macos.periodic_inbox import read_run_state, write_run_state, state_path
+    write_run_state(tmp_path, success=True, files=1, added=1)
+    path = state_path(tmp_path)
+    assert read_run_state(tmp_path)["last_run_known"] is True
+    path.chmod(0o644)
+    assert read_run_state(tmp_path) == {"last_run_known": False}
