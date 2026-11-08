@@ -173,6 +173,19 @@
       total.textContent = "Values: " + parts.join(" / ") + (info.valuation_complete ? "" : " (partial)");
       list.appendChild(total);
     }
+    var allocations = info.currency_allocations || {};
+    var allocationCurrencies = Object.keys(allocations);
+    for (var c = 0; c < allocationCurrencies.length; c++) {
+      var shares = allocations[allocationCurrencies[c]];
+      var allocationLine = document.createElement("div");
+      allocationLine.className = "repo-row";
+      var breakdown = [];
+      for (var a = 0; a < shares.length; a++) {
+        breakdown.push(shares[a].symbol + " " + shares[a].percent + "%");
+      }
+      allocationLine.textContent = "Manual " + allocationCurrencies[c] + " allocation: " + breakdown.join(" · ");
+      list.appendChild(allocationLine);
+    }
     if (valuation && valuation.available) {
       var totalsLabel = [];
       var quoteKeys = Object.keys(valuation.totals || {});
