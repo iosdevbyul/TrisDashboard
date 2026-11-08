@@ -405,6 +405,16 @@
       row.textContent = repos[i].repository + " · " + repos[i].open_pr_count +
         (repos[i].open_pr_count_truncated ? "+ open PRs" : " open PRs") + " · " + ciText;
       list.appendChild(row);
+      var repoName = repos[i].repository;
+      if (typeof repoName === "string" && /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(repoName)) {
+        var repositoryLink = document.createElement("a");
+        repositoryLink.className = "github-pr-link";
+        repositoryLink.href = "https://github.com/" + repoName;
+        repositoryLink.target = "_blank";
+        repositoryLink.rel = "noopener noreferrer";
+        repositoryLink.textContent = "Open repository · " + repoName;
+        list.appendChild(repositoryLink);
+      }
       var previews = repos[i].open_prs || [];
       for (var k = 0; k < previews.length; k++) {
         if (typeof previews[k].url === "string" &&
