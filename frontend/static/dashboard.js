@@ -388,6 +388,12 @@
       averageLine.textContent = "Average on active days · " + info.average_active_day_minutes + " min";
       list.appendChild(averageLine);
     }
+    if (typeof info.average_active_day_km === "number") {
+      var distanceAverage = document.createElement("div");
+      distanceAverage.className = "repo-row";
+      distanceAverage.textContent = "Average distance per active day · " + info.average_active_day_km + " km";
+      list.appendChild(distanceAverage);
+    }
     if (typeof info.average_session_minutes === "number") {
       var perSession = document.createElement("div");
       perSession.className = "repo-row";
