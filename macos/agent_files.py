@@ -4,7 +4,7 @@ import plistlib
 from pathlib import Path
 
 
-def write_private_agent(path: Path, config: dict) -> tuple[int, int]:
+def write_private_agent(path: Path, config: dict) -> tuple[int, int, int]:
     """Create once, refuse symlink targets and restrict settings paths to the owner."""
     payload = plistlib.dumps(config)
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -13,7 +13,7 @@ def write_private_agent(path: Path, config: dict) -> tuple[int, int]:
             file.write(payload)
         os.chmod(path, 0o600)
         identity = path.lstat()
-        return (identity.st_dev, identity.st_ino)
+        return (identity.st_dev, identity.st_ino, identity.st_ctime_ns)
     except BaseException:
         path.unlink(missing_ok=True)
         raise
@@ -23,7 +23,7 @@ def remove_failed_agent(path: Path, identity: tuple[int, int]) -> bool:
     """Only clean up the file created by this install attempt, not a replacement."""
     try:
         stat = path.lstat()
-        if (stat.st_dev, stat.st_ino) != identity or path.is_symlink():
+        if (stat.st_dev, stat.st_ino, stat.st_ctime_ns) != identity or path.is_symlink():
             return False
         path.unlink()
         return True
