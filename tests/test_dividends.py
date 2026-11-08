@@ -98,3 +98,18 @@ def test_reject_nonstandard_json_numeric_constant_anywhere(tmp_path, constant):
 def test_invalid_dividend_reference_date_is_rejected(tmp_path, reference):
     with pytest.raises(ValueError, match="Invalid dividend reference date"):
         load_dividends(snapshot(tmp_path, []), today=reference)
+
+
+def test_six_month_dividend_totals_exclude_older_payments(tmp_path):
+    from datetime import date
+    import json
+    from backend.dividends import load_dividends
+    path = tmp_path / "payments.json"
+    path.write_text(json.dumps({"payments": [
+        {"symbol": "JEPQ", "currency": "USD", "amount": "10.25", "paid_on": "2026-11-01"},
+        {"symbol": "SCHD", "currency": "USD", "amount": "5.75", "paid_on": "2026-06-01"},
+        {"symbol": "QQQI", "currency": "USD", "amount": "100", "paid_on": "2026-04-01"}
+    ]}))
+    data = load_dividends(path, today=date(2026, 11, 8))
+    assert data["six_month_totals"] == {"USD": "16.00"}
+    assert data["monthly_totals"] == {"USD": "10.25"}
