@@ -2,6 +2,12 @@
 from decimal import Decimal, InvalidOperation
 
 def quote_valuation(portfolio: dict, quotes: dict) -> dict:
+    if not isinstance(portfolio, dict) or not portfolio.get("available"):
+        return {"available": False, "reason": "portfolio-unavailable"}
+    if not isinstance(portfolio.get("positions"), list):
+        return {"available": False, "reason": "portfolio-unavailable"}
+    if not isinstance(quotes, dict) or not isinstance(quotes.get("quotes"), list):
+        return {"available": False, "reason": "quotes-unavailable"}
     if not portfolio.get("available"):
         return {"available": False, "reason": "portfolio-unavailable"}
     if not quotes.get("available"):
@@ -13,7 +19,7 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
     for quote in quotes.get("quotes", []):
         if not isinstance(quote, dict) or quote.get("outdated") or not quote.get("price"):
             continue
-        if not quote.get("symbol") or quote.get("currency") not in ("USD", "KRW"):
+        if not isinstance(quote.get("symbol"), str) or not quote["symbol"] or quote.get("currency") not in ("USD", "KRW"):
             continue
         if not isinstance(quote.get("reported_at_utc"), str) or not quote["reported_at_utc"]:
             continue
@@ -29,6 +35,8 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
             continue
         symbol = item.get("symbol")
         currency = item.get("currency")
+        if not isinstance(symbol, str) or not isinstance(currency, str):
+            continue
         key = (symbol, currency)
         quote = None if key in ambiguous else latest.get(key)
         if quote is None:
