@@ -233,3 +233,15 @@ def test_weekly_peak_activity_day_and_empty_week(tmp_path):
     data = load_fitness(snapshot(tmp_path, workouts), today=date(2026, 11, 9))
     assert data["peak_active_day"] == {"date":"2026-11-08","duration_minutes":70}
     assert load_fitness(snapshot(tmp_path, []), today=date(2026, 11, 9))["peak_active_day"] is None
+
+
+def test_dominant_activity_uses_duration_not_session_count(tmp_path):
+    workouts = [
+        {"date":"2026-11-09","type":"Running","duration_minutes":20},
+        {"date":"2026-11-08","type":"Running","duration_minutes":20},
+        {"date":"2026-11-07","type":"Strength","duration_minutes":70},
+    ]
+    data = load_fitness(snapshot(tmp_path, workouts), today=date(2026, 11, 9))
+    assert data["dominant_activity"] == {
+        "type":"Strength","sessions":1,"duration_minutes":70,"distance_km":0}
+    assert load_fitness(snapshot(tmp_path, []), today=date(2026, 11, 9))["dominant_activity"] is None
