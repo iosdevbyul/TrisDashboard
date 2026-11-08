@@ -8,7 +8,7 @@ from pathlib import Path
 
 from backend.fitness import load_fitness
 from macos.import_waktrainer import (
-    MAX_SESSIONS, import_export, merged_workouts, parse_export,
+    MAX_SESSIONS, MAX_BYTES, import_export, merged_workouts, parse_export,
 )
 
 PREFIX = "waktrainer-dashboard-"
@@ -35,7 +35,15 @@ def receive(directory: Path, output: Path, *, apply: bool = False,
         info = path.stat()
         if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
             raise ValueError("Workout export is not owned by the current user")
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        # Cap each incoming file before decoding it, even when the export
+        # directory contains otherwise trusted user-owned JSON.
+        if info.st_size > MAX_BYTES:
+            raise ValueError("Workout export is too large")
+        with path.open("rb") as handle:
+            raw = handle.read(MAX_BYTES + 1)
+        if len(raw) > MAX_BYTES:
+            raise ValueError("Workout export is too large")
+        payload = json.loads(raw)
         if not isinstance(payload, dict) or type(payload.get("schema_version")) is not int or payload["schema_version"] != 2:
             raise ValueError("Inbox accepts only WakTrainer version 2 exports")
         validated = parse_export(path, timezone_name=timezone_name)["workouts"]
