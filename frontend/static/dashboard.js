@@ -255,7 +255,9 @@
     var summary = info.summary;
     text("fitness-summary", summary.sessions + " sessions · " + summary.duration_minutes + " min");
     var total = document.createElement("div");
-    total.textContent = "Distance " + summary.distance_km + " km · " + info.period_start + " to " + info.period_end;
+    total.textContent = "Distance " + summary.distance_km + " km · " +
+      (typeof info.active_days === "number" ? "Active " + info.active_days + "/7 days · " : "") +
+      info.period_start + " to " + info.period_end;
     list.appendChild(total);
     var daily = info.daily || [];
     for (var d = 0; d < daily.length; d++) {
