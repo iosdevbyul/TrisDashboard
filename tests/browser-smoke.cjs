@@ -290,6 +290,15 @@ assert.equal(byId("agenda-toggle").attributes["aria-expanded"], "true");
 handlers["agenda-toggle:click"]();
 assert.equal(byId("agenda-list").children.length, 9);
 
+// Disclose the event preview cap without implying the whole agenda is visible.
+response.agenda = {available:true,window_start:"2026-11-09",window_end:"2026-11-23",
+  upcoming_count:45, events_truncated:true,
+  events:Array.from({length:30}, (_,i) => ({date:"2026-11-10",title:"Event " + i,time:"09:00"}))};
+handlers["document:visibilitychange"]();
+assert.match(byId("agenda-updated").textContent, /First 30 of 45 events shown/);
+assert.match(byId("agenda-toggle").textContent, /first 30 of 45/);
+response.agenda = {available:false,configured:false};
+
 // A 20-result GitHub API page is only a lower bound, not an exact PR count.
 response.github = { available: true, repositories: [{
   repository: "owner/busy", available: true, open_pr_count: 20,
