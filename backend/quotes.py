@@ -5,6 +5,8 @@ from urllib.parse import urlencode
 
 
 def quote_symbols(raw: str) -> list[str]:
+    if not isinstance(raw, str):
+        raise ValueError("Invalid quote symbols")
     names = []
     for item in raw.split(","):
         symbol = item.strip().upper()
@@ -35,6 +37,8 @@ def parse_quote(data: dict, expected_symbol: str, now: datetime | None = None) -
     except (ValueError, TypeError, KeyError, OverflowError, OSError, InvalidOperation) as error:
         raise ValueError("Malformed quote") from error
     current = now or datetime.now(timezone.utc)
+    if not isinstance(current, datetime) or current.tzinfo is None or current.utcoffset() is None:
+        raise ValueError("Quote reference must have timezone")
     age_seconds = (current - reported_at).total_seconds()
     # Twelve Data reports bar-open time in timestamp, while last_quote_at
     # is the optional last-minute candle time. These are not interchangeable.
@@ -65,12 +69,16 @@ def parse_quote(data: dict, expected_symbol: str, now: datetime | None = None) -
 
 def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
     """Re-evaluate timestamps at display time; cached quotes cannot remain 'fresh' forever."""
+    if not isinstance(payload, dict):
+        raise ValueError("Invalid quote cache")
     if not payload.get("available"):
         return dict(payload)
     current = now or datetime.now(timezone.utc)
     result = dict(payload)
     readings = []
     for quote in payload.get("quotes", []):
+        if not isinstance(quote, dict):
+            continue
         item = dict(quote)
         if item.get("price") and item.get("reported_at_utc"):
             try:
