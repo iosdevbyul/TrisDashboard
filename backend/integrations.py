@@ -13,7 +13,7 @@ from backend.portfolio import portfolio
 from backend.fitness import fitness
 from backend.dividends import dividends
 from backend.agenda import agenda
-from backend.quotes import quote_symbols, load_quotes
+from backend.quotes import quote_symbols, load_quotes, refresh_quote_freshness
 from backend.valuation import quote_valuation
 
 _cache = {}
@@ -200,7 +200,8 @@ def quotes() -> dict:
         return {"available": False, "configured": True, "stale": True}
     scope = hashlib.sha256(token.encode("utf-8")).hexdigest()
     key = "quotes:" + ",".join(symbols) + ":" + scope
-    return cached(key, lambda: load_quotes(symbols, token, get_json), ttl=1800)
+    result = cached(key, lambda: load_quotes(symbols, token, get_json), ttl=1800)
+    return refresh_quote_freshness(result)
 
 
 def overview(timeout_seconds: float = 4.0) -> dict:

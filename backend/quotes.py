@@ -50,6 +50,30 @@ def parse_quote(data: dict, expected_symbol: str, now: datetime | None = None) -
     }
 
 
+def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
+    """Re-evaluate timestamps at display time; cached quotes cannot remain 'fresh' forever."""
+    if not payload.get("available"):
+        return dict(payload)
+    current = now or datetime.now(timezone.utc)
+    result = dict(payload)
+    readings = []
+    for quote in payload.get("quotes", []):
+        item = dict(quote)
+        if item.get("price") and item.get("reported_at_utc"):
+            try:
+                timestamp = datetime.fromisoformat(item["reported_at_utc"])
+                if timestamp.tzinfo is None:
+                    raise ValueError("Missing quote timezone")
+                seconds = (current - timestamp).total_seconds()
+                item["outdated"] = seconds > 72 * 3600 or seconds < -600
+                item["age_hours"] = round(max(0, seconds) / 3600, 1)
+            except (ValueError, TypeError):
+                item["outdated"] = True
+        readings.append(item)
+    result["quotes"] = readings
+    return result
+
+
 def load_quotes(symbols: list[str], token: str, fetcher) -> dict:
     readings = []
     for symbol in symbols:
