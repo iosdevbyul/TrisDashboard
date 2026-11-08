@@ -71,6 +71,12 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     for monthly in history.values():
         for currency, amount in monthly.items():
             history_totals[currency] = history_totals.get(currency, Decimal("0")) + amount
+    complete_month_totals = {}
+    for previous_month in months[:-1]:
+        for currency, amount in history[previous_month].items():
+            complete_month_totals[currency] = complete_month_totals.get(currency, Decimal("0")) + amount
+    complete_month_average = {currency: str((amount / Decimal(5)).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP)) for currency, amount in sorted(complete_month_totals.items())}
     monthly_average = {currency: str((amount / Decimal(6)).quantize(
         Decimal("0.01"), rounding=ROUND_HALF_UP))
         for currency, amount in sorted(history_totals.items())}
@@ -78,6 +84,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             "month": month, "monthly_totals": {key: str(value) for key, value in sorted(totals.items())},
             "six_month_totals": {key: str(value) for key, value in sorted(history_totals.items())},
             "observed_monthly_average": monthly_average,
+            "completed_month_average": complete_month_average,
             "six_month_by_symbol": [
                 {"symbol": symbol, "currency": currency, "amount": str(amount),
                  "currency_share_percent": str((amount * Decimal(100) / history_totals[currency]).quantize(
