@@ -171,3 +171,16 @@ def test_weekly_activity_breakdown_separates_categories_and_excludes_old(tmp_pat
         {"type": "Strength", "sessions": 1, "duration_minutes": 40, "distance_km": 0},
     ]
     assert result["summary"]["sessions"] == 3
+
+
+def test_weekly_streak_counts_consecutive_active_days(tmp_path):
+    workouts = [
+        {"date": day, "type": "Running", "duration_minutes": 20}
+        for day in ["2026-11-02", "2026-11-03", "2026-11-05", "2026-11-06", "2026-11-07"]]
+    result = load_fitness(snapshot(tmp_path, workouts), today=date(2026, 11, 8))
+    assert result["longest_streak_days"] == 3
+    assert result["ongoing_streak_days"] == 0
+    workouts.append({"date": "2026-11-08", "type": "Running", "duration_minutes": 20})
+    result = load_fitness(snapshot(tmp_path, workouts), today=date(2026, 11, 8))
+    assert result["longest_streak_days"] == 4
+    assert result["ongoing_streak_days"] == 4
