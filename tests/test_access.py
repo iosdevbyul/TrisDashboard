@@ -29,3 +29,12 @@ def test_api_denies_unallowed_client(monkeypatch):
     response = TestClient(app).get("/healthz", headers={"X-Forwarded-For": "127.0.0.1"})
     assert response.status_code == 403
     assert response.text == "Forbidden"
+
+
+def test_invalid_later_allowlist_rule_never_grants_access():
+    assert not allowed_client("192.168.1.42", "192.168.1.0/24,invalid-rule")
+    assert not allowed_client("192.168.1.42", "192.168.1.0/24,192.168.1.1/99")
+
+
+def test_valid_later_rule_still_matches():
+    assert allowed_client("192.168.1.42", "127.0.0.1,192.168.1.0/24")
