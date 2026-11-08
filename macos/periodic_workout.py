@@ -2,6 +2,7 @@
 import argparse
 import os
 import plistlib
+from macos.agent_files import write_private_agent
 import subprocess
 import sys
 from pathlib import Path
@@ -67,7 +68,7 @@ def install(project: Path, home: Path, source: Path, output: Path) -> None:
         raise RuntimeError("Workout import agent already installed")
     agent.parent.mkdir(parents=True, exist_ok=True)
     (home / "Library" / "Logs" / "TrisDashboard").mkdir(parents=True, exist_ok=True)
-    agent.write_bytes(plistlib.dumps(agent_config(project, home, source, output)))
+    write_private_agent(agent, agent_config(project, home, source, output))
     try:
         subprocess.run(["launchctl", "bootstrap", "gui/" + str(os.getuid()), str(agent)], check=True)
     except Exception:
