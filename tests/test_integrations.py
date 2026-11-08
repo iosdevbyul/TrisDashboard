@@ -229,3 +229,19 @@ def test_weather_bad_coordinate_configuration_fails_safe(monkeypatch, latitude, 
     monkeypatch.setenv("TRIS_LONGITUDE", longitude)
     monkeypatch.setattr(integrations, "get_json", lambda url: pytest.fail("unexpected request"))
     assert integrations.weather() == {"available": False, "configured": True, "stale": True}
+
+
+def test_github_repository_config_rejects_unicode_homographs(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_GITHUB_REPOS", "owner/répō,owner/ｒｅｐｏ,valid/repo")
+    observed = []
+    def fake_get(url):
+        observed.append(url)
+        if "/actions/runs" in url:
+            return {"workflow_runs": []}
+        return []
+    monkeypatch.setattr(integrations, "get_json", fake_get)
+    data = integrations.github()
+    assert data["available"] is True
+    assert [entry["repository"] for entry in data["repositories"]] == ["valid/repo"]
+    assert len(observed) == 2
