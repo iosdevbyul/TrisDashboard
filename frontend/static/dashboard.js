@@ -339,7 +339,9 @@
       " · " + info.today_event_count + " today" : "";
     var tomorrowCount = typeof info.tomorrow_event_count === "number" ?
       " · " + info.tomorrow_event_count + " tomorrow" : "";
-    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + nextLabel);
+    var weekCount = typeof info.next_seven_days_count === "number" ?
+      " · " + info.next_seven_days_count + " in next 7 days" : "";
+    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + nextLabel);
     var events = info.events || [];
     var todayDate = info.window_start;
     var tomorrowDate = "";
