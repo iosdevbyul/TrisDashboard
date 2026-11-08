@@ -29,8 +29,9 @@ def credential_status(*, lookup=keychain_value) -> dict:
     available = {}
     for name, service in SERVICE_NAMES.items():
         try:
-            available[name] = bool(lookup(service))
-        except OSError:
+            value = lookup(service)
+            available[name] = isinstance(value, str) and bool(value.strip())
+        except (OSError, ValueError, TypeError):
             available[name] = False
     return available
 
@@ -40,9 +41,9 @@ def provider_environment(base: dict | None = None, *, lookup=keychain_value) -> 
     for name, service in SERVICE_NAMES.items():
         try:
             value = lookup(service)
-        except OSError:
+        except (OSError, ValueError, TypeError):
             value = None
-        if value is not None:
+        if isinstance(value, str) and value.strip():
             env[name] = value
     return env
 
