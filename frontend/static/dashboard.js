@@ -314,6 +314,7 @@
       list.appendChild(bestRow);
     }
     var symbolTotals = info.six_month_by_symbol || [];
+    var symbolMonths = info.six_month_payment_months || [];
     if (symbolTotals.length) {
       var symbolHeading = document.createElement("div");
       symbolHeading.className = "agenda-group";
@@ -322,10 +323,18 @@
       for (var sb = 0; sb < symbolTotals.length; sb++) {
         var symbolRow = document.createElement("div");
         symbolRow.className = "repo-row";
+        var coverage = "";
+        for (var sm = 0; sm < symbolMonths.length; sm++) {
+          if (symbolMonths[sm].symbol === symbolTotals[sb].symbol &&
+              symbolMonths[sm].currency === symbolTotals[sb].currency) {
+            coverage = " · Paid in " + symbolMonths[sm].paid_months + "/6 months";
+            break;
+          }
+        }
         symbolRow.textContent = symbolTotals[sb].symbol + " · " + symbolTotals[sb].amount +
           " " + symbolTotals[sb].currency +
           (typeof symbolTotals[sb].currency_share_percent === "string" ?
-           " · " + symbolTotals[sb].currency_share_percent + "% of " + symbolTotals[sb].currency + " payments" : "");
+           " · " + symbolTotals[sb].currency_share_percent + "% of " + symbolTotals[sb].currency + " payments" : "") + coverage;
         list.appendChild(symbolRow);
       }
     }
