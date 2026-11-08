@@ -4,6 +4,7 @@ import fcntl
 import json
 import math
 import os
+import stat
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -156,16 +157,27 @@ def import_export(source: Path, destination: Path, *, force: bool = False,
         raise ValueError("Destination must be private JSON outside repository")
     if force and merge:
         raise ValueError("--force and --merge cannot be combined")
-    if not dry_run:
-        destination.parent.mkdir(parents=True, exist_ok=True)
+    if dry_run:
+        # Validation should not create destination folders, lock files or JSON output.
+        return _import_export_unlocked(
+            source, destination, force=force, dry_run=True, merge=merge)
+    destination.parent.mkdir(parents=True, exist_ok=True)
     # Persistent sidecar lock is intentionally never unlinked: removing it races waiting writers.
     lock_path = destination.with_name(destination.name + ".lock")
-    with lock_path.open("a+b") as lock_file:
-        os.chmod(lock_path, 0o600)
+    flags = os.O_RDWR | os.O_CREAT
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    fd = os.open(lock_path, flags, 0o600)
+    with os.fdopen(fd, "a+b") as lock_file:
+        info = os.fstat(lock_file.fileno())
+        if (not stat.S_ISREG(info.st_mode)
+                or info.st_uid != os.getuid()
+                or info.st_mode & 0o077):
+            raise ValueError("Workout lock must be owner-only regular file")
         fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
         try:
             return _import_export_unlocked(
-                source, destination, force=force, dry_run=dry_run, merge=merge)
+                source, destination, force=force, dry_run=False, merge=merge)
         finally:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 

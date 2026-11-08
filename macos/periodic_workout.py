@@ -29,7 +29,8 @@ def safe_path(value: Path) -> Path:
 def import_once(source: Path, output: Path) -> dict:
     if not source.is_file():
         return {"state": "waiting-for-export", "added": 0}
-    result = import_export(source, output, merge=output.exists())
+    # Let the importer decide existence while holding its file lock.
+    result = import_export(source, output, merge=True)
     return {"state": "imported", "added": result["added"]}
 
 
