@@ -292,3 +292,34 @@ def test_invalid_github_repository_configuration_is_unavailable(monkeypatch):
     monkeypatch.setenv("TRIS_GITHUB_REPOS", "invalid,owner/space repo,")
     monkeypatch.setattr(integrations, "get_json", lambda url: pytest.fail("unexpected GitHub request"))
     assert integrations.github() == {"available": False, "configured": True, "stale": True}
+
+
+def test_cache_does_not_serve_provider_data_older_than_one_day(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setattr(integrations.time, "monotonic", lambda: 500000.0)
+    calls = []
+    def get_data():
+        calls.append(True)
+        if len(calls) > 1:
+            raise OSError("provider unavailable")
+        return {"available": True, "temperature_c": 18}
+    assert integrations.cached("weather:bounded", get_data, ttl=60)["available"] is True
+    integrations._cache["weather:bounded"]["time"] -= integrations.MAX_STALE_SECONDS + 1
+    stale = integrations.cached("weather:bounded", get_data, ttl=60)
+    assert stale["available"] is False
+    assert stale["stale"] is True
+    assert stale["error"] == "temporarily unavailable"
+    assert len(calls) == 2
+    integrations._cache.clear()
+
+
+def test_cache_can_retain_recent_snapshot_on_temporary_error(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setattr(integrations.time, "monotonic", lambda: 500000.0)
+    assert integrations.cached("weather:recent", lambda: {"available": True}, ttl=60)["available"]
+    integrations._cache["weather:recent"]["time"] -= 120
+    def down():
+        raise OSError("provider offline")
+    restored = integrations.cached("weather:recent", down, ttl=60)
+    assert restored["available"] is True and restored["stale"] is True
+    integrations._cache.clear()
