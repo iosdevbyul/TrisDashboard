@@ -29,7 +29,8 @@ SECURITY_HEADERS = {
 @app.middleware("http")
 async def secure_local_responses(request, call_next):
     if not allowed_client(request.client.host if request.client else None):
-        return PlainTextResponse("Forbidden", status_code=403, headers={"Cache-Control": "no-store"})
+        return PlainTextResponse("Forbidden", status_code=403,
+                                 headers={**SECURITY_HEADERS, "Cache-Control": "no-store"})
     response = await call_next(request)
     for name, value in SECURITY_HEADERS.items():
         response.headers[name] = value
