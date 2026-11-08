@@ -270,7 +270,24 @@
       " · " + info.today_event_count + " today" : "";
     text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + nextLabel);
     var events = info.events || [];
+    var todayDate = info.window_start;
+    var tomorrowDate = "";
+    if (typeof todayDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(todayDate)) {
+      var parts = todayDate.split("-");
+      var nextDay = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]) + 1));
+      tomorrowDate = nextDay.getUTCFullYear() + "-" + pad(nextDay.getUTCMonth() + 1) + "-" + pad(nextDay.getUTCDate());
+    }
+    var lastGroup = "";
     for (var i = 0; i < events.length; i++) {
+      var group = events[i].date === todayDate ? "Today" :
+        events[i].date === tomorrowDate ? "Tomorrow" : "Upcoming";
+      if (group !== lastGroup) {
+        var heading = document.createElement("div");
+        heading.className = "agenda-group";
+        heading.textContent = group;
+        list.appendChild(heading);
+        lastGroup = group;
+      }
       var row = document.createElement("div");
       row.className = "agenda-row";
       row.textContent = events[i].date + (events[i].time ? " " + events[i].time : "") + " · " + events[i].title;
