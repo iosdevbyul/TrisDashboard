@@ -208,3 +208,21 @@ def test_outage_cooldown_keeps_previous_data_stale_and_blocks_valuation(monkeypa
         {"symbol": "JEPQ", "currency": "USD", "quantity": "5"}]}, delayed)
     assert result["available"] is False
     integrations._QUOTE_RETRY_AT.clear()
+
+
+def test_invalid_quote_symbol_configuration_type_rejected():
+    for raw in (None, 123, ["JEPQ"]):
+        with pytest.raises(ValueError, match="Invalid quote symbols"):
+            quote_symbols(raw)
+
+
+def test_quote_reference_requires_aware_datetime():
+    with pytest.raises(ValueError, match="reference"):
+        parse_quote(sample(), "JEPQ", datetime(2026, 11, 8))
+
+
+def test_corrupted_cached_quote_rows_are_ignored():
+    from backend.quotes import refresh_quote_freshness
+    assert refresh_quote_freshness({"available": True, "quotes": [None, 5, {"symbol": "JEPQ", "price": "3", "reported_at_utc": "bad"}]})["quotes"][0]["outdated"] is True
+    with pytest.raises(ValueError, match="Invalid quote cache"):
+        refresh_quote_freshness(None)
