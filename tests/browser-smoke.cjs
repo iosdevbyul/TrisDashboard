@@ -162,9 +162,24 @@ assert.equal(paths.includes("reload"), false);
 const beforeHiddenPoll = paths.length;
 document.hidden = true;
 periodic.find((item) => item.delay === 15000).callback();
-periodic.find((item) => item.delay === 180000).callback();
+periodic.find((item) => item.delay === 60000).callback();
 assert.equal(paths.length, beforeHiddenPoll);
 document.hidden = false;
+
+// Users can adjust the auto-refresh cadence without reloading the page.
+byId("setting-refresh-minutes").value = "10";
+handlers["setting-refresh-minutes:change"].call(byId("setting-refresh-minutes"));
+assert.equal(window.trisDashboardRefreshMinutes, 10);
+assert.match(byId("refresh-cadence").textContent, /10 minutes/);
+const beforeCadence = paths.filter((url) => url.startsWith("/api/overview")).length;
+clockOffset += 6 * 60000;
+periodic.find((item) => item.delay === 60000).callback();
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforeCadence);
+clockOffset += 5 * 60000;
+periodic.find((item) => item.delay === 60000).callback();
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforeCadence + 1);
+byId("setting-refresh-minutes").value = "3";
+handlers["setting-refresh-minutes:change"].call(byId("setting-refresh-minutes"));
 
 // API failure must retain the last rendered values and schedule a bounded retry.
 const priorWeather = byId("weather-temp").textContent;
