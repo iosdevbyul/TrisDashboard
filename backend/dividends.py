@@ -10,6 +10,10 @@ from backend.portfolio import nonnegative, CURRENCIES
 _DATE_RE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
 
+def _reject_nonstandard_constant(value):
+    raise ValueError("Non-standard JSON numeric constant: " + value)
+
+
 def _unique_keys(pairs):
     result = {}
     for key, value in pairs:
@@ -21,7 +25,8 @@ def _unique_keys(pairs):
 def load_dividends(path: Path, today: date | None = None) -> dict:
     if path.stat().st_size > 65536:
         raise ValueError("Dividend file too large")
-    payload = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys)
+    payload = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys,
+                         parse_constant=_reject_nonstandard_constant)
     entries = payload.get("payments") if isinstance(payload, dict) else None
     if not isinstance(entries, list) or len(entries) > 300:
         raise ValueError("Invalid dividend payments")

@@ -84,3 +84,11 @@ def test_invalid_dividends_fall_back_without_crash(tmp_path, monkeypatch):
                                   "paid_on": "20261101", "amount": "1"}])
     monkeypatch.setenv("TRIS_DIVIDENDS_FILE", str(source))
     assert dividends() == {"available": False, "configured": True, "stale": True}
+
+
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_reject_nonstandard_json_numeric_constant_anywhere(tmp_path, constant):
+    path = tmp_path / "invalid-dividends.json"
+    path.write_text('{"metadata":' + constant + ',"payments":[]}')
+    with pytest.raises(ValueError, match="Non-standard JSON"):
+        load_dividends(path, today=date(2026, 11, 8))
