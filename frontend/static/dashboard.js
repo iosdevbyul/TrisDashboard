@@ -272,7 +272,7 @@
     var events = info.events || [];
     var todayDate = info.window_start;
     var tomorrowDate = "";
-    if (typeof todayDate === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(todayDate)) {
+    if (typeof todayDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(todayDate)) {
       var parts = todayDate.split("-");
       var nextDay = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]) + 1));
       tomorrowDate = nextDay.getUTCFullYear() + "-" + pad(nextDay.getUTCMonth() + 1) + "-" + pad(nextDay.getUTCDate());
