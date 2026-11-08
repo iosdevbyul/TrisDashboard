@@ -64,8 +64,13 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             monthly[currency] = monthly.get(currency, Decimal("0")) + amount
         recent.append({"symbol": ticker, "currency": currency, "paid_on": paid_on.isoformat(), "amount": str(amount)})
     recent.sort(key=lambda item: item["paid_on"], reverse=True)
+    history_totals = {}
+    for monthly in history.values():
+        for currency, amount in monthly.items():
+            history_totals[currency] = history_totals.get(currency, Decimal("0")) + amount
     return {"available": True, "configured": True, "source": "manual_confirmed_payments",
             "month": month, "monthly_totals": {key: str(value) for key, value in sorted(totals.items())},
+            "six_month_totals": {key: str(value) for key, value in sorted(history_totals.items())},
             "history": [{"month": key, "totals": {currency: str(amount) for currency, amount in sorted(history[key].items())}}
                         for key in months],
             "record_count": len(entries), "recent": recent[:5], "stale": False}
