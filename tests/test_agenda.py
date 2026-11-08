@@ -111,3 +111,16 @@ def test_tomorrow_count_handles_month_boundary_and_preview_limit(tmp_path):
     assert data["tomorrow_event_count"] == 10
     assert data["upcoming_count"] == 11
     assert len(data["events"]) == 8
+
+
+def test_next_seven_days_count_includes_today_and_excludes_day_eight(tmp_path):
+    source = file_with(tmp_path, [
+        {"date": "2026-11-09", "title": "Today"},
+        {"date": "2026-11-15", "title": "Day seven"},
+        {"date": "2026-11-16", "title": "Day eight"},
+        {"date": "2026-11-20", "title": "Later"},
+    ])
+    result = load_agenda(source, today=date(2026, 11, 9))
+    assert result["next_seven_days_count"] == 2
+    assert result["upcoming_count"] == 4
+    assert load_agenda(file_with(tmp_path, []), today=date(2026, 11, 9))["next_seven_days_count"] == 0
