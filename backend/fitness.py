@@ -96,6 +96,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
                            "distance_km": round(values["distance_km"], 2)}
                           for kind, values in by_type.items()]
     activity_breakdown.sort(key=lambda entry: (-entry["duration_minutes"], entry["type"]))
+    dominant_activity = dict(activity_breakdown[0]) if activity_breakdown else None
     active_days = sum(1 for day in daily.values() if day["sessions"] > 0)
     peak_day = max(daily.items(), key=lambda item: (item[1]["duration_minutes"], item[0]))
     peak_active_day = {"date": peak_day[0], "duration_minutes": peak_day[1]["duration_minutes"]}
@@ -129,6 +130,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "longest_streak_days": longest_streak,
             "ongoing_streak_days": ongoing_streak,
             "activity_breakdown": activity_breakdown,
+            "dominant_activity": dominant_activity,
             "summary": {"sessions": totals["sessions"], "duration_minutes": round(totals["minutes"], 1),
                         "distance_km": round(totals["distance_km"], 2)},
             "recent": weekly[:5], "daily": [
