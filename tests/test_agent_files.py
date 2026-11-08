@@ -38,3 +38,35 @@ def test_private_permissions_ignore_lax_umask(tmp_path):
     finally:
         os.umask(previous)
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
+
+
+def test_failed_bootstrap_removes_only_original_agent(tmp_path):
+    from macos.agent_files import remove_failed_agent
+    path = tmp_path / "agent.plist"
+    identity = write_private_agent(path, {"Label": "owner"})
+    assert remove_failed_agent(path, identity) is True
+    assert not path.exists()
+
+
+def test_failed_bootstrap_preserves_replaced_file(tmp_path):
+    from macos.agent_files import remove_failed_agent
+    path = tmp_path / "agent.plist"
+    identity = write_private_agent(path, {"Label": "owner"})
+    path.unlink()
+    other = tmp_path / "replacement.plist"
+    other.write_text("replacement")
+    other.replace(path)
+    assert remove_failed_agent(path, identity) is False
+    assert path.read_text() == "replacement"
+
+
+def test_failed_bootstrap_preserves_symlink_replacement(tmp_path):
+    from macos.agent_files import remove_failed_agent
+    path = tmp_path / "agent.plist"
+    identity = write_private_agent(path, {"Label": "owner"})
+    path.unlink()
+    target = tmp_path / "private.txt"
+    target.write_text("private")
+    path.symlink_to(target)
+    assert remove_failed_agent(path, identity) is False
+    assert target.read_text() == "private"
