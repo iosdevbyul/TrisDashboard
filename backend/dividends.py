@@ -2,7 +2,7 @@
 import json
 import os
 import re
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 from backend.portfolio import nonnegative, CURRENCIES
@@ -30,7 +30,9 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     entries = payload.get("payments") if isinstance(payload, dict) else None
     if not isinstance(entries, list) or len(entries) > 300:
         raise ValueError("Invalid dividend payments")
-    reference = today or date.today()
+    if today is not None and (not isinstance(today, date) or isinstance(today, datetime)):
+        raise ValueError("Invalid dividend reference date")
+    reference = date.today() if today is None else today
     totals = {}
     month = reference.strftime("%Y-%m")
     months = []
