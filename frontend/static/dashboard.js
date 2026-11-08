@@ -263,7 +263,9 @@
     var nextIn = info.next_event_in_days;
     var nextLabel = typeof nextIn === "number" && nextIn >= 0 ?
       " · Next " + (nextIn === 0 ? "today" : nextIn === 1 ? "tomorrow" : "in " + nextIn + " days") : "";
-    text("agenda-summary", info.upcoming_count + " upcoming events" + nextLabel);
+    var todayCount = typeof info.today_event_count === "number" ?
+      " · " + info.today_event_count + " today" : "";
+    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + nextLabel);
     var events = info.events || [];
     for (var i = 0; i < events.length; i++) {
       var row = document.createElement("div");

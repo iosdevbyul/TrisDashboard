@@ -91,3 +91,13 @@ def test_agenda_next_event_countdown_uses_local_calendar_dates(tmp_path):
     assert result["next_event_in_days"] == 1
     path.write_text('{"events":[]}')
     assert load_agenda(path, today=date(2026, 11, 8))["next_event_in_days"] is None
+
+
+def test_today_event_count_uses_full_source_not_preview_limit(tmp_path):
+    entries = [{"date": "2026-11-08", "title": "Today " + str(i)} for i in range(10)]
+    entries.append({"date": "2026-11-09", "title": "Tomorrow"})
+    data = load_agenda(file_with(tmp_path, entries), today=date(2026, 11, 8))
+    assert data["today_event_count"] == 10
+    assert data["upcoming_count"] == 11
+    assert len(data["events"]) == 8
+    assert load_agenda(file_with(tmp_path, []), today=date(2026, 11, 8))["today_event_count"] == 0
