@@ -52,3 +52,21 @@ def test_quotes_unconfigured_without_key(monkeypatch):
     monkeypatch.setenv("TRIS_QUOTE_SYMBOLS", "JEPQ")
     monkeypatch.delenv("TRIS_TWELVEDATA_API_KEY", raising=False)
     assert integrations.quotes()["configured"] is False
+
+
+def test_cached_quote_becomes_outdated_without_provider_refresh():
+    from backend.quotes import refresh_quote_freshness
+    now = datetime(2026, 11, 8, tzinfo=timezone.utc)
+    quote = parse_quote(sample(timestamp=int((now - timedelta(hours=71)).timestamp())), "JEPQ", now)
+    original = {"available": True, "quotes": [quote]}
+    updated = refresh_quote_freshness(original, now + timedelta(hours=2))
+    assert updated["quotes"][0]["outdated"] is True
+    assert original["quotes"][0]["outdated"] is False
+    assert updated["quotes"][0]["age_hours"] == 73.0
+
+
+def test_cached_quote_invalid_timestamp_is_not_trusted():
+    from backend.quotes import refresh_quote_freshness
+    original = {"available": True, "quotes": [{
+        "symbol": "JEPQ", "price": "52", "reported_at_utc": "not-a-time", "outdated": False}]}
+    assert refresh_quote_freshness(original)["quotes"][0]["outdated"] is True

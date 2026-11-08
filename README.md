@@ -290,3 +290,7 @@ The WakTrainer v2 importer now refuses to silently ignore a corrected or conflic
 ## Browser recovery and quote display regression tests
 
 The Node.js fake-browser CI now exercises overview API HTTP failure, bounded retry scheduling, successful recovery with provider-stamped quotes and partial portfolio valuation, and malformed JSON responses. Tests assert that previously rendered values are retained during failures, quote totals remain explicitly source-attributed, and data source status updates correctly. The checks require no real API token, broker account or external network; the final Safari 9 hardware test is still required.
+
+### Quote timestamp freshness during caching
+
+Each served quote re-evaluates the provider's original UTC timestamp against the current server time, even when the market response was loaded from the 30-minute cache. A stale quote cannot silently remain eligible for price-derived valuations simply because its cached `outdated` value was once false. Stored provider data is not modified by this check. The API remains optional and source-stamped; no paid market-data access is presumed.
