@@ -42,7 +42,17 @@ def receive(directory: Path, output: Path, *, apply: bool = False) -> dict:
             raise ValueError("Too many workouts to import")
 
     # Reject conflicts between separate incoming exports before changing history.
-    _, _ = merged_workouts([], records)
+    unique_records, _ = merged_workouts([], records)
+    # Repeated exports can contain the same completed workout. Preserve the
+    # first matching source record and stage unique IDs only.
+    unique_ids = {item["session_id"] for item in unique_records}
+    staged_sessions = []
+    staged_ids = set()
+    for session in sessions:
+        session_id = session["session_id"]
+        if session_id in unique_ids and session_id not in staged_ids:
+            staged_sessions.append(session)
+            staged_ids.add(session_id)
     existing = []
     if output.exists():
         load_fitness(output)
@@ -68,7 +78,7 @@ def receive(directory: Path, output: Path, *, apply: bool = False) -> dict:
             prefix=".tris-inbox-", dir=output.parent, delete=False
         ) as handle:
             staged = Path(handle.name)
-            json.dump({"schema_version": 2, "sessions": sessions}, handle)
+            json.dump({"schema_version": 2, "sessions": staged_sessions}, handle)
         result = import_export(staged, output, merge=True)
         summary["written"] = result["written"]
         return summary
