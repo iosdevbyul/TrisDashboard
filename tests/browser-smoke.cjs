@@ -75,6 +75,7 @@ class XMLHttpRequest {
   send() {
     paths.push(this.url);
     const isOverview = this.url.startsWith("/api/overview");
+    if (isOverview) assert.equal(byId("refresh-button").disabled, true);
     this.status = isOverview ? overviewStatus : 200;
     this.readyState = 4;
     this.responseText = isOverview && overviewBody !== null
@@ -157,6 +158,8 @@ const beforeRefresh = paths.filter((url) => url.startsWith("/api/overview")).len
 handlers["refresh-button:click"]();
 assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforeRefresh + 1);
 assert.equal(paths.includes("reload"), false);
+assert.equal(byId("refresh-button").disabled, false);
+assert.equal(byId("refresh-button").attributes["aria-busy"], "false");
 
 // Backgrounded iPad Safari must not send periodic health or overview requests.
 const beforeHiddenPoll = paths.length;
