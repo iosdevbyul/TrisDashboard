@@ -90,7 +90,7 @@ def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
         if item.get("price") and item.get("reported_at_utc"):
             try:
                 timestamp = datetime.fromisoformat(item["reported_at_utc"])
-                if timestamp.tzinfo is None:
+                if timestamp.tzinfo is None or timestamp.utcoffset() is None:
                     raise ValueError("Missing quote timezone")
                 seconds = (current - timestamp).total_seconds()
                 item["outdated"] = seconds > 72 * 3600 or seconds < -600
