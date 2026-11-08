@@ -254,3 +254,21 @@ def test_quote_cache_rejects_naive_display_reference():
     from backend.quotes import refresh_quote_freshness
     with pytest.raises(ValueError, match="Quote reference"):
         refresh_quote_freshness({"available": True, "quotes": []}, datetime(2026, 11, 8))
+
+
+def test_cached_quote_rejects_timezone_without_usable_offset():
+    from datetime import tzinfo
+    from backend.quotes import refresh_quote_freshness
+    class BrokenZone(tzinfo):
+        def utcoffset(self, dt):
+            return None
+        def dst(self, dt):
+            return None
+        def tzname(self, dt):
+            return "Broken"
+    # Cached ISO timestamps are required to contain a real UTC offset.
+    payload = {"available": True, "quotes": [{"symbol": "JEPQ", "price": "50",
+               "reported_at_utc": "2026-11-08T10:00:00", "outdated": False}]}
+    result = refresh_quote_freshness(payload)
+    assert result["quotes"][0]["outdated"] is True
+    assert payload["quotes"][0]["outdated"] is False
