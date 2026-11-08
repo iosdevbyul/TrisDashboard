@@ -73,3 +73,10 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .workout-bar-row>span:first-child{width:105px}
 .workout-bar-track{height:9px;background:#304155;border-radius:5px;overflow:hidden}
 .workout-bar-fill{display:block;height:9px;background:#6bc5a2;border-radius:5px}
+
+/* Readable large-text accessibility option for first generation iPad mini. */
+.large-text .card h2{font-size:18px}
+.large-text .card p{font-size:27px}
+.large-text .details,.large-text .repo-row,.large-text .agenda-row,.large-text .card small{font-size:16px;line-height:1.5}
+.large-text .glance-strip strong{font-size:18px}
+.large-text .workout-bar-row,.large-text .dividend-bar-row{font-size:14px}
