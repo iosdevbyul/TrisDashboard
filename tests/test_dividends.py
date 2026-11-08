@@ -197,3 +197,18 @@ def test_completed_month_change_compares_only_finished_months_by_currency(tmp_pa
     assert data["completed_month_change"]["KRW"]["difference"] == "1000"
     assert data["completed_month_change"]["KRW"]["percentage"] is None
     assert load_dividends(snapshot(tmp_path, []), today=date(2026, 11, 9))["completed_month_change"] == {}
+
+
+def test_dividend_payment_coverage_counts_distinct_months_only(tmp_path):
+    source = snapshot(tmp_path, [
+        {"symbol":"JEPQ","currency":"USD","amount":"10","paid_on":"2026-11-01"},
+        {"symbol":"JEPQ","currency":"USD","amount":"20","paid_on":"2026-11-09"},
+        {"symbol":"JEPQ","currency":"USD","amount":"15","paid_on":"2026-10-01"},
+        {"symbol":"QQQI","currency":"USD","amount":"5","paid_on":"2026-09-01"},
+        {"symbol":"OLD","currency":"USD","amount":"4","paid_on":"2026-04-01"}
+    ])
+    result = load_dividends(source, today=date(2026,11,9))
+    assert result["six_month_payment_months"] == [
+        {"symbol":"JEPQ","currency":"USD","paid_months":2},
+        {"symbol":"QQQI","currency":"USD","paid_months":1}]
+    assert load_dividends(snapshot(tmp_path, []), today=date(2026,11,9))["six_month_payment_months"] == []
