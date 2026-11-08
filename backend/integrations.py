@@ -73,6 +73,19 @@ def cached(key: str, loader, *, ttl: int = TTL_SECONDS) -> dict:
     return fresh
 
 
+def _forecast_first(payload, name):
+    if not isinstance(payload, dict):
+        return None
+    daily = payload.get("daily")
+    values = daily.get(name) if isinstance(daily, dict) else None
+    if not isinstance(values, list) or not values:
+        return None
+    value = values[0]
+    if type(value) not in (int, float) or not math.isfinite(value):
+        return None
+    return value
+
+
 def weather() -> dict:
     try:
         latitude = float(os.environ.get("TRIS_LATITUDE", "37.5665"))
@@ -101,9 +114,9 @@ def weather() -> dict:
             "weather_code": current["weather_code"],
             "feels_like_c": current.get("apparent_temperature"),
             "wind_kmh": current.get("wind_speed_10m"),
-            "today_high_c": (payload.get("daily", {}).get("temperature_2m_max") or [None])[0],
-            "today_low_c": (payload.get("daily", {}).get("temperature_2m_min") or [None])[0],
-            "rain_chance_percent": (payload.get("daily", {}).get("precipitation_probability_max") or [None])[0],
+            "today_high_c": _forecast_first(payload, "temperature_2m_max"),
+            "today_low_c": _forecast_first(payload, "temperature_2m_min"),
+            "rain_chance_percent": _forecast_first(payload, "precipitation_probability_max"),
         }
     return cached("weather:" + query + ":" + label, load, ttl=600)
 

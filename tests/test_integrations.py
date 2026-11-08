@@ -264,3 +264,24 @@ def test_provider_json_caps_response_before_decoding(monkeypatch):
         integrations.get_json("https://example.invalid/test")
     monkeypatch.setattr(integrations, "urlopen", lambda req, timeout: FakeResponse(b'{"temperature": 12}'))
     assert integrations.get_json("https://example.invalid/test") == {"temperature": 12}
+
+
+def test_weather_retains_current_conditions_if_optional_daily_is_malformed(monkeypatch):
+    integrations._cache.clear()
+    monkeypatch.setattr(integrations, "get_json", lambda url: {
+        "current": {"temperature_2m": 18, "relative_humidity_2m": 45, "weather_code": 1},
+        "daily": {"temperature_2m_max": "bad-shape", "temperature_2m_min": [],
+                  "precipitation_probability_max": [float("nan")]},
+    })
+    value = integrations.weather()
+    assert value["available"] is True
+    assert value["temperature_c"] == 18
+    assert value["today_high_c"] is None
+    assert value["today_low_c"] is None
+    assert value["rain_chance_percent"] is None
+    integrations._cache.clear()
+    monkeypatch.setattr(integrations, "get_json", lambda url: {
+        "current": {"temperature_2m": 12, "relative_humidity_2m": 55, "weather_code": 2},
+        "daily": None,
+    })
+    assert integrations.weather()["available"] is True
