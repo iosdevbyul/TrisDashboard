@@ -226,3 +226,9 @@ def test_corrupted_cached_quote_rows_are_ignored():
     assert refresh_quote_freshness({"available": True, "quotes": [None, 5, {"symbol": "JEPQ", "price": "3", "reported_at_utc": "bad"}]})["quotes"][0]["outdated"] is True
     with pytest.raises(ValueError, match="Invalid quote cache"):
         refresh_quote_freshness(None)
+
+
+@pytest.mark.parametrize("symbol", ["ＪＥＰＱ", "JÉPQ", "JΕPQ", "JEPQ\u0661"])
+def test_quote_symbols_reject_non_ascii_confusables(symbol):
+    with pytest.raises(ValueError, match="Invalid quote symbol"):
+        quote_symbols(symbol)
