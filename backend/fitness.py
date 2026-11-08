@@ -86,6 +86,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
         day_summary["duration_minutes"] = round(day_summary["duration_minutes"], 1)
         day_summary["distance_km"] = round(day_summary["distance_km"], 2)
     weekly.sort(key=lambda item: item["date"], reverse=True)
+    active_days = sum(1 for day in daily.values() if day["sessions"] > 0)
     modified = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
     age_hours = max(0.0, (datetime.now(timezone.utc) - modified).total_seconds()) / 3600
     return {"available": True, "configured": True, "source": "manual_export",
@@ -93,6 +94,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "file_age_hours": round(age_hours, 1),
             "file_older_than_week": age_hours > 168,
             "period_start": start.isoformat(), "period_end": reference.isoformat(),
+            "active_days": active_days,
             "summary": {"sessions": totals["sessions"], "duration_minutes": round(totals["minutes"], 1),
                         "distance_km": round(totals["distance_km"], 2)},
             "recent": weekly[:5], "daily": [
