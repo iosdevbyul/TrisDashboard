@@ -215,6 +215,15 @@ handlers["document:visibilitychange"]();
 assert.match(byId("fitness-updated").textContent, /48 total recorded sessions/);
 assert.match(byId("fitness-summary").textContent, /2 sessions/);
 
+// Agenda groups distinguish today and tomorrow, even across month boundaries.
+response.agenda = {available:true, upcoming_count:3, today_event_count:1,
+  next_event_in_days:0, window_start:"2026-11-30", window_end:"2026-12-14",
+  events:[{date:"2026-11-30",title:"Today"},{date:"2026-12-01",title:"Tomorrow"},
+          {date:"2026-12-03",title:"Later"}]};
+handlers["document:visibilitychange"]();
+const groups = byId("agenda-list").children.filter((item) => item.className === "agenda-group");
+assert.deepEqual(groups.map((item) => item.textContent), ["Today","Tomorrow","Upcoming"]);
+
 // A 20-result GitHub API page is only a lower bound, not an exact PR count.
 response.github = { available: true, repositories: [{
   repository: "owner/busy", available: true, open_pr_count: 20,
