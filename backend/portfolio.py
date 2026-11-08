@@ -80,8 +80,17 @@ def load_portfolio(path: Path) -> dict:
                           "quantity": str(quantity),
                           "price": str(nonnegative(price, "price")) if price is not None else None,
                           "market_value": str(value) if value is not None else None})
+    allocations = {}
+    for currency, total in totals.items():
+        if total > 0 and all(p["market_value"] is not None for p in positions if p["currency"] == currency):
+            allocations[currency] = [
+                {"symbol": p["symbol"], "percent": str(
+                    (Decimal(p["market_value"]) * 100 / total).quantize(Decimal("0.1")))}
+                for p in positions if p["currency"] == currency
+            ]
     return {"available": True, "source": "manual_snapshot", "as_of": parsed.isoformat(),
             "positions": positions, "totals": {k: str(v) for k, v in sorted(totals.items())},
+            "currency_allocations": allocations,
             "valuation_complete": all(p["market_value"] is not None for p in positions),
             "quality": quality,
             "stale": False}
