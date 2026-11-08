@@ -65,10 +65,25 @@ MAX_BYTES = 128 * 1024
 MAX_SESSIONS = 500
 
 
+def _unique_export_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate workout export JSON key")
+        result[key] = value
+    return result
+
+
+def _reject_export_constant(value):
+    raise ValueError("Non-standard workout export JSON value")
+
+
 def parse_export(path: Path, *, timezone_name: str | None = None) -> dict:
     if path.stat().st_size > MAX_BYTES:
         raise ValueError("Export is too large")
-    export = json.loads(path.read_text(encoding="utf-8"))
+    export = json.loads(path.read_text(encoding="utf-8"),
+                        object_pairs_hook=_unique_export_keys,
+                        parse_constant=_reject_export_constant)
     if not isinstance(export, dict) or type(export.get("schema_version")) is not int or export["schema_version"] not in (1, 2):
         raise ValueError("Unsupported export version")
     version = export["schema_version"]
