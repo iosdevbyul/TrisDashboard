@@ -328,3 +328,14 @@ The fitness card displays a seven-day, date-scoped activity breakdown with sessi
 ## Workout source file freshness
 
 The local fitness panel now displays the MacBook workout JSON **file modification time in UTC**, and identifies a file not updated in more than seven days. This timestamp describes the last local file write, **not** the time of the most recent workout, a mobile sync, or data correctness. A week without exercising is not automatically an error, so the source does not become unavailable or mark data as stale solely because the file is old. No additional background network access is required.
+
+## Receive user-shared WakTrainer workout files from Mac Downloads
+
+WakTrainer's iOS export action creates a different `waktrainer-dashboard-UUID.json` filename each time. A new opt-in MacBook command recognizes those named exports in a specified local directory and merges all validated v2 sessions as a **single import**. Preview is the default and never writes:
+
+```sh
+.venv/bin/python -m macos.receive_workouts --directory ~/Downloads --output ~/tris-private/fitness.json
+.venv/bin/python -m macos.receive_workouts --directory ~/Downloads --output ~/tris-private/fitness.json --apply
+```
+
+It reads only `waktrainer-dashboard-*.json` files owned by the logged-in Mac user, rejects symbolic links, caps the number of files and workout records, validates duplicates/conflicts before updating the private JSON, and refuses to erase existing history. Files are **not moved or deleted**, so re-running the command is idempotent; remove/archive older exports manually if the inbox exceeds 50 files. No device upload, cloud polling, root privileges or automatic watch service is added. The owner must first share files from iPhone to the chosen Mac folder (for example, AirDrop/Files).
