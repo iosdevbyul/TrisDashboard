@@ -73,10 +73,15 @@ def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
         raise ValueError("Invalid quote cache")
     if not payload.get("available"):
         return dict(payload)
-    current = now or datetime.now(timezone.utc)
+    current = datetime.now(timezone.utc) if now is None else now
+    if not isinstance(current, datetime) or current.tzinfo is None or current.utcoffset() is None:
+        raise ValueError("Quote reference must have timezone")
+    quotes = payload.get("quotes")
+    if not isinstance(quotes, list):
+        raise ValueError("Invalid quote cache rows")
     result = dict(payload)
     readings = []
-    for quote in payload.get("quotes", []):
+    for quote in quotes:
         if not isinstance(quote, dict):
             continue
         item = dict(quote)
