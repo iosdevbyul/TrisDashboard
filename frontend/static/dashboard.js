@@ -71,7 +71,11 @@
     lastRequestStarted = now;
     var sequence = ++requestSequence;
     if (request && request.readyState !== 4) { request.abort(); }
-    request = get("/healthz", function (online) {
+    request = get("/healthz", function (online, xhr) {
+      if (online) {
+        try { online = JSON.parse(xhr.responseText).status === "ok"; }
+        catch (error) { online = false; }
+      }
       if (sequence === requestSequence) { setConnection(online); }
     });
   }
