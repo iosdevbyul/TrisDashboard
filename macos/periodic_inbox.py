@@ -66,7 +66,8 @@ def read_run_state(home: Path) -> dict:
     if path.is_symlink():
         return {"last_run_known": False}
     try:
-        if not path.is_file() or path.stat().st_size > 2048:
+        if (not path.is_file() or path.stat().st_size > 2048
+                or path.stat().st_mode & 0o077):
             return {"last_run_known": False}
         data = json.loads(path.read_text(encoding="utf-8"),
                           object_pairs_hook=_unique_state_keys,
