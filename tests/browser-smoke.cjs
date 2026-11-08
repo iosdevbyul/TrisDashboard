@@ -22,7 +22,7 @@ class TestDate extends Date {
 function element(id = "") {
   const children = [];
   const result = {
-    id, checked: false, hidden: false, textContent: "", className: "",
+    id, checked: false, hidden: false, textContent: "", className: "", style: {},
     children, attributes: {}, href: "",
     get firstChild() { return children.length ? children[0] : null; },
     appendChild(child) { children.push(child); return child; },
@@ -209,11 +209,17 @@ assert.match(byId("data-refresh-state").textContent, /succeeded at \d\d:\d\d/i);
 response.fitness = {
   available: true, summary: {sessions: 2, duration_minutes: 50, distance_km: 5},
   active_days: 2, total_history_count: 48,
-  period_start: "2026-11-02", period_end: "2026-11-08", daily: [], recent: []
+  period_start: "2026-11-02", period_end: "2026-11-08",
+  daily: [{date: "2026-11-07", sessions: 1, duration_minutes: 30, distance_km: 3},
+          {date: "2026-11-08", sessions: 1, duration_minutes: 60, distance_km: 2}], recent: []
 };
 handlers["document:visibilitychange"]();
 assert.match(byId("fitness-updated").textContent, /48 total recorded sessions/);
 assert.match(byId("fitness-summary").textContent, /2 sessions/);
+const bars = byId("fitness-list").children.find((child) => child.className === "workout-bars");
+assert.ok(bars);
+assert.equal(bars.children[0].children[1].children[0].style.width, "50%");
+assert.equal(bars.children[1].children[1].children[0].style.width, "100%");
 
 // A 20-result GitHub API page is only a lower bound, not an exact PR count.
 response.github = { available: true, repositories: [{
