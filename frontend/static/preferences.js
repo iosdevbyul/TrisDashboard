@@ -68,6 +68,10 @@
     panel.hidden = !panel.hidden;
     this.setAttribute("aria-expanded", panel.hidden ? "false" : "true");
   });
+  document.getElementById("close-display-settings").addEventListener("click", function () {
+    document.getElementById("display-settings").hidden = true;
+    document.getElementById("settings-button").setAttribute("aria-expanded", "false");
+  });
   document.getElementById("setting-compact").addEventListener("change", function () {
     settings.compact = this.checked; apply(); store();
   });
