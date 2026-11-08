@@ -256,7 +256,9 @@
         var symbolRow = document.createElement("div");
         symbolRow.className = "repo-row";
         symbolRow.textContent = symbolTotals[sb].symbol + " · " + symbolTotals[sb].amount +
-          " " + symbolTotals[sb].currency;
+          " " + symbolTotals[sb].currency +
+          (typeof symbolTotals[sb].currency_share_percent === "string" ?
+           " · " + symbolTotals[sb].currency_share_percent + "% of " + symbolTotals[sb].currency + " payments" : "");
         list.appendChild(symbolRow);
       }
     }
