@@ -240,8 +240,9 @@ response.valuation = {
   partial: false, totals: { USD: "150.75" }, stale: false
 };
 retry.callback();
-assert.equal(byId("quotes-summary").textContent, "1/1 quotes reported");
+assert.match(byId("quotes-summary").textContent, /^1\/1 quotes reported · Oldest reading 3\.5h ago$/);
 assert.match(byId("quotes-list").children[0].textContent, /3\.5h old/);
+assert.match(byId("quotes-summary").textContent, /Oldest reading 3\.5h ago/);
 response.quotes.quotes[0].outdated = true;
 handlers["document:visibilitychange"]();
 assert.match(byId("quotes-summary").textContent, /1 outdated/);
@@ -356,7 +357,7 @@ assert.match(byId("trello-summary").textContent, /16 cards/);
 overviewBody = "{invalid-json";
 handlers["document:visibilitychange"]();
 assert.match(byId("data-refresh-state").textContent, /failed/i);
-assert.equal(byId("quotes-summary").textContent, "1/1 quotes reported");
+assert.match(byId("quotes-summary").textContent, /^1\/1 quotes reported · Oldest reading 3\.5h ago$/);
 assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
 
 // A 200 response that fails during card rendering must not claim refresh success.
