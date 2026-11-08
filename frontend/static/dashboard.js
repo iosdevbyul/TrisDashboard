@@ -621,21 +621,25 @@
       text("weather-details", "No weather data yet");
     } else {
       text("weather-temp", temperature(info.temperature_c));
+      var humidity = typeof info.humidity_percent === "number" && isFinite(info.humidity_percent) &&
+        info.humidity_percent >= 0 && info.humidity_percent <= 100 ?
+        info.humidity_percent + "%" : "unavailable";
       var details = info.location + " · " + weatherDescription(info.weather_code) +
-        " · Humidity " + info.humidity_percent + "%";
+        " · Humidity " + humidity;
       if (typeof info.wind_kmh === "number" && isFinite(info.wind_kmh) && info.wind_kmh >= 0) {
         details += " · Wind " + info.wind_kmh + " km/h";
       }
-      if (info.feels_like_c !== null && typeof info.feels_like_c !== "undefined") {
+      if (typeof info.feels_like_c === "number" && isFinite(info.feels_like_c)) {
         details += " · Feels " + temperature(info.feels_like_c);
       }
-      if (info.today_high_c !== null && typeof info.today_high_c !== "undefined") {
+      if (typeof info.today_high_c === "number" && isFinite(info.today_high_c)) {
         details += " · High " + temperature(info.today_high_c);
       }
-      if (info.today_low_c !== null && typeof info.today_low_c !== "undefined") {
+      if (typeof info.today_low_c === "number" && isFinite(info.today_low_c)) {
         details += " / Low " + temperature(info.today_low_c);
       }
-      if (info.rain_chance_percent !== null && typeof info.rain_chance_percent !== "undefined") {
+      if (typeof info.rain_chance_percent === "number" && isFinite(info.rain_chance_percent) &&
+          info.rain_chance_percent >= 0 && info.rain_chance_percent <= 100) {
         details += " · Rain " + info.rain_chance_percent + "%";
       }
       text("weather-details", details);
