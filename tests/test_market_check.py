@@ -70,3 +70,15 @@ def test_configured_symbols_still_check_keychain(tmp_path):
     report = inspect_market(write_settings(tmp_path, TRIS_QUOTE_SYMBOLS="JEPQ"), lookup=lookup)
     assert report["ready_for_optional_api_test"] is True
     assert calls == [SERVICE_NAMES["TRIS_TWELVEDATA_API_KEY"]]
+
+
+def test_market_preflight_rejects_malformed_keychain_lookup_without_leaking(tmp_path):
+    for exception in (ValueError("private-key"), TypeError("private-key")):
+        def failing_lookup(service):
+            raise exception
+        report = inspect_market(write_settings(tmp_path, TRIS_QUOTE_SYMBOLS="JEPQ"),
+                                lookup=failing_lookup)
+        assert report["settings_valid"] is True
+        assert report["keychain_key_present"] is False
+        assert report["ready_for_optional_api_test"] is False
+        assert "private-key" not in str(report)
