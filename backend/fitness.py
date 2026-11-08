@@ -1,14 +1,27 @@
 """Optional local workout export, without HealthKit or remote credentials."""
 import json
 import os
+import re
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+
+
+_DATE_RE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+
+
+def _unique_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate workout JSON key")
+        result[key] = value
+    return result
 
 
 def load_fitness(path: Path, today: date | None = None) -> dict:
     if path.stat().st_size > 128 * 1024:
         raise ValueError("Workout file too large")
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys)
     if not isinstance(payload, dict) or not isinstance(payload.get("workouts"), list):
         raise ValueError("Expected workouts array")
     workouts = payload["workouts"]
@@ -32,6 +45,8 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
         distance = workout.get("distance_km", 0)
         if not isinstance(day_text, str) or not isinstance(kind, str) or not 1 <= len(kind) <= 32:
             raise ValueError("Invalid workout fields")
+        if not _DATE_RE.fullmatch(day_text):
+            raise ValueError("Invalid workout date")
         workout_day = date.fromisoformat(day_text)
         if any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ -_" for c in kind):
             raise ValueError("Invalid workout type")
@@ -44,7 +59,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
         session_id = workout.get("session_id")
         if session_id is not None and (
                 not isinstance(session_id, str) or not 1 <= len(session_id) <= 100
-                or not all(c.isalnum() or c in "-_:." for c in session_id)):
+                or not all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_:. " for c in session_id)):
             raise ValueError("Invalid session ID")
         if session_id is not None:
             if session_id in seen_ids:
