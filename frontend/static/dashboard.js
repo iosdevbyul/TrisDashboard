@@ -59,6 +59,9 @@
     } else {
       wasOffline = true;
       offlineBanner.hidden = false;
+      offlineBanner.textContent = "MacBook server is unreachable. " +
+        (lastSuccessfulOverview ? "Last successful update at " + lastSuccessfulOverview + ". Showing saved screen values." :
+        "No dashboard data has been loaded yet.");
       connection.textContent = "Server offline";
       text("glance-connection", "Offline");
       indicator.className = "indicator offline";
