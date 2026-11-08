@@ -205,6 +205,16 @@
         list.appendChild(barRow);
       }
     }
+    var largestHoldings = info.largest_holdings || {};
+    var largestCurrencies = Object.keys(largestHoldings);
+    for (var lh = 0; lh < largestCurrencies.length; lh++) {
+      var largestRow = document.createElement("div");
+      largestRow.className = "repo-row";
+      var lc = largestCurrencies[lh];
+      largestRow.textContent = "Largest manually valued holding · " + lc + " " +
+        largestHoldings[lc].symbol + " (" + largestHoldings[lc].market_value + ")";
+      list.appendChild(largestRow);
+    }
     if (valuation && valuation.available) {
       var totalsLabel = [];
       var quoteKeys = Object.keys(valuation.totals || {});
