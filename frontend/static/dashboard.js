@@ -371,6 +371,13 @@
     var weekCount = typeof info.next_seven_days_count === "number" ?
       " · " + info.next_seven_days_count + " in next 7 days" : "";
     text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + nextLabel);
+    if (info.next_event && typeof info.next_event.title === "string") {
+      var nextRow = document.createElement("div");
+      nextRow.className = "repo-row";
+      nextRow.textContent = "Next scheduled: " + info.next_event.title + " · " +
+        info.next_event.date + (info.next_event.time ? " " + info.next_event.time : "");
+      list.appendChild(nextRow);
+    }
     var events = info.events || [];
     var todayDate = info.window_start;
     var tomorrowDate = "";

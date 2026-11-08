@@ -124,3 +124,14 @@ def test_next_seven_days_count_includes_today_and_excludes_day_eight(tmp_path):
     assert result["next_seven_days_count"] == 2
     assert result["upcoming_count"] == 4
     assert load_agenda(file_with(tmp_path, []), today=date(2026, 11, 9))["next_seven_days_count"] == 0
+
+
+def test_next_event_preview_is_chronologically_earliest(tmp_path):
+    source = file_with(tmp_path, [
+        {"date":"2026-11-10","time":"14:00","title":"Afternoon"},
+        {"date":"2026-11-10","time":"09:00","title":"Morning"},
+        {"date":"2026-11-09","title":"Today"},
+    ])
+    result = load_agenda(source, today=date(2026, 11, 9))
+    assert result["next_event"] == {"date":"2026-11-09","time":"","title":"Today"}
+    assert load_agenda(file_with(tmp_path, []), today=date(2026, 11, 9))["next_event"] is None
