@@ -233,7 +233,10 @@
       text("agenda-updated", info && info.configured ? "Check local agenda file" : "Configure on MacBook");
       return;
     }
-    text("agenda-summary", info.upcoming_count + " upcoming events");
+    var nextIn = info.next_event_in_days;
+    var nextLabel = typeof nextIn === "number" && nextIn >= 0 ?
+      " · Next " + (nextIn === 0 ? "today" : nextIn === 1 ? "tomorrow" : "in " + nextIn + " days") : "";
+    text("agenda-summary", info.upcoming_count + " upcoming events" + nextLabel);
     var events = info.events || [];
     for (var i = 0; i < events.length; i++) {
       var row = document.createElement("div");
