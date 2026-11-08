@@ -228,3 +228,19 @@ def test_backup_manifest_requires_valid_nonfuture_timezone_aware_timestamp(tmp_p
     with pytest.raises(ValueError, match="creation time"):
         validate_backup(snapshot)
     assert holdings.exists() and agenda.exists()
+
+
+def test_backup_and_restore_refuse_symlink_configured_private_files(tmp_path):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    snapshot = tmp_path / "backup"
+    backup(settings, snapshot)
+    alias = tmp_path / "holdings-link.json"
+    alias.symlink_to(holdings)
+    settings.write_text(json.dumps({"TRIS_PORTFOLIO_FILE": str(alias),
+                                    "TRIS_AGENDA_FILE": str(agenda)}))
+    before = holdings.read_bytes()
+    with pytest.raises(ValueError, match="symlink"):
+        backup(settings, tmp_path / "another-backup")
+    with pytest.raises(ValueError, match="symlink"):
+        restore(settings, snapshot, force=True)
+    assert holdings.read_bytes() == before
