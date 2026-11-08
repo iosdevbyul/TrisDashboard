@@ -110,3 +110,15 @@ def test_same_symbol_different_currencies_are_distinct(tmp_path):
         {"symbol": "TEST", "currency": "KRW", "quantity": 3},
     ])
     assert len(load_portfolio(path)["positions"]) == 2
+
+
+def test_currency_allocations_require_complete_manual_prices(tmp_path):
+    result = load_portfolio(write_snapshot(tmp_path, [
+        {"symbol": "JEPQ", "currency": "USD", "quantity": 1, "price": 75},
+        {"symbol": "SCHD", "currency": "USD", "quantity": 1, "price": 25},
+        {"symbol": "KR", "currency": "KRW", "quantity": 1},
+    ]))
+    assert result["currency_allocations"]["USD"] == [
+        {"symbol": "JEPQ", "percent": "75.0"}, {"symbol": "SCHD", "percent": "25.0"}]
+    assert "KRW" not in result["currency_allocations"]
+    assert result["valuation_complete"] is False
