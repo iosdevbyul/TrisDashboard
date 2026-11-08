@@ -2,7 +2,7 @@
   "use strict";
   var key = "tris.dashboard.display.v1";
   var panelNames = ["portfolio", "quotes", "dividends", "agenda", "github", "weather", "trello", "server", "fitness"];
-  var settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, hidden: []};
+  var settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, hidden: []};
 
   function store() {
     try { window.localStorage.setItem(key, JSON.stringify(settings)); } catch (error) {}
@@ -17,6 +17,7 @@
         settings.glance = saved.glance === true;
         settings.largeText = saved.largeText === true;
         settings.highContrast = saved.highContrast === true;
+        settings.refreshMinutes = [3, 5, 10].indexOf(saved.refreshMinutes) !== -1 ? saved.refreshMinutes : 3;
         if (Object.prototype.toString.call(saved.hidden) === "[object Array]") {
           settings.hidden = [];
           for (var i = 0; i < saved.hidden.length; i++) {
@@ -36,6 +37,9 @@
     document.getElementById("setting-glance").checked = settings.glance;
     document.getElementById("setting-large-text").checked = settings.largeText;
     document.getElementById("setting-high-contrast").checked = settings.highContrast;
+    document.getElementById("setting-refresh-minutes").value = String(settings.refreshMinutes);
+    document.getElementById("refresh-cadence").textContent = "Data refreshes every " + settings.refreshMinutes + " minutes";
+    window.trisDashboardRefreshMinutes = settings.refreshMinutes;
     for (var i = 0; i < panelNames.length; i++) {
       var name = panelNames[i];
       var visible = settings.hidden.indexOf(name) === -1;
@@ -100,6 +104,11 @@
   document.getElementById("setting-high-contrast").addEventListener("change", function () {
     settings.highContrast = this.checked; apply(); store();
   });
+  document.getElementById("setting-refresh-minutes").addEventListener("change", function () {
+    var minutes = Number(this.value);
+    if ([3, 5, 10].indexOf(minutes) !== -1) { settings.refreshMinutes = minutes; }
+    apply(); store();
+  });
   document.getElementById("focus-panels").addEventListener("click", function () {
     var focus = ["portfolio", "quotes", "dividends", "github", "fitness"];
     settings.hidden = [];
@@ -125,7 +134,7 @@
     apply(); store();
   });
   document.getElementById("reset-settings").addEventListener("click", function () {
-    settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, hidden: []}; apply(); store();
+    settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, hidden: []}; apply(); store();
   });
 
   buildControls(); restore(); apply();
