@@ -20,7 +20,7 @@ def test_weather_stale_fallback(monkeypatch):
     monkeypatch.setattr(integrations, "get_json", lambda url: {"current": {"temperature_2m": 10, "relative_humidity_2m": 30, "weather_code": 1}})
     assert integrations.weather()["available"]
     for item in integrations._cache.values():
-        item["time"] = -999999
+        item["time"] -= 601
     def fail(url):
         raise OSError("no network")
     monkeypatch.setattr(integrations, "get_json", fail)
