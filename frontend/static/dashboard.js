@@ -513,10 +513,6 @@
         if (!payload || typeof payload !== "object" || !payload.server || !payload.weather || !payload.github) {
           throw new Error("Unexpected overview response");
         }
-        consecutiveOverviewFailures = 0;
-        var refreshedAt = new Date();
-        lastSuccessfulOverview = pad(refreshedAt.getHours()) + ":" + pad(refreshedAt.getMinutes());
-        text("data-refresh-state", "Last overview refresh succeeded at " + lastSuccessfulOverview + ".");
         showGithub(payload.github);
         showWeather(payload.weather);
         showTrello(payload.trello);
@@ -527,9 +523,11 @@
         showDividends(payload.dividends);
         showAgenda(payload.agenda);
         showSummary(payload);
+        consecutiveOverviewFailures = 0;
+        var refreshedAt = new Date();
+        lastSuccessfulOverview = pad(refreshedAt.getHours()) + ":" + pad(refreshedAt.getMinutes());
+        text("data-refresh-state", "Last overview refresh succeeded at " + lastSuccessfulOverview + ".");
       } catch (error) {
-        text("weather-updated", "Invalid server response");
-        text("github-updated", "Invalid server response");
         retryOverview();
       }
     }, 10000);

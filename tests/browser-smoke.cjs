@@ -226,6 +226,15 @@ assert.match(byId("data-refresh-state").textContent, /failed/i);
 assert.equal(byId("quotes-summary").textContent, "1/1 quotes reported");
 assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
 
+// A 200 response that fails during card rendering must not claim refresh success.
+overviewBody = null;
+response.portfolio = {available: true, positions: [], quality: {outdated: false}};
+handlers["document:visibilitychange"]();
+assert.match(byId("data-refresh-state").textContent, /failed/i);
+assert.doesNotMatch(byId("data-refresh-state").textContent, /succeeded/i);
+assert.notEqual(byId("weather-updated").textContent, "Invalid server response");
+response.portfolio = {available: false, configured: false};
+
 // An HTTP 200 with an invalid health payload is not an online server.
 healthBody = '{"status":"not-ready"}';
 clockOffset += 3000;
