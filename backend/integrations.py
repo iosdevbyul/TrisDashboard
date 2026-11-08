@@ -1,5 +1,6 @@
 """Server-only read-only integrations with bounded HTTP calls and stale caching."""
 import json
+import math
 import hashlib
 from concurrent.futures import ThreadPoolExecutor, wait
 import os
@@ -69,8 +70,14 @@ def cached(key: str, loader, *, ttl: int = TTL_SECONDS) -> dict:
 
 
 def weather() -> dict:
-    latitude = float(os.environ.get("TRIS_LATITUDE", "37.5665"))
-    longitude = float(os.environ.get("TRIS_LONGITUDE", "126.9780"))
+    try:
+        latitude = float(os.environ.get("TRIS_LATITUDE", "37.5665"))
+        longitude = float(os.environ.get("TRIS_LONGITUDE", "126.9780"))
+    except ValueError:
+        return {"available": False, "configured": True, "stale": True}
+    if (not math.isfinite(latitude) or not math.isfinite(longitude)
+            or not -90 <= latitude <= 90 or not -180 <= longitude <= 180):
+        return {"available": False, "configured": True, "stale": True}
     label = os.environ.get("TRIS_LOCATION_NAME", "Seoul")[:60]
     query = urlencode({
         "latitude": latitude, "longitude": longitude,
