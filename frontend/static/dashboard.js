@@ -268,7 +268,12 @@
       row.textContent = recent[i].date + " · " + recent[i].type + " · " + recent[i].duration_minutes + " min";
       list.appendChild(row);
     }
-    text("fitness-updated", "Local export · Refreshes on page data update");
+    var updated = "Local export · Refreshes on page data update";
+    if (info.file_updated_utc) {
+      updated = "Local file updated " + info.file_updated_utc.replace("T", " ").slice(0, 16) +
+        " UTC" + (info.file_older_than_week ? " · FILE OVER 7 DAYS OLD" : "");
+    }
+    text("fitness-updated", updated);
   }
 
   function showWeather(info) {
