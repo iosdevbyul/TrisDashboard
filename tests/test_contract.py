@@ -42,3 +42,13 @@ def test_show_all_panels_control_is_served_and_wired():
     assert 'id="show-all-panels"' in html
     assert 'getElementById("show-all-panels").addEventListener("click"' in js
     assert "settings.hidden = [];" in js
+
+
+def test_legacy_ipad_controls_have_touch_targets_and_keyboard_focus():
+    css = client.get("/static/style.css").text
+    assert "min-height:44px" in css
+    assert "outline:3px solid #a7ccef" in css
+    assert "overflow-wrap:break-word" in css
+    js = client.get("/static/dashboard.js").text
+    assert "=>" not in js
+    assert "const " not in js
