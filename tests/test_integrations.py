@@ -215,3 +215,17 @@ def test_github_token_rotation_invalidates_cache(monkeypatch):
     assert len(requests) == 4
     assert "token-one" not in str(integrations._cache)
     assert "token-two" not in str(integrations._cache)
+
+
+import pytest
+
+
+@pytest.mark.parametrize("latitude, longitude", [("invalid", "126.9"), ("NaN", "126.9"),
+                                                   ("91", "126.9"), ("37", "181"),
+                                                   ("Infinity", "126.9")])
+def test_weather_bad_coordinate_configuration_fails_safe(monkeypatch, latitude, longitude):
+    integrations._cache.clear()
+    monkeypatch.setenv("TRIS_LATITUDE", latitude)
+    monkeypatch.setenv("TRIS_LONGITUDE", longitude)
+    monkeypatch.setattr(integrations, "get_json", lambda url: pytest.fail("unexpected request"))
+    assert integrations.weather() == {"available": False, "configured": True, "stale": True}
