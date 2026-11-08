@@ -40,6 +40,12 @@
     <label><input id="setting-glance" type="checkbox"> Glance mode</label>
     <label><input id="setting-large-text" type="checkbox"> Large text</label>
     <label><input id="setting-high-contrast" type="checkbox"> High contrast</label>
+    <label for="setting-refresh-minutes">Automatic refresh</label>
+    <select id="setting-refresh-minutes" aria-label="Automatic data refresh interval">
+      <option value="3">Every 3 minutes</option>
+      <option value="5">Every 5 minutes</option>
+      <option value="10">Every 10 minutes</option>
+    </select>
     <div class="settings-label">Visible panels</div>
     <div id="panel-visibility"></div>
     <button type="button" id="close-display-settings">Close settings</button>
@@ -76,6 +82,7 @@
       <h2>Agenda · Next 14 days</h2>
       <p id="agenda-summary">Not configured</p>
       <div id="agenda-list" class="details">Private local schedule</div>
+      <button type="button" id="agenda-toggle" hidden aria-expanded="false">Show more events</button>
       <small id="agenda-updated">Local manually entered events</small>
     </article>
     <article class="card" data-panel="github">
@@ -110,7 +117,7 @@
       <small id="fitness-updated">Not a live HealthKit connection</small>
     </article>
   </section>
-  <footer>Local network &middot; TrisDashboard &middot; Data refreshes every 3 minutes</footer>
+  <footer>Local network &middot; TrisDashboard &middot; <span id="refresh-cadence">Data refreshes every 3 minutes</span></footer>
 </main>
 <script src="/static/dashboard.js"></script>
 <script src="/static/preferences.js"></script>

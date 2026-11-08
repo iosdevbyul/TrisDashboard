@@ -21,6 +21,8 @@
   var lastWeatherInfo = null;
   try { weatherFahrenheit = window.localStorage.getItem("tris.dashboard.weather.fahrenheit") === "true"; }
   catch (error) {}
+  var agendaExpanded = false;
+  var lastAgendaInfo = null;
 
   function pad(number) { return number < 10 ? "0" + number : String(number); }
   function text(id, value) { document.getElementById(id).textContent = String(value); }
@@ -390,9 +392,12 @@
   }
 
   function showAgenda(info) {
+    lastAgendaInfo = info;
+    var toggle = document.getElementById("agenda-toggle");
     var list = document.getElementById("agenda-list");
     while (list.firstChild) { list.removeChild(list.firstChild); }
     if (!info || !info.available) {
+      toggle.hidden = true;
       text("agenda-summary", info && info.configured ? "Unavailable" : "Not configured");
       text("agenda-updated", info && info.configured ? "Check local agenda file" : "Configure on MacBook");
       return;
@@ -417,6 +422,10 @@
       list.appendChild(nextRow);
     }
     var events = info.events || [];
+    var visibleEventCount = agendaExpanded ? events.length : Math.min(8, events.length);
+    toggle.hidden = events.length <= 8;
+    toggle.textContent = agendaExpanded ? "Show fewer events" : "Show more events";
+    toggle.setAttribute("aria-expanded", agendaExpanded ? "true" : "false");
     var todayDate = info.window_start;
     var tomorrowDate = "";
     if (typeof todayDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(todayDate)) {
@@ -425,7 +434,7 @@
       tomorrowDate = nextDay.getUTCFullYear() + "-" + pad(nextDay.getUTCMonth() + 1) + "-" + pad(nextDay.getUTCDate());
     }
     var lastGroup = "";
-    for (var i = 0; i < events.length; i++) {
+    for (var i = 0; i < visibleEventCount; i++) {
       var group = events[i].date === todayDate ? "Today" :
         events[i].date === tomorrowDate ? "Tomorrow" : "Upcoming";
       if (group !== lastGroup) {
@@ -440,7 +449,8 @@
       row.textContent = events[i].date + (events[i].time ? " " + events[i].time : "") + " · " + events[i].title;
       list.appendChild(row);
     }
-    text("agenda-updated", "Local calendar · " + info.window_start + " to " + info.window_end);
+    text("agenda-updated", "Local calendar · " + info.window_start + " to " + info.window_end +
+      (info.events_truncated ? " · First 30 events shown" : ""));
   }
 
   function showFitness(info) {
@@ -657,11 +667,13 @@
       }
       var previews = repos[i].open_prs || [];
       for (var k = 0; k < previews.length; k++) {
-        if (typeof previews[k].url === "string" &&
-            previews[k].url.indexOf("https://github.com/") === 0) {
+        if (typeof repoName === "string" &&
+            /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(repoName) &&
+            typeof previews[k].number === "number" && isFinite(previews[k].number) &&
+            previews[k].number > 0 && Math.floor(previews[k].number) === previews[k].number) {
           var link = document.createElement("a");
           link.className = "github-pr-link";
-          link.href = previews[k].url;
+          link.href = "https://github.com/" + repoName + "/pull/" + previews[k].number;
           link.target = "_blank";
           link.rel = "noopener noreferrer";
           link.textContent = "#" + previews[k].number + " " + previews[k].title;
@@ -800,6 +812,11 @@
     }, 10000);
   }
 
+  document.getElementById("agenda-toggle").addEventListener("click", function () {
+    agendaExpanded = !agendaExpanded;
+    if (lastAgendaInfo) { showAgenda(lastAgendaInfo); }
+  });
+
   document.getElementById("weather-unit-button").addEventListener("click", function () {
     weatherFahrenheit = !weatherFahrenheit;
     try { window.localStorage.setItem("tris.dashboard.weather.fahrenheit", String(weatherFahrenheit)); }
@@ -818,7 +835,12 @@
   loadOverview(true);
   setInterval(tick, 1000);
   setInterval(function () { if (!document.hidden) { checkServer(); } }, 15000);
-  setInterval(function () { if (!document.hidden) { loadOverview(false); } }, 180000);
+  setInterval(function () {
+    var interval = window.trisDashboardRefreshMinutes || 3;
+    if (!document.hidden && new Date().getTime() - lastDataStarted >= interval * 60000) {
+      loadOverview(false);
+    }
+  }, 60000);
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) { tick(); checkServer(); loadOverview(true); } else { clearOverviewRetry(); }
   });

@@ -118,6 +118,7 @@ assert.equal(byId("weather-temp").textContent, "71.6 °F");
 assert.equal(state["tris.dashboard.weather.fahrenheit"], "true");
 handlers["weather-unit-button:click"]();
 assert.equal(byId("weather-temp").textContent, "22 °C");
+
 response.weather.weather_code = 2;
 handlers["document:visibilitychange"]();
 assert.match(byId("weather-details").textContent, /Partly cloudy/);
@@ -167,9 +168,24 @@ assert.equal(paths.includes("reload"), false);
 const beforeHiddenPoll = paths.length;
 document.hidden = true;
 periodic.find((item) => item.delay === 15000).callback();
-periodic.find((item) => item.delay === 180000).callback();
+periodic.find((item) => item.delay === 60000).callback();
 assert.equal(paths.length, beforeHiddenPoll);
 document.hidden = false;
+
+// Users can adjust the auto-refresh cadence without reloading the page.
+byId("setting-refresh-minutes").value = "10";
+handlers["setting-refresh-minutes:change"].call(byId("setting-refresh-minutes"));
+assert.equal(window.trisDashboardRefreshMinutes, 10);
+assert.match(byId("refresh-cadence").textContent, /10 minutes/);
+const beforeCadence = paths.filter((url) => url.startsWith("/api/overview")).length;
+clockOffset += 6 * 60000;
+periodic.find((item) => item.delay === 60000).callback();
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforeCadence);
+clockOffset += 5 * 60000;
+periodic.find((item) => item.delay === 60000).callback();
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforeCadence + 1);
+byId("setting-refresh-minutes").value = "3";
+handlers["setting-refresh-minutes:change"].call(byId("setting-refresh-minutes"));
 
 // API failure must retain the last rendered values and schedule a bounded retry.
 const priorWeather = byId("weather-temp").textContent;
@@ -241,6 +257,19 @@ assert.ok(bars);
 assert.equal(bars.children[0].children[1].children[0].style.width, "50%");
 assert.equal(bars.children[1].children[1].children[0].style.width, "100%");
 
+// Agenda can expand beyond the first eight entries without reloading Safari.
+response.agenda = { available:true, window_start:"2026-11-09", window_end:"2026-11-23",
+  upcoming_count:10, today_event_count:10, tomorrow_event_count:0,
+  events:Array.from({length:10}, (_,i)=>({date:"2026-11-09",title:"Event "+i,time:""})) };
+handlers["document:visibilitychange"]();
+assert.equal(byId("agenda-toggle").hidden, false);
+assert.equal(byId("agenda-list").children.length, 9);
+handlers["agenda-toggle:click"]();
+assert.equal(byId("agenda-list").children.length, 11);
+assert.equal(byId("agenda-toggle").attributes["aria-expanded"], "true");
+handlers["agenda-toggle:click"]();
+assert.equal(byId("agenda-list").children.length, 9);
+
 // A 20-result GitHub API page is only a lower bound, not an exact PR count.
 response.github = { available: true, repositories: [{
   repository: "owner/busy", available: true, open_pr_count: 20,
@@ -250,6 +279,13 @@ handlers["document:visibilitychange"]();
 assert.match(byId("github-summary").textContent, /20\+ known open PRs/);
 assert.match(byId("github-list").children[0].textContent, /20\+ open PRs/);
 assert.equal(byId("github-list").children[1].href, "https://github.com/owner/busy");
+response.github.repositories[0].open_prs = [{number:42,title:"Safe PR",url:"https://github.com/malicious.example/bad"}];
+handlers["document:visibilitychange"]();
+assert.equal(byId("github-list").children[2].href, "https://github.com/owner/busy/pull/42");
+response.github.repositories[0].open_prs = [{number:0,title:"Invalid PR",url:"https://github.com/owner/busy/pull/0"}];
+handlers["document:visibilitychange"]();
+assert.equal(byId("github-list").children.length, 2);
+response.github.repositories[0].open_prs = [];
 response.github.repositories[0].repository = "owner/evil?access_token=secret";
 handlers["document:visibilitychange"]();
 assert.equal(byId("github-list").children.length, 1);
