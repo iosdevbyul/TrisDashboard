@@ -80,6 +80,8 @@ def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
         if not isinstance(quote, dict):
             continue
         item = dict(quote)
+        if not item.get("price") or not item.get("reported_at_utc"):
+            item["outdated"] = True
         if item.get("price") and item.get("reported_at_utc"):
             try:
                 timestamp = datetime.fromisoformat(item["reported_at_utc"])
