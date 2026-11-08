@@ -85,9 +85,14 @@ def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
         if not isinstance(quote, dict):
             continue
         item = dict(quote)
-        if not item.get("price") or not item.get("reported_at_utc"):
+        try:
+            value = Decimal(str(item.get("price")))
+            valid_price = not isinstance(item.get("price"), bool) and value.is_finite() and value > 0
+        except (ValueError, TypeError, InvalidOperation):
+            valid_price = False
+        if not valid_price or not item.get("reported_at_utc"):
             item["outdated"] = True
-        if item.get("price") and item.get("reported_at_utc"):
+        if valid_price and item.get("reported_at_utc"):
             try:
                 timestamp = datetime.fromisoformat(item["reported_at_utc"])
                 if timestamp.tzinfo is None or timestamp.utcoffset() is None:
