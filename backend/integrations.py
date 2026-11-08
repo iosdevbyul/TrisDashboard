@@ -20,6 +20,7 @@ from backend.valuation import quote_valuation
 _cache = {}
 _lock = threading.Lock()
 TTL_SECONDS = 300
+MAX_PROVIDER_RESPONSE_BYTES = 1024 * 1024
 _PROVIDER_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="dashboard-provider")
 _PROVIDER_INFLIGHT = {}
 _PROVIDER_LOCK = threading.Lock()
@@ -45,7 +46,10 @@ def get_json(url: str, headers: dict | None = None) -> dict:
         request_headers.update(headers)
     request = Request(url, headers=request_headers)
     with urlopen(request, timeout=5) as response:
-        return json.load(response)
+        payload = response.read(MAX_PROVIDER_RESPONSE_BYTES + 1)
+        if len(payload) > MAX_PROVIDER_RESPONSE_BYTES:
+            raise ValueError("Provider JSON response too large")
+        return json.loads(payload)
 
 
 def cached(key: str, loader, *, ttl: int = TTL_SECONDS) -> dict:

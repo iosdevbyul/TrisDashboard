@@ -245,3 +245,22 @@ def test_github_repository_config_rejects_unicode_homographs(monkeypatch):
     assert data["available"] is True
     assert [entry["repository"] for entry in data["repositories"]] == ["valid/repo"]
     assert len(observed) == 2
+
+
+def test_provider_json_caps_response_before_decoding(monkeypatch):
+    from backend import integrations
+    class FakeResponse:
+        def __init__(self, payload):
+            self.payload = payload
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def read(self, limit):
+            assert limit == integrations.MAX_PROVIDER_RESPONSE_BYTES + 1
+            return self.payload[:limit]
+    monkeypatch.setattr(integrations, "urlopen", lambda req, timeout: FakeResponse(b" " * (integrations.MAX_PROVIDER_RESPONSE_BYTES + 1)))
+    with pytest.raises(ValueError, match="too large"):
+        integrations.get_json("https://example.invalid/test")
+    monkeypatch.setattr(integrations, "urlopen", lambda req, timeout: FakeResponse(b'{"temperature": 12}'))
+    assert integrations.get_json("https://example.invalid/test") == {"temperature": 12}
