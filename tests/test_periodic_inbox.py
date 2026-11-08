@@ -278,3 +278,15 @@ def test_inbox_state_rejects_invalid_candidate_counts(tmp_path, files):
     path.write_text(json.dumps({"checked_at_utc": datetime.now(timezone.utc).isoformat(),
                                 "success": True, "candidate_files": files, "new_workouts": 1}))
     assert read_run_state(tmp_path) == {"last_run_known": False}
+
+
+@pytest.mark.parametrize("payload", [
+    '{"checked_at_utc":"2026-11-08T08:00:00+00:00","success":true,"success":false,"candidate_files":1,"new_workouts":1}',
+    '{"checked_at_utc":"2026-11-08T08:00:00+00:00","success":true,"candidate_files":1,"new_workouts":1,"metadata":NaN}',
+])
+def test_inbox_state_rejects_ambiguous_json(tmp_path, payload):
+    from macos.periodic_inbox import state_path, read_run_state
+    path = state_path(tmp_path)
+    path.parent.mkdir(parents=True)
+    path.write_text(payload)
+    assert read_run_state(tmp_path) == {"last_run_known": False}
