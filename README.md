@@ -437,3 +437,7 @@ The MacBook workout inbox rejects an individual shared JSON larger than 128 KiB 
 ### Owner-only macOS login-agent configuration
 
 New dashboard, scheduled workout, and AirDrop inbox LaunchAgent plists are now created exclusively with `0600` permissions. Existing files and symlink targets are never silently overwritten, even if the user's default umask is permissive. These configurations may contain private local file paths, so store and run them only in the Mac's logged-in user account; this does not encrypt data or authorize untrusted Wi-Fi access.
+
+### Validate inbox status timestamps before declaring success
+
+The diagnostic command now treats a status record as unknown when its timestamp has no timezone, lies more than five minutes in the future, or its successful import count is not a bounded integer. Missing/broken status files are also handled without exposing file paths or exception text. This prevents malformed status files from accidentally satisfying strict operational checks; it is not proof that launchd executed on a physical Mac.

@@ -50,18 +50,29 @@ def write_run_state(home: Path, *, success: bool, files: int = 0, added: int = 0
 
 def read_run_state(home: Path) -> dict:
     path = state_path(home)
-    if not path.is_file() or path.is_symlink() or path.stat().st_size > 2048:
+    if path.is_symlink():
         return {"last_run_known": False}
     try:
+        if not path.is_file() or path.stat().st_size > 2048:
+            return {"last_run_known": False}
         data = json.loads(path.read_text(encoding="utf-8"))
         if (not isinstance(data, dict) or type(data.get("success")) is not bool
                 or not isinstance(data.get("checked_at_utc"), str)):
             return {"last_run_known": False}
-        datetime.fromisoformat(data["checked_at_utc"])
+        stamp = datetime.fromisoformat(data["checked_at_utc"])
+        if stamp.tzinfo is None:
+            return {"last_run_known": False}
+        # Reject a corrupt or forged future success timestamp; the strict
+        # readiness gate must not trust a report whose clock is far ahead.
+        if (stamp - datetime.now(timezone.utc)).total_seconds() > 300:
+            return {"last_run_known": False}
+        added = data.get("new_workouts")
+        if data["success"] and (type(added) is not int or not 0 <= added <= 500):
+            return {"last_run_known": False}
         return {"last_run_known": True,
                 "last_run_success": data["success"],
                 "last_run_utc": data["checked_at_utc"],
-                "last_new_workouts": data.get("new_workouts") if data["success"] else None}
+                "last_new_workouts": added if data["success"] else None}
     except (OSError, ValueError, TypeError):
         return {"last_run_known": False}
 
