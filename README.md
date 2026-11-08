@@ -316,3 +316,7 @@ After exporting completed workout history from WakTrainer and saving the shared 
 ```
 
 The preview validates both inputs, checks session-ID conflicts and reports only new/duplicate counts, combined total and earliest/latest dates. It never creates destination directories or writes output. If the summary is correct, use `.venv/bin/python -m macos.import_waktrainer --input ~/Downloads/waktrainer-export.json --output ~/tris-private/fitness.json --merge` to import. This remains user-controlled file transfer; there is no iPhone background upload.
+
+## WakTrainer v2 workout history identity integrity
+
+The MacBook fitness reader now rejects duplicate stable `session_id` values across **all** stored workouts, including records older than the visible seven-day window. Such a file is marked unavailable rather than silently double-counting activities. The internal API also reports the total history count and number of stable-ID records, allowing future migration checks. Legacy workouts without IDs remain readable. This does not change original workout records or automatically access HealthKit.

@@ -18,6 +18,8 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
     start = reference - timedelta(days=6)
     weekly = []
     totals = {"sessions": 0, "minutes": 0, "distance_km": 0.0}
+    seen_ids = set()
+    stable_id_count = 0
     for workout in workouts:
         if not isinstance(workout, dict):
             raise ValueError("Invalid workout")
@@ -41,6 +43,11 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
                 not isinstance(session_id, str) or not 1 <= len(session_id) <= 100
                 or not all(c.isalnum() or c in "-_:." for c in session_id)):
             raise ValueError("Invalid session ID")
+        if session_id is not None:
+            if session_id in seen_ids:
+                raise ValueError("Duplicate workout session ID")
+            seen_ids.add(session_id)
+            stable_id_count += 1
         if start <= workout_day <= reference:
             weekly.append({"date": workout_day.isoformat(), "type": kind, "duration_minutes": minutes, "distance_km": distance})
             totals["sessions"] += 1
@@ -51,7 +58,9 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "period_start": start.isoformat(), "period_end": reference.isoformat(),
             "summary": {"sessions": totals["sessions"], "duration_minutes": round(totals["minutes"], 1),
                         "distance_km": round(totals["distance_km"], 2)},
-            "recent": weekly[:5], "stale": False}
+            "recent": weekly[:5], "stale": False,
+            "total_history_count": len(workouts),
+            "stable_id_count": stable_id_count}
 
 
 def fitness() -> dict:
