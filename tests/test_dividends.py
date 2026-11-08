@@ -166,3 +166,19 @@ def test_completed_month_average_excludes_partial_current_month(tmp_path):
     assert data["completed_month_average"] == {"KRW":"100.00","USD":"5.00"}
     assert data["observed_monthly_average"]["USD"] == "20.83"
     assert load_dividends(snapshot(tmp_path, []), today=date(2026, 11, 9))["completed_month_average"] == {}
+
+
+def test_best_completed_month_excludes_current_and_separates_currencies(tmp_path):
+    source = snapshot(tmp_path, [
+        {"symbol":"JEPQ","paid_on":"2026-11-02","currency":"USD","amount":"900"},
+        {"symbol":"JEPQ","paid_on":"2026-09-02","currency":"USD","amount":"30"},
+        {"symbol":"QQQI","paid_on":"2026-09-04","currency":"USD","amount":"15"},
+        {"symbol":"QQQI","paid_on":"2026-10-04","currency":"USD","amount":"40"},
+        {"symbol":"KR","paid_on":"2026-08-01","currency":"KRW","amount":"3000"},
+        {"symbol":"KR","paid_on":"2026-10-01","currency":"KRW","amount":"2500"},
+    ])
+    value = load_dividends(source, today=date(2026, 11, 9))
+    assert value["best_completed_months"] == {
+        "USD":{"month":"2026-09","amount":"45"},
+        "KRW":{"month":"2026-08","amount":"3000"}}
+    assert load_dividends(snapshot(tmp_path, []), today=date(2026, 11, 9))["best_completed_months"] == {}
