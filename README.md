@@ -394,3 +394,7 @@ chmod 700 ~/tris-private
 ```
 
 The helper creates the settings file with owner-only permissions, never overwrites an existing file, and does not create fake workout records. It contains no API keys. The fitness file will appear only after a real import; until then, preflight appropriately reports it missing. To install the login agent after manual verification, run `.venv/bin/python -m macos.service install --lan --settings ~/tris-private/settings.json` only if your trusted Wi-Fi clients need access. This step is optional and does not open a router port.
+
+## Check Twelve Data readiness without spending API credits
+
+Run `.venv/bin/python -m macos.market_check --settings ~/tris-private/settings.json` to check the allowed settings JSON and whether your logged-in Mac Keychain contains the optional `ai.tris.dashboard.twelvedata` credential. This command **never calls Twelve Data or sends market-data requests**, so it cannot consume provider credits. It prints only booleans and ticker count, not tokens, ticker symbols, paths or quote values. A positive result indicates local configuration readiness, **not** that your account is entitled to those symbols, the API is accessible, or the returned quotes are recent. The market card stays optional.
