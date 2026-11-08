@@ -187,6 +187,23 @@
       }
       allocationLine.textContent = "Manual " + allocationCurrencies[c] + " allocation: " + breakdown.join(" · ");
       list.appendChild(allocationLine);
+      for (var ai = 0; ai < shares.length; ai++) {
+        var percent = Number(shares[ai].percent);
+        if (!isFinite(percent) || percent < 0 || percent > 100) { continue; }
+        var barRow = document.createElement("div");
+        barRow.className = "allocation-row";
+        var caption = document.createElement("span");
+        caption.textContent = shares[ai].symbol + " · " + shares[ai].percent + "%";
+        var track = document.createElement("span");
+        track.className = "allocation-track";
+        var fill = document.createElement("span");
+        fill.className = "allocation-fill";
+        fill.style.width = percent + "%";
+        track.appendChild(fill);
+        barRow.appendChild(caption);
+        barRow.appendChild(track);
+        list.appendChild(barRow);
+      }
     }
     if (valuation && valuation.available) {
       var totalsLabel = [];
