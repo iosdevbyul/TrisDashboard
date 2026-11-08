@@ -28,6 +28,9 @@ def safe_path(value: Path) -> Path:
 
 
 def import_once(source: Path, output: Path) -> dict:
+    source, output = safe_path(source), safe_path(output)
+    if source == output:
+        raise ValueError("Source and output must differ")
     if not source.is_file():
         return {"state": "waiting-for-export", "added": 0}
     # Let the importer decide existence while holding its file lock.
