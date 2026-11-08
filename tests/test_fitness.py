@@ -184,3 +184,16 @@ def test_weekly_streak_counts_consecutive_active_days(tmp_path):
     result = load_fitness(snapshot(tmp_path, workouts), today=date(2026, 11, 8))
     assert result["longest_streak_days"] == 4
     assert result["ongoing_streak_days"] == 4
+
+
+def test_average_workout_minutes_counts_only_active_days(tmp_path):
+    source = snapshot(tmp_path, [
+        {"date":"2026-11-09","type":"Running","duration_minutes":30},
+        {"date":"2026-11-09","type":"Strength","duration_minutes":60},
+        {"date":"2026-11-07","type":"Walking","duration_minutes":30},
+    ])
+    result = load_fitness(source, today=date(2026, 11, 9))
+    assert result["active_days"] == 2
+    assert result["average_active_day_minutes"] == 60.0
+    empty = load_fitness(snapshot(tmp_path, []), today=date(2026, 11, 9))
+    assert empty["average_active_day_minutes"] == 0.0
