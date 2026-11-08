@@ -244,6 +244,20 @@
       observedRow.textContent = "Recorded monthly average (6 calendar months, current month partial): " + observedParts.join(" / ");
       list.appendChild(observedRow);
     }
+    var symbolTotals = info.six_month_by_symbol || [];
+    if (symbolTotals.length) {
+      var symbolHeading = document.createElement("div");
+      symbolHeading.className = "agenda-group";
+      symbolHeading.textContent = "Confirmed payments by holding · last 6 months";
+      list.appendChild(symbolHeading);
+      for (var sb = 0; sb < symbolTotals.length; sb++) {
+        var symbolRow = document.createElement("div");
+        symbolRow.className = "repo-row";
+        symbolRow.textContent = symbolTotals[sb].symbol + " · " + symbolTotals[sb].amount +
+          " " + symbolTotals[sb].currency;
+        list.appendChild(symbolRow);
+      }
+    }
     var history = info.history || [];
     var maxByCurrency = {};
     for (var h = 0; h < history.length; h++) {

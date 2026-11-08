@@ -41,6 +41,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         months.append(f"{(index // 12):04d}-{(index % 12) + 1:02d}")
     history = {month_key: {} for month_key in months}
     recent = []
+    by_symbol = {}
     for entry in entries:
         if not isinstance(entry, dict):
             raise ValueError("Invalid payment")
@@ -60,6 +61,8 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         if paid_month == month:
             totals[currency] = totals.get(currency, Decimal("0")) + amount
         if paid_month in history:
+            symbol_key = (ticker, currency)
+            by_symbol[symbol_key] = by_symbol.get(symbol_key, Decimal("0")) + amount
             monthly = history[paid_month]
             monthly[currency] = monthly.get(currency, Decimal("0")) + amount
         recent.append({"symbol": ticker, "currency": currency, "paid_on": paid_on.isoformat(), "amount": str(amount)})
@@ -75,6 +78,11 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             "month": month, "monthly_totals": {key: str(value) for key, value in sorted(totals.items())},
             "six_month_totals": {key: str(value) for key, value in sorted(history_totals.items())},
             "observed_monthly_average": monthly_average,
+            "six_month_by_symbol": [
+                {"symbol": symbol, "currency": currency, "amount": str(amount)}
+                for (symbol, currency), amount in sorted(
+                    by_symbol.items(), key=lambda item: (item[0][1], -item[1], item[0][0]))
+            ],
             "history": [{"month": key, "totals": {currency: str(amount) for currency, amount in sorted(history[key].items())}}
                         for key in months],
             "record_count": len(entries), "recent": recent[:5], "stale": False}
