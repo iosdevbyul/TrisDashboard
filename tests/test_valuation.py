@@ -88,3 +88,17 @@ def test_quote_missing_source_timestamp_is_excluded_without_crashing():
     assert result["available"] is False
     assert result["matched_count"] == 0
     assert result["partial"] is True
+
+
+def test_boolean_quantity_and_price_never_become_market_values():
+    portfolio = {"available": True, "positions": [
+        {"symbol": "A", "currency": "USD", "quantity": True},
+        {"symbol": "B", "currency": "USD", "quantity": "2"},
+    ]}
+    quotes = {"available": True, "quotes": [
+        {"symbol": "A", "currency": "USD", "price": "10", "reported_at_utc": "stamp"},
+        {"symbol": "B", "currency": "USD", "price": True, "reported_at_utc": "stamp"},
+    ]}
+    result = quote_valuation(portfolio, quotes)
+    assert result["available"] is False
+    assert result["matched_count"] == 0
