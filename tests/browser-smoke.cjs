@@ -204,7 +204,7 @@ response.quotes.quotes[0].outdated = false;
 assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
 assert.match(byId("portfolio-quote-values").textContent, /Not guaranteed live/);
 assert.match(byId("glance-sources").textContent, /4\/8 ready/);
-assert.match(byId("data-refresh-state").textContent, /succeeded at \d\d:\d\d/i);
+assert.match(byId("data-refresh-state").textContent, /succeeded at \d\d:\d\d on \d{4}-\d\d-\d\d/i);
 
 // Fitness history count is distinct from the last-seven-day session count.
 response.fitness = {
@@ -280,7 +280,7 @@ healthBody = '{"status":"not-ready"}';
 clockOffset += 3000;
 handlers["document:visibilitychange"]();
 assert.equal(byId("connection").textContent, "Server offline");
-assert.match(byId("offline-banner").textContent, /Last successful update at \d\d:\d\d/);
+assert.match(byId("offline-banner").textContent, /Last successful update at \d\d:\d\d on \d{4}-\d\d-\d\d/);
 healthBody = '{"status":"ok"}';
 clockOffset += 3000;
 handlers["document:visibilitychange"]();
