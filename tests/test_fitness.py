@@ -209,3 +209,15 @@ def test_average_per_session_differs_from_average_per_active_day(tmp_path):
     assert value["average_session_minutes"] == 40.0
     assert value["average_active_day_minutes"] == 60.0
     assert load_fitness(snapshot(tmp_path, []), today=date(2026, 11, 9))["average_session_minutes"] == 0.0
+
+
+def test_average_distance_per_active_day_accounts_for_zero_distance_strength(tmp_path):
+    source = snapshot(tmp_path, [
+        {"date":"2026-11-09","type":"Running","duration_minutes":30,"distance_km":4},
+        {"date":"2026-11-09","type":"Strength","duration_minutes":30},
+        {"date":"2026-11-08","type":"Walking","duration_minutes":60,"distance_km":2},
+    ])
+    result = load_fitness(source, today=date(2026, 11, 9))
+    assert result["average_active_day_km"] == 3.0
+    assert result["active_days"] == 2
+    assert load_fitness(snapshot(tmp_path, []), today=date(2026, 11, 9))["average_active_day_km"] == 0.0
