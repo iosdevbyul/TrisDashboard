@@ -19,9 +19,10 @@ def allowed_client(host: str | None, policy: str | None = None) -> bool:
     if not rules or len(rules) > 32:
         return False
     try:
-        return any(address in ipaddress.ip_network(entry, strict=False) for entry in rules)
+        networks = [ipaddress.ip_network(entry, strict=False) for entry in rules]
     except ValueError:
         return False
+    return any(address in network for network in networks)
 
 
 def validate_allowlist(value: str) -> str:
