@@ -21,6 +21,7 @@ def test_live_smoke_reports_safe_counts_without_personal_data(monkeypatch):
         "fitness": {"available": False, "configured": False},
         "dividends": {"available": False, "configured": False},
         "agenda": {"available": False, "configured": False},
+        "quotes": {"available": False, "configured": False},
     })
     result = check_deployment(fetch)
     assert result["passed"]
