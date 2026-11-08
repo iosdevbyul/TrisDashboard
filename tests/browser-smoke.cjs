@@ -176,6 +176,16 @@ assert.match(byId("portfolio-quote-values").textContent, /Not guaranteed live/);
 assert.match(byId("glance-sources").textContent, /4\/8 ready/);
 assert.match(byId("data-refresh-state").textContent, /succeeded at \d\d:\d\d/i);
 
+// Fitness history count is distinct from the last-seven-day session count.
+response.fitness = {
+  available: true, summary: {sessions: 2, duration_minutes: 50, distance_km: 5},
+  active_days: 2, total_history_count: 48,
+  period_start: "2026-11-02", period_end: "2026-11-08", daily: [], recent: []
+};
+handlers["document:visibilitychange"]();
+assert.match(byId("fitness-updated").textContent, /48 total recorded sessions/);
+assert.match(byId("fitness-summary").textContent, /2 sessions/);
+
 // A 20-result GitHub API page is only a lower bound, not an exact PR count.
 response.github = { available: true, repositories: [{
   repository: "owner/busy", available: true, open_pr_count: 20,
