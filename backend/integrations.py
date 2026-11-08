@@ -141,6 +141,8 @@ def github() -> dict:
                 repositories.append(name)
         if len(repositories) == 6:
             break
+    if not repositories:
+        return {"available": False, "configured": True, "stale": True}
 
     def load():
         results = []
