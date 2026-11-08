@@ -100,7 +100,10 @@ def _reject_manifest_constant(value):
 
 
 def validate_backup(directory: Path) -> dict:
-    directory = directory.expanduser().resolve()
+    directory = directory.expanduser()
+    if directory.is_symlink():
+        raise ValueError("Backup directory must not be a symlink")
+    directory = directory.resolve()
     manifest_path = directory / MANIFEST
     if (manifest_path.is_symlink() or not manifest_path.is_file()
             or manifest_path.stat().st_size > MAX_MANIFEST_BYTES):
