@@ -124,3 +124,28 @@ def test_received_utc_exports_use_explicit_seoul_calendar_date(tmp_path):
     result = receive(inbox, target, apply=True, timezone_name="Asia/Seoul")
     assert result["new"] == 1
     assert json.loads(target.read_text())["workouts"][0]["date"] == "2026-11-08"
+
+
+def test_oversized_inbox_file_does_not_change_history(tmp_path):
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    target = tmp_path / "private" / "fitness.json"
+    write_export(inbox, "original", "session-1")
+    receive(inbox, target, apply=True)
+    original = target.read_bytes()
+    (inbox / "waktrainer-dashboard-oversized.json").write_bytes(
+        b" " * (128 * 1024 + 1))
+    with pytest.raises(ValueError, match="too large"):
+        receive(inbox, target, apply=True)
+    assert target.read_bytes() == original
+
+
+def test_oversized_inbox_file_fails_preview_without_creating_output(tmp_path):
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    (inbox / "waktrainer-dashboard-oversized.json").write_bytes(
+        b" " * (128 * 1024 + 1))
+    target = tmp_path / "private" / "fitness.json"
+    with pytest.raises(ValueError, match="too large"):
+        receive(inbox, target)
+    assert not target.parent.exists()

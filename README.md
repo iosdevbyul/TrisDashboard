@@ -429,3 +429,7 @@ The existing `macos.readiness` check stays permissive for users intentionally ru
 ```
 
 The flags require respectively: reachable localhost dashboard, installed/valid workout inbox configuration, and a successful inbox run **within 45 minutes**. Failed conditions return exit code 1 and short non-sensitive identifiers. A sleeping Mac can legitimately fail the recent-run criterion. No credentials, private paths, remote API calls or source values are needed for these checks; a strict result is not a substitute for actual iPad Safari testing or long-duration device acceptance.
+
+### Bounded shared-file parsing
+
+The MacBook workout inbox rejects an individual shared JSON larger than 128 KiB **before decoding the file**, even if it is owned by the current Mac user. Oversized or invalid exports fail the entire batch without intentionally replacing existing workout history; originals remain untouched. Per-file and combined record limits are independent, to limit memory use when an unexpected export lands in the inbox.
