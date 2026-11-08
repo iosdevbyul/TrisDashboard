@@ -68,3 +68,21 @@ def test_duplicate_id_outside_seven_day_window_is_still_invalid(tmp_path):
     ])
     with pytest.raises(ValueError, match="Duplicate"):
         load_fitness(path, today=date(2026, 11, 8))
+
+
+def test_daily_workout_breakdown_includes_empty_days(tmp_path):
+    path = snapshot(tmp_path, [
+        {"date": "2026-11-08", "type": "Running", "duration_minutes": 20, "distance_km": 3.1},
+        {"date": "2026-11-08", "type": "Strength", "duration_minutes": 40},
+        {"date": "2026-11-05", "type": "Walking", "duration_minutes": 30, "distance_km": 2.2},
+        {"date": "2026-10-20", "type": "Cycling", "duration_minutes": 60},
+    ])
+    days = load_fitness(path, today=date(2026, 11, 8))["daily"]
+    assert len(days) == 7
+    assert days[0] == {"date": "2026-11-02", "sessions": 0,
+                       "duration_minutes": 0, "distance_km": 0.0}
+    assert days[-1] == {"date": "2026-11-08", "sessions": 2,
+                        "duration_minutes": 60, "distance_km": 3.1}
+    assert days[3]["date"] == "2026-11-05"
+    assert days[3]["distance_km"] == 2.2
+    assert sum(day["sessions"] for day in days) == 3

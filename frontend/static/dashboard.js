@@ -252,6 +252,15 @@
     var total = document.createElement("div");
     total.textContent = "Distance " + summary.distance_km + " km · " + info.period_start + " to " + info.period_end;
     list.appendChild(total);
+    var daily = info.daily || [];
+    for (var d = 0; d < daily.length; d++) {
+      var dayLine = document.createElement("div");
+      dayLine.className = "repo-row";
+      dayLine.textContent = daily[d].date + " · " + daily[d].sessions +
+        " sessions · " + daily[d].duration_minutes + " min · " +
+        daily[d].distance_km + " km";
+      list.appendChild(dayLine);
+    }
     var recent = info.recent || [];
     for (var i = 0; i < recent.length; i++) {
       var row = document.createElement("div");

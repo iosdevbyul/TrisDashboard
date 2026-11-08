@@ -320,3 +320,7 @@ The preview validates both inputs, checks session-ID conflicts and reports only 
 ## WakTrainer v2 workout history identity integrity
 
 The MacBook fitness reader now rejects duplicate stable `session_id` values across **all** stored workouts, including records older than the visible seven-day window. Such a file is marked unavailable rather than silently double-counting activities. The internal API also reports the total history count and number of stable-ID records, allowing future migration checks. Legacy workouts without IDs remain readable. This does not change original workout records or automatically access HealthKit.
+
+## Workout activity by day
+
+The fitness card displays a seven-day, date-scoped activity breakdown with session counts, active minutes and kilometers per day, including explicit zeros on rest days. The same validated workout export drives the existing weekly aggregate and the daily rows; older workouts are excluded from both. No new HealthKit permissions, location traces or remote data access are introduced.
