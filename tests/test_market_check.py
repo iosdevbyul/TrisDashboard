@@ -93,4 +93,6 @@ def test_market_preflight_rejects_noncredential_keychain_results(tmp_path, crede
                             lookup=lambda service: credential)
     assert report["keychain_key_present"] is False
     assert report["ready_for_optional_api_test"] is False
-    assert str(credential) not in str(report)
+    assert set(report) == {"settings_valid", "symbols_configured", "symbol_count",
+                           "keychain_key_present", "ready_for_optional_api_test",
+                           "network_requests"}
