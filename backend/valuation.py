@@ -9,12 +9,17 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
     if quotes.get("stale"):
         return {"available": False, "reason": "provider-cache-stale"}
     latest = {}
+    ambiguous = set()
     for quote in quotes.get("quotes", []):
         if not isinstance(quote, dict) or quote.get("outdated") or not quote.get("price"):
             continue
         if not quote.get("symbol") or quote.get("currency") not in ("USD", "KRW"):
             continue
-        latest[(quote["symbol"], quote["currency"])] = quote
+        key = (quote["symbol"], quote["currency"])
+        if key in latest:
+            ambiguous.add(key)
+        else:
+            latest[key] = quote
     matched = []
     totals = {}
     for item in portfolio.get("positions", []):
@@ -22,7 +27,8 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
             continue
         symbol = item.get("symbol")
         currency = item.get("currency")
-        quote = latest.get((symbol, currency))
+        key = (symbol, currency)
+        quote = None if key in ambiguous else latest.get(key)
         if quote is None:
             continue
         try:
