@@ -13,6 +13,10 @@ const scheduled = [];
 let overviewStatus = 200;
 let overviewBody = null;
 let healthBody = null;
+let clockOffset = 0;
+class TestDate extends Date {
+  constructor(...args) { super(...(args.length ? args : [Date.now() + clockOffset])); }
+}
 
 function element(id = "") {
   const children = [];
@@ -90,7 +94,7 @@ const window = {
 };
 
 const context = vm.createContext({
-  document, window, XMLHttpRequest, Date, JSON, Object, Math, String,
+  document, window, XMLHttpRequest, Date: TestDate, JSON, Object, Math, String,
   setInterval: () => 1,
   setTimeout: (callback, delay) => {
     scheduled.push({ callback, delay, cancelled: false });
@@ -172,9 +176,11 @@ assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
 
 // An HTTP 200 with an invalid health payload is not an online server.
 healthBody = '{"status":"not-ready"}';
+clockOffset += 3000;
 handlers["document:visibilitychange"]();
 assert.equal(byId("connection").textContent, "Server offline");
 healthBody = '{"status":"ok"}';
+clockOffset += 3000;
 handlers["document:visibilitychange"]();
 assert.equal(byId("connection").textContent, "Server online");
 
