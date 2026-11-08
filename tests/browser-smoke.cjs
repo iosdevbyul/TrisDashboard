@@ -128,6 +128,13 @@ assert.equal(byId("server-uptime").textContent, "Uptime unavailable");
 response.server.uptime_seconds = 1800;
 assert.ok(byId("panel-visibility").children.length >= 8);
 
+byId("display-settings").hidden = true;
+handlers["settings-button:click"].call(byId("settings-button"));
+assert.equal(byId("display-settings").hidden, false);
+handlers["document:keydown"]({keyCode: 27});
+assert.equal(byId("display-settings").hidden, true);
+assert.equal(byId("settings-button").attributes["aria-expanded"], "false");
+
 handlers["focus-panels:click"]();
 assert.equal(byId("panel-weather").hidden, true);
 assert.equal(byId("panel-portfolio").hidden, false);

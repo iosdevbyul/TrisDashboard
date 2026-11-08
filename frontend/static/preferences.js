@@ -72,6 +72,15 @@
     document.getElementById("display-settings").hidden = true;
     document.getElementById("settings-button").setAttribute("aria-expanded", "false");
   });
+  document.addEventListener("keydown", function (event) {
+    if (event.keyCode === 27 || event.key === "Escape") {
+      var panel = document.getElementById("display-settings");
+      if (!panel.hidden) {
+        panel.hidden = true;
+        document.getElementById("settings-button").setAttribute("aria-expanded", "false");
+      }
+    }
+  });
   document.getElementById("setting-compact").addEventListener("change", function () {
     settings.compact = this.checked; apply(); store();
   });
