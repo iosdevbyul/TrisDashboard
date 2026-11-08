@@ -58,3 +58,10 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .github-pr-link{display:block;font-size:12px;color:#a7ccef;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 0}
 
 .refresh-status{color:#8ea4bc;font-size:12px;margin:0 0 12px}
+
+/* Large tap targets, readable focus state, and safe text wrapping on older iPads. */
+.toolbar button,.display-settings button{min-height:44px;min-width:44px;cursor:pointer}
+.display-settings input[type="checkbox"]{min-width:20px;min-height:20px}
+.toolbar button:focus,.display-settings button:focus,.display-settings input:focus,.github-pr-link:focus{outline:3px solid #a7ccef;outline-offset:2px}
+.card p,.card small,.details,.refresh-status{overflow-wrap:break-word}
+@media (max-width:600px){.toolbar button,.display-settings button{min-height:44px}.display-settings label{padding:5px 0}}
