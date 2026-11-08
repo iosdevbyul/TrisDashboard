@@ -473,3 +473,7 @@ If `launchctl bootstrap` fails during dashboard or workout scheduler installatio
 ### Backup manifest validation before restore
 
 Offline restore now rejects oversized or symlinked manifests, malformed sizes/checksums (including booleans masquerading as numeric sizes), and individual backup files exceeding the documented size limit **before decoding their content**. The check runs for previews and explicit restores; failing validation leaves configured private data unmodified. Restores remain best-effort multi-file operations with rollback, rather than atomic power-loss transactions.
+
+## Offline real-server restart smoke test
+
+Run `.venv/bin/python -m macos.server_cycle_check --json` to start the installed FastAPI/uvicorn application on an **ephemeral localhost-only port**, verify `/healthz`, stop the process and repeat the full start/health/stop cycle. The check exercises actual Python process startup and recovery, not just FastAPI's in-memory test client. It uses no user configuration, external API requests, account credentials or privileged ports. The test is also run in GitHub's Python CI matrix. **Limit:** Linux CI process lifecycle passing does not prove macOS launchd reboots or physical Safari behavior; test those separately on the MacBook/iPad.
