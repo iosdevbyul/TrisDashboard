@@ -275,6 +275,19 @@
       completedLine.textContent = "Average of last 5 completed calendar months: " + completedParts.join(" / ");
       list.appendChild(completedLine);
     }
+    var change = info.completed_month_change || {};
+    var changeCurrencies = Object.keys(change);
+    for (var dc = 0; dc < changeCurrencies.length; dc++) {
+      var changeRow = document.createElement("div");
+      changeRow.className = "repo-row";
+      var changeItem = change[changeCurrencies[dc]];
+      changeRow.textContent = "Confirmed completed-month change · " + changeCurrencies[dc] +
+        " " + changeItem.latest_month + " vs " + changeItem.previous_month +
+        " · " + changeItem.difference +
+        (changeItem.percentage !== null && typeof changeItem.percentage !== "undefined" ?
+         " (" + changeItem.percentage + "%)" : " (prior month zero; percent unavailable)");
+      list.appendChild(changeRow);
+    }
     var bestMonths = info.best_completed_months || {};
     var bestCurrencies = Object.keys(bestMonths);
     for (var bi = 0; bi < bestCurrencies.length; bi++) {
