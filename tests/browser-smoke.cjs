@@ -155,6 +155,19 @@ handlers["show-all-panels:click"]();
 assert.equal(byId("panel-weather").hidden, false);
 assert.equal(byId("panel-portfolio").hidden, false);
 
+byId("setting-pause-refresh").checked = true;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
+assert.equal(window.trisDashboardRefreshPaused, true);
+clockOffset += 11 * 60000;
+const beforePaused = paths.filter((url) => url.startsWith("/api/overview")).length;
+periodic.find((entry) => entry.delay === 60000).callback();
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforePaused);
+handlers["refresh-button:click"]();
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforePaused + 1);
+byId("setting-pause-refresh").checked = false;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
+assert.equal(window.trisDashboardRefreshPaused, false);
+
 byId("setting-compact").checked = true;
 handlers["setting-compact:change"].call(byId("setting-compact"));
 assert.match(document.body.className, /compact/);

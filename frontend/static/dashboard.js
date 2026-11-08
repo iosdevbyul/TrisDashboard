@@ -837,7 +837,8 @@
   setInterval(function () { if (!document.hidden) { checkServer(); } }, 15000);
   setInterval(function () {
     var interval = window.trisDashboardRefreshMinutes || 3;
-    if (!document.hidden && new Date().getTime() - lastDataStarted >= interval * 60000) {
+    if (!document.hidden && !window.trisDashboardRefreshPaused &&
+        new Date().getTime() - lastDataStarted >= interval * 60000) {
       loadOverview(false);
     }
   }, 60000);
