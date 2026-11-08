@@ -20,6 +20,7 @@ from backend.valuation import quote_valuation
 _cache = {}
 _lock = threading.Lock()
 TTL_SECONDS = 300
+MAX_STALE_SECONDS = 24 * 60 * 60
 MAX_PROVIDER_RESPONSE_BYTES = 1024 * 1024
 _PROVIDER_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="dashboard-provider")
 _PROVIDER_INFLIGHT = {}
@@ -63,7 +64,7 @@ def cached(key: str, loader, *, ttl: int = TTL_SECONDS) -> dict:
         fresh["updated_at"] = datetime.now(timezone.utc).isoformat()
         fresh["stale"] = False
     except (OSError, ValueError, KeyError, TypeError, HTTPError, URLError) as error:
-        if previous:
+        if previous and now - previous["time"] <= MAX_STALE_SECONDS:
             fallback = dict(previous["data"])
             fallback["stale"] = True
             return fallback
