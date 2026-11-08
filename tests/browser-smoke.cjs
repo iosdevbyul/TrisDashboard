@@ -206,6 +206,18 @@ assert.match(byId("portfolio-quote-values").textContent, /Not guaranteed live/);
 assert.match(byId("glance-sources").textContent, /4\/8 ready/);
 assert.match(byId("data-refresh-state").textContent, /succeeded at \d\d:\d\d on \d{4}-\d\d-\d\d/i);
 
+// Manual holdings allocation must render independent, bounded percentages.
+response.portfolio = { available:true, as_of:"2026-11-08T00:00:00+00:00",
+  positions:[{symbol:"JEPQ",quantity:"2",currency:"USD",market_value:"150",price:"75"},
+             {symbol:"SCHD",quantity:"1",currency:"USD",market_value:"50",price:"50"}],
+  currency_allocations:{USD:[{symbol:"JEPQ",percent:"75.0"},{symbol:"SCHD",percent:"25.0"}]},
+  totals:{USD:"200"},valuation_complete:true,quality:{outdated:false}};
+handlers["document:visibilitychange"]();
+const assetBars = byId("portfolio-list").children.filter((row) => row.className === "allocation-row");
+assert.equal(assetBars.length, 2);
+assert.equal(assetBars[0].children[1].children[0].style.width, "75%");
+assert.equal(assetBars[1].children[1].children[0].style.width, "25%");
+
 // Fitness history count is distinct from the last-seven-day session count.
 response.fitness = {
   available: true, summary: {sessions: 2, duration_minutes: 50, distance_km: 5},
