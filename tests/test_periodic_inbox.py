@@ -50,3 +50,62 @@ def test_optional_inbox_remains_inert_until_workout_file_arrives(tmp_path):
     assert receive(inbox, output, apply=True)["new"] == 1
     assert receive(inbox, output, apply=True)["new"] == 0
     assert len(json.loads(output.read_text())["workouts"]) == 1
+
+
+def test_inbox_status_reports_readiness_without_private_paths(tmp_path):
+    from macos.periodic_inbox import inspect, agent_path
+    home = tmp_path / "Home"
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    output = tmp_path / "private" / "fitness.json"
+    config = agent_config(tmp_path / "repo", home, inbox, output)
+    agent = agent_path(home)
+    agent.parent.mkdir(parents=True)
+    agent.write_bytes(plistlib.dumps(config))
+    (inbox / "waktrainer-dashboard-private-event.json").write_text("{}")
+    status = inspect(home)
+    assert status["installed"] is True
+    assert status["configuration_valid"] is True
+    assert status["inbox_available"] is True
+    assert status["candidate_files"] == 1
+    assert status["over_file_limit"] is False
+    assert str(inbox) not in str(status)
+    assert str(output) not in str(status)
+    assert "private-event" not in str(status)
+
+
+def test_inbox_status_missing_agent_is_safe(tmp_path):
+    from macos.periodic_inbox import inspect
+    assert inspect(tmp_path)["installed"] is False
+
+
+def test_inbox_status_rejects_unexpected_arguments(tmp_path):
+    from macos.periodic_inbox import inspect, agent_path
+    home = tmp_path / "Home"
+    agent = agent_path(home)
+    agent.parent.mkdir(parents=True)
+    agent.write_bytes(plistlib.dumps({
+        "ProgramArguments": ["/bin/sh", "-c", "echo private"]
+    }))
+    status = inspect(home)
+    assert status["installed"]
+    assert status["configuration_valid"] is False
+    assert "private" not in str(status)
+
+
+def test_inbox_status_identifies_overfull_folder(tmp_path):
+    from macos.periodic_inbox import inspect, agent_path
+    from macos.receive_workouts import MAX_FILES
+    home = tmp_path / "Home"
+    inbox = tmp_path / "Downloads"
+    inbox.mkdir()
+    agent = agent_path(home)
+    agent.parent.mkdir(parents=True)
+    agent.write_bytes(plistlib.dumps(agent_config(
+        tmp_path / "repo", home, inbox, tmp_path / "private" / "fitness.json"
+    )))
+    for index in range(MAX_FILES + 1):
+        (inbox / ("waktrainer-dashboard-" + str(index) + ".json")).write_text("{}")
+    status = inspect(home)
+    assert status["candidate_files"] == MAX_FILES + 1
+    assert status["over_file_limit"]

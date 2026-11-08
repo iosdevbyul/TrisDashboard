@@ -1,5 +1,6 @@
 """Opt-in per-user macOS LaunchAgent for shared WakTrainer workout files."""
 import argparse
+import json
 import os
 import plistlib
 import stat
@@ -8,7 +9,7 @@ import sys
 from pathlib import Path
 
 from macos.periodic_workout import safe_path, require_macos
-from macos.receive_workouts import receive
+from macos.receive_workouts import receive, PREFIX, MAX_FILES
 
 LABEL = "ai.tris.dashboard.waktrainer-inbox"
 INTERVAL_SECONDS = 900
@@ -77,15 +78,52 @@ def uninstall(home: Path) -> None:
         agent.unlink()
 
 
+def inspect(home: Path) -> dict:
+    """Report readiness without exposing file names, paths or workout data."""
+    agent = agent_path(home)
+    result = {"installed": False, "configuration_valid": False,
+              "inbox_available": False, "candidate_files": 0,
+              "over_file_limit": False, "output_configured": False}
+    if not agent.is_file() or agent.is_symlink() or agent.stat().st_size > 16 * 1024:
+        return result
+    result["installed"] = True
+    try:
+        payload = plistlib.loads(agent.read_bytes())
+        arguments = payload["ProgramArguments"]
+        if (not isinstance(arguments, list) or len(arguments) != 8
+                or arguments[1:4] != ["-m", "macos.periodic_inbox", "run-once"]
+                or arguments[4] != "--directory" or arguments[6] != "--output"
+                or not isinstance(arguments[5], str)
+                or not isinstance(arguments[7], str)):
+            return result
+        directory = private_inbox(Path(arguments[5]))
+        output = safe_path(Path(arguments[7]))
+        if output.parent == directory and output.name.startswith(PREFIX):
+            return result
+        result["configuration_valid"] = True
+        result["inbox_available"] = True
+        result["output_configured"] = True
+        candidates = list(directory.glob(PREFIX + "*.json"))
+        result["candidate_files"] = len(candidates)
+        result["over_file_limit"] = len(candidates) > MAX_FILES
+    except (OSError, ValueError, KeyError, TypeError, plistlib.InvalidFileException):
+        return result
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Optional local WakTrainer AirDrop inbox scheduler")
-    parser.add_argument("command", choices=("install", "uninstall", "run-once"))
+    parser.add_argument("command", choices=("install", "uninstall", "run-once", "status"))
     parser.add_argument("--directory", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     try:
         project, home = Path(__file__).resolve().parent.parent, Path.home()
-        if args.command == "uninstall":
+        if args.command == "status":
+            if args.directory or args.output:
+                raise ValueError("Status has no file arguments")
+            print(json.dumps(inspect(home), sort_keys=True))
+        elif args.command == "uninstall":
             if args.directory or args.output:
                 raise ValueError("Uninstall has no file arguments")
             uninstall(home)

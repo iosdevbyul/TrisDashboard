@@ -355,3 +355,7 @@ The optional agent scans only the owner-created `waktrainer-dashboard-*.json` ex
 ## Overlapping workout exports
 
 WakTrainer exports complete history snapshots, so two or more shared JSON files often contain the same stable workout IDs. The inbox importer now counts and stages **unique sessions** before enforcing the 500-session history cap, instead of rejecting repeated full exports simply because their summed raw rows exceed 500. It still validates every source file and rejects conflicting records under the same stable ID. The summary distinguishes raw input rows, duplicates and genuinely new sessions.
+
+## Check the automatic workout inbox without exposing personal data
+
+Run `.venv/bin/python -m macos.periodic_inbox status` to see whether the optional per-user workout inbox LaunchAgent is installed, whether its configured folder is accessible, the number of matching shared JSON files, and whether the inbox has exceeded the 50-file limit. This is a **configuration and file-count inspection only**, not proof that launchd is currently executing or that all exports are valid. The summary intentionally omits workout names, file paths, profile details and access credentials. No scheduler is installed or modified by this status command.
