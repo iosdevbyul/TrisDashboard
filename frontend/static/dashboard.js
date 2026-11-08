@@ -475,8 +475,8 @@
   checkServer();
   loadOverview(true);
   setInterval(tick, 1000);
-  setInterval(checkServer, 15000);
-  setInterval(loadOverview, 180000);
+  setInterval(function () { if (!document.hidden) { checkServer(); } }, 15000);
+  setInterval(function () { if (!document.hidden) { loadOverview(false); } }, 180000);
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) { tick(); checkServer(); loadOverview(true); } else { clearOverviewRetry(); }
   });

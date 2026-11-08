@@ -10,6 +10,7 @@ const elements = new Map();
 const handlers = {};
 const paths = [];
 const scheduled = [];
+const periodic = [];
 let overviewStatus = 200;
 let overviewBody = null;
 let healthBody = null;
@@ -95,7 +96,7 @@ const window = {
 
 const context = vm.createContext({
   document, window, XMLHttpRequest, Date: TestDate, JSON, Object, Math, String,
-  setInterval: () => 1,
+  setInterval: (callback, delay) => { periodic.push({callback, delay}); return periodic.length; },
   setTimeout: (callback, delay) => {
     scheduled.push({ callback, delay, cancelled: false });
     return scheduled.length;
@@ -125,6 +126,14 @@ const beforeRefresh = paths.filter((url) => url.startsWith("/api/overview")).len
 handlers["refresh-button:click"]();
 assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforeRefresh + 1);
 assert.equal(paths.includes("reload"), false);
+
+// Backgrounded iPad Safari must not send periodic health or overview requests.
+const beforeHiddenPoll = paths.length;
+document.hidden = true;
+periodic.find((item) => item.delay === 15000).callback();
+periodic.find((item) => item.delay === 180000).callback();
+assert.equal(paths.length, beforeHiddenPoll);
+document.hidden = false;
 
 // API failure must retain the last rendered values and schedule a bounded retry.
 const priorWeather = byId("weather-temp").textContent;
