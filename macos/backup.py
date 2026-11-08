@@ -25,7 +25,10 @@ def configured_files(settings_file: Path) -> dict[str, tuple[Path, object]]:
     results = {}
     for label, (env_name, loader) in FILE_LOADERS.items():
         if env_name in settings:
-            results[label] = (Path(settings[env_name]).expanduser().resolve(), loader)
+            configured_path = Path(settings[env_name]).expanduser()
+            if configured_path.is_symlink():
+                raise ValueError("Configured backup data file must not be a symlink")
+            results[label] = (configured_path.resolve(), loader)
     return results
 
 
