@@ -283,4 +283,9 @@ clockOffset += 3000;
 handlers["document:visibilitychange"]();
 assert.equal(byId("connection").textContent, "Server online");
 
+byId("setting-large-text").checked = true;
+handlers["setting-large-text:change"].call(byId("setting-large-text"));
+assert.match(document.body.className, /large-text/);
+assert.match(state["tris.dashboard.display.v1"], /"largeText":true/);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
