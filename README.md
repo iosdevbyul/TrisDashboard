@@ -298,3 +298,7 @@ Each served quote re-evaluates the provider's original UTC timestamp against the
 ### Market-data outage isolation
 
 When **all** requested market symbols return unusable/error results, the failed response is not cached for a full 30 minutes. If a prior successful response exists, it may be shown as explicitly stale reference information; however **stale provider-cache results cannot be used for quote-based portfolio valuation**, regardless of the embedded quote timestamp. A partly failed batch still reports individual unavailable symbols and partial coverage. No new market data is fabricated during an outage.
+
+## Local workout import concurrency
+
+Both scheduled and manual WakTrainer JSON imports now acquire an exclusive advisory sidecar lock (`fitness.json.lock`) before reading or replacing history. This prevents two concurrent importer processes from independently reading the same old file and overwriting each other's newly imported workouts. The lock remains on disk (owner-only permissions) to avoid races with waiting processes. When `--merge` encounters no new sessions, it leaves the JSON untouched, including its modification time. Other programs writing the same JSON directly must also honor this lock; this is not distributed synchronization or iPhone-to-Mac transfer.

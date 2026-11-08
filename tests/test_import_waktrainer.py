@@ -170,3 +170,34 @@ def test_v1_duplicate_measurements_rejected_instead_of_double_counted(tmp_path):
                "activity_type": "running", "duration_seconds": 1200}
     with pytest.raises(ValueError, match="Duplicate legacy"):
         parse_export(export(tmp_path, [workout, workout]))
+
+
+def test_duplicate_merge_does_not_rewrite_existing_file(tmp_path):
+    source = export(tmp_path, [{
+        "session_id": "stable-23", "started_at": "2026-11-08T09:00:00+09:00",
+        "activity_type": "running", "duration_seconds": 1200
+    }], version=2)
+    target = tmp_path / "history.json"
+    assert import_export(source, target)["written"] is True
+    stat = target.stat()
+    data = target.read_bytes()
+    second = import_export(source, target, merge=True)
+    assert second == {"sessions": 1, "added": 0, "written": False}
+    assert target.read_bytes() == data
+    assert target.stat().st_mtime_ns == stat.st_mtime_ns
+    assert (tmp_path / "history.json.lock").stat().st_mode & 0o077 == 0
+
+
+def test_bad_import_releases_sidecar_lock(tmp_path):
+    source = export(tmp_path, [{
+        "session_id": "bad-id", "started_at": "2026-11-08T09:00:00+09:00",
+        "activity_type": "incorrect", "duration_seconds": 1200
+    }], version=2)
+    target = tmp_path / "history.json"
+    with pytest.raises(ValueError):
+        import_export(source, target)
+    export(tmp_path, [{
+        "session_id": "good-id", "started_at": "2026-11-08T09:00:00+09:00",
+        "activity_type": "walking", "duration_seconds": 1200
+    }], version=2)
+    assert import_export(source, target)["added"] == 1

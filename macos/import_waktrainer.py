@@ -1,5 +1,6 @@
 """Versioned opt-in WakTrainer export bridge. Does not access the WakTrainer app."""
 import argparse
+import fcntl
 import json
 import math
 import os
@@ -99,8 +100,8 @@ def parse_export(path: Path) -> dict:
     return {"workouts": workouts}
 
 
-def import_export(source: Path, destination: Path, *, force: bool = False,
-                  dry_run: bool = False, merge: bool = False) -> dict:
+def _import_export_unlocked(source: Path, destination: Path, *, force: bool = False,
+                           dry_run: bool = False, merge: bool = False) -> dict:
     source = source.expanduser().resolve()
     destination = destination.expanduser().resolve()
     project = Path(__file__).resolve().parent.parent
@@ -120,6 +121,9 @@ def import_export(source: Path, destination: Path, *, force: bool = False,
                 raise ValueError("Existing workout file is invalid")
             merged, added = merged_workouts(old["workouts"], data["workouts"])
             data["workouts"] = merged
+            if added == 0:
+                # Preserve existing bytes, inode and modification date on repeated scheduled imports.
+                return {"sessions": len(merged), "added": 0, "written": False}
         elif not force:
             raise ValueError("Destination exists")
     if not dry_run:
@@ -140,6 +144,30 @@ def import_export(source: Path, destination: Path, *, force: bool = False,
     finally:
         if temp is not None:
             temp.unlink(missing_ok=True)
+
+
+def import_export(source: Path, destination: Path, *, force: bool = False,
+                  dry_run: bool = False, merge: bool = False) -> dict:
+    """Serialize imports from the MacBook's scheduled and manual paths."""
+    destination = destination.expanduser().resolve()
+    project = Path(__file__).resolve().parent.parent
+    if (destination == project or project in destination.parents
+            or destination.suffix.lower() != ".json"):
+        raise ValueError("Destination must be private JSON outside repository")
+    if force and merge:
+        raise ValueError("--force and --merge cannot be combined")
+    if not dry_run:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+    # Persistent sidecar lock is intentionally never unlinked: removing it races waiting writers.
+    lock_path = destination.with_name(destination.name + ".lock")
+    with lock_path.open("a+b") as lock_file:
+        os.chmod(lock_path, 0o600)
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            return _import_export_unlocked(
+                source, destination, force=force, dry_run=dry_run, merge=merge)
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
 def main() -> None:
