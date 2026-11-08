@@ -4,11 +4,13 @@ import json
 import os
 import stat
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 from backend.fitness import load_fitness
 from macos.import_waktrainer import (
     MAX_SESSIONS, MAX_BYTES, import_export, merged_workouts, parse_export,
+    validated_timezone,
 )
 
 PREFIX = "waktrainer-dashboard-"
@@ -73,7 +75,9 @@ def receive(directory: Path, output: Path, *, apply: bool = False,
     staged_sessions = sessions
     existing = []
     if output.exists():
-        load_fitness(output)
+        zone = validated_timezone(timezone_name)
+        validation_day = datetime.now(zone).date() if zone else None
+        load_fitness(output, today=validation_day)
         previous = json.loads(output.read_text(encoding="utf-8"))
         existing = previous["workouts"]
     combined, added = merged_workouts(existing, records)
