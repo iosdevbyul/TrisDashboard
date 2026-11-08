@@ -79,3 +79,12 @@ def test_duplicate_only_market_quotes_produce_no_valuation():
         {"symbol": "JEPQ", "currency": "USD", "price": "60", "reported_at_utc": "t"},
     ]}
     assert quote_valuation(portfolio, quotes)["available"] is False
+
+
+def test_quote_missing_source_timestamp_is_excluded_without_crashing():
+    portfolio = {"available": True, "positions": [{"symbol": "JEPQ", "currency": "USD", "quantity": "2"}]}
+    quotes = {"available": True, "quotes": [{"symbol": "JEPQ", "currency": "USD", "price": "50"}]}
+    result = quote_valuation(portfolio, quotes)
+    assert result["available"] is False
+    assert result["matched_count"] == 0
+    assert result["partial"] is True
