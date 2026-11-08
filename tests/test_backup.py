@@ -200,3 +200,16 @@ def test_backup_manifest_rejects_duplicate_or_nonstandard_json(tmp_path, raw):
     with pytest.raises(ValueError):
         validate_backup(snapshot)
     assert holdings.exists() and agenda.exists()
+
+
+def test_backup_rejects_symlinked_directory(tmp_path):
+    settings, holdings, agenda = fixture_files(tmp_path)
+    snapshot = tmp_path / "snapshot"
+    backup(settings, snapshot)
+    alias = tmp_path / "alias"
+    alias.symlink_to(snapshot, target_is_directory=True)
+    with pytest.raises(ValueError, match="symlink"):
+        validate_backup(alias)
+    with pytest.raises(ValueError, match="symlink"):
+        restore(settings, alias, force=True)
+    assert holdings.exists() and agenda.exists()
