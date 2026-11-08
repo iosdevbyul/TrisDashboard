@@ -206,6 +206,9 @@ def inspect(home: Path) -> dict:
         result["inbox_available"] = True
         result["output_configured"] = True
         candidates = list(directory.glob(PREFIX + "*.json"))
+        if any(path.is_symlink() or not path.is_file() for path in candidates):
+            result["inbox_available"] = False
+            return result
         result["candidate_files"] = len(candidates)
         result["over_file_limit"] = len(candidates) > MAX_FILES
     except (OSError, ValueError, KeyError, TypeError, plistlib.InvalidFileException):
