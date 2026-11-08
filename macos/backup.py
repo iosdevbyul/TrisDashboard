@@ -61,7 +61,25 @@ def backup(settings_file: Path, destination: Path) -> dict:
         manifest_file = temp / MANIFEST
         manifest_file.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         os.chmod(manifest_file, 0o600)
-        temp.rename(destination)
+        # Reserve the final directory name exclusively: POSIX rename can
+        # overwrite an empty directory that appeared after our earlier check.
+        destination.mkdir(mode=0o700, exist_ok=False)
+        owned = destination.lstat()
+        try:
+            # Publish the checksum manifest last so incomplete backups never
+            # pass validation, even if a process exits unexpectedly.
+            for name in originals:
+                filename = name + ".json"
+                os.replace(temp / filename, destination / filename)
+            os.replace(manifest_file, destination / MANIFEST)
+        except Exception:
+            try:
+                current = destination.lstat()
+                if (current.st_dev, current.st_ino) == (owned.st_dev, owned.st_ino):
+                    shutil.rmtree(destination)
+            except FileNotFoundError:
+                pass
+            raise
     finally:
         if temp.exists():
             shutil.rmtree(temp)
