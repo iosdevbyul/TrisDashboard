@@ -113,6 +113,11 @@ vm.runInContext(fs.readFileSync(path.join(root, "frontend/static/preferences.js"
 assert.ok(paths.some((url) => url.startsWith("/healthz")));
 assert.ok(paths.some((url) => url.startsWith("/api/overview")));
 assert.equal(byId("weather-temp").textContent, "22 °C");
+handlers["weather-unit-button:click"]();
+assert.equal(byId("weather-temp").textContent, "71.6 °F");
+assert.equal(state["tris.dashboard.weather.fahrenheit"], "true");
+handlers["weather-unit-button:click"]();
+assert.equal(byId("weather-temp").textContent, "22 °C");
 response.weather.weather_code = 2;
 handlers["document:visibilitychange"]();
 assert.match(byId("weather-details").textContent, /Partly cloudy/);
