@@ -69,3 +69,9 @@ def test_reject_nonstandard_json_numeric_constant_anywhere(tmp_path, constant):
     path.write_text('{"metadata":' + constant + ',"events":[]}')
     with pytest.raises(ValueError, match="Non-standard JSON"):
         load_agenda(path, today=date(2026, 11, 8))
+
+
+@pytest.mark.parametrize("reference", ["2026-11-08", 123, True])
+def test_reject_invalid_agenda_reference_date(tmp_path, reference):
+    with pytest.raises(ValueError, match="Invalid agenda reference date"):
+        load_agenda(file_with(tmp_path, []), today=reference)
