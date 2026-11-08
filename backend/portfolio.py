@@ -6,6 +6,10 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from backend.quality import snapshot_quality
 
+def _reject_nonstandard_constant(value):
+    raise ValueError("Non-standard JSON numeric constant: " + value)
+
+
 def _unique_keys(pairs):
     result = {}
     for key, value in pairs:
@@ -35,7 +39,8 @@ def load_portfolio(path: Path) -> dict:
     """Only user-supplied snapshot values; never infer prices, returns or dividends."""
     if path.stat().st_size > 64 * 1024:
         raise ValueError("Snapshot file too large")
-    data = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys)
+    data = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_keys,
+                         parse_constant=_reject_nonstandard_constant)
     if not isinstance(data, dict) or not isinstance(data.get("positions"), list):
         raise ValueError("Expected positions array")
     if len(data["positions"]) > MAX_POSITIONS:

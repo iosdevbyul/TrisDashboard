@@ -85,3 +85,11 @@ def test_duplicate_keys_produce_safe_unavailable_state(tmp_path, monkeypatch):
     path.write_text('{"as_of":"2026-11-07T12:00:00+00:00","positions":[],"positions":[]}')
     monkeypatch.setenv("TRIS_PORTFOLIO_FILE", str(path))
     assert portfolio() == {"available": False, "configured": True, "stale": True}
+
+
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_reject_nonstandard_json_numeric_constant_anywhere(tmp_path, constant):
+    path = tmp_path / "invalid-portfolio.json"
+    path.write_text('{"metadata":' + constant + ',"as_of":"2026-11-07T12:00:00+00:00","positions":[]}')
+    with pytest.raises(ValueError, match="Non-standard JSON"):
+        load_portfolio(path)
