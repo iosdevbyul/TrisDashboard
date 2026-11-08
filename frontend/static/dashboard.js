@@ -441,6 +441,9 @@
     var visibleEventCount = agendaExpanded ? events.length : Math.min(8, events.length);
     toggle.hidden = events.length <= 8;
     toggle.textContent = agendaExpanded ? "Show fewer events" : "Show more events";
+    if (info.events_truncated) {
+      toggle.textContent += " (first " + events.length + " of " + info.upcoming_count + ")";
+    }
     toggle.setAttribute("aria-expanded", agendaExpanded ? "true" : "false");
     var todayDate = info.window_start;
     var tomorrowDate = "";
@@ -466,7 +469,7 @@
       list.appendChild(row);
     }
     text("agenda-updated", "Local calendar · " + info.window_start + " to " + info.window_end +
-      (info.events_truncated ? " · First 30 events shown" : ""));
+      (info.events_truncated ? " · First " + events.length + " of " + info.upcoming_count + " events shown" : ""));
   }
 
   function showFitness(info) {
