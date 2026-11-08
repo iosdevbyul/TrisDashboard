@@ -94,3 +94,52 @@ def test_provider_outage_preserves_old_cache_as_stale(monkeypatch):
     fallback = integrations.quotes()
     assert fallback["available"] and fallback["stale"] is True
     assert "private-test" not in str(fallback)
+
+
+def test_twelve_data_official_quote_shape_and_distinct_bar_timestamps():
+    from datetime import timedelta
+    now = datetime(2026, 11, 8, 12, tzinfo=timezone.utc)
+    bar_open = int((now - timedelta(hours=2)).timestamp())
+    last_minute = int((now - timedelta(minutes=1)).timestamp())
+    response = {
+        "symbol": "JEPQ", "name": "JPMorgan Nasdaq Equity Premium Income ETF",
+        "exchange": "NASDAQ", "currency": "USD",
+        "datetime": "2026-11-08 10:00:00",
+        "timestamp": bar_open,
+        "last_quote_at": last_minute,
+        "open": "52.10000", "high": "52.90000",
+        "low": "51.95000", "close": "52.42000",
+        "previous_close": "52.08000",
+    }
+    result = parse_quote(response, "JEPQ", now)
+    assert result["price"] == "52.42000"
+    assert result["age_hours"] == 2.0
+    assert result["reported_at_utc"] == (now - timedelta(hours=2)).isoformat()
+    assert result["last_quote_at_utc"] == (now - timedelta(minutes=1)).isoformat()
+    assert result["is_realtime"] is False
+
+
+def test_quote_last_quote_timestamp_is_optional_and_cannot_be_spoofed():
+    now = datetime(2026, 11, 8, 12, tzinfo=timezone.utc)
+    data = sample(timestamp=int((now - timedelta(hours=2)).timestamp()))
+    data["last_quote_at"] = int((now + timedelta(days=1)).timestamp())
+    assert parse_quote(data, "JEPQ", now)["last_quote_at_utc"] is None
+    data["last_quote_at"] = "not-unix"
+    assert parse_quote(data, "JEPQ", now)["last_quote_at_utc"] is None
+    del data["last_quote_at"]
+    assert parse_quote(data, "JEPQ", now)["last_quote_at_utc"] is None
+
+
+def test_quote_vendor_error_response_is_not_a_valid_price():
+    with pytest.raises(ValueError):
+        parse_quote({"status": "error", "code": 429,
+                     "message": "API credits exhausted"}, "JEPQ")
+
+
+def test_quote_rejects_wrong_symbol_and_currency():
+    with pytest.raises(ValueError):
+        parse_quote(sample(symbol="OTHER"), "JEPQ")
+    data = sample()
+    data["currency"] = "EUR"
+    with pytest.raises(ValueError):
+        parse_quote(data, "JEPQ")
