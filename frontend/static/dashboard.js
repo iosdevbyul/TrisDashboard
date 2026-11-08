@@ -799,7 +799,12 @@
   loadOverview(true);
   setInterval(tick, 1000);
   setInterval(function () { if (!document.hidden) { checkServer(); } }, 15000);
-  setInterval(function () { if (!document.hidden) { loadOverview(false); } }, 180000);
+  setInterval(function () {
+    var interval = window.trisDashboardRefreshMinutes || 3;
+    if (!document.hidden && new Date().getTime() - lastDataStarted >= interval * 60000) {
+      loadOverview(false);
+    }
+  }, 60000);
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) { tick(); checkServer(); loadOverview(true); } else { clearOverviewRetry(); }
   });
