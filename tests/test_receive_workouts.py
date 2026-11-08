@@ -170,3 +170,22 @@ def test_inbox_rejects_symlink_directory_even_for_preview(tmp_path):
     with pytest.raises(ValueError, match="symlink"):
         receive(alias, target)
     assert not target.exists()
+
+
+def test_inbox_validates_the_same_file_bytes_it_imports(tmp_path, monkeypatch):
+    from macos import receive_workouts as inbox_module
+    directory = tmp_path / "inbox"
+    directory.mkdir()
+    write_export(directory, "single", "id-one")
+    output = tmp_path / "fitness.json"
+    original = inbox_module.parse_export
+    seen = []
+    def validate(path, *, timezone_name=None, raw=None):
+        assert isinstance(raw, bytes)
+        seen.append(raw)
+        return original(path, timezone_name=timezone_name, raw=raw)
+    monkeypatch.setattr(inbox_module, "parse_export", validate)
+    report = receive(directory, output, apply=True)
+    assert report["new"] == 1
+    assert len(seen) == 1
+    assert b"id-one" in seen[0]
