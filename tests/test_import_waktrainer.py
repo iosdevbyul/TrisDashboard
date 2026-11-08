@@ -262,3 +262,13 @@ def test_unknown_import_timezone_rejected_without_output(tmp_path):
     with pytest.raises(ValueError, match="timezone"):
         import_export(source, target, dry_run=True, timezone_name="Mars/Phobos")
     assert not target.exists()
+
+
+@pytest.mark.parametrize("session_id", ["ｓｅｓｓｉｏｎ", "abcé", "abc١"])
+def test_v2_non_ascii_session_ids_rejected_before_import(tmp_path, session_id):
+    source = export(tmp_path, [{
+        "session_id": session_id, "started_at": "2026-11-08T09:00:00+09:00",
+        "activity_type": "walking", "duration_seconds": 600,
+    }], version=2)
+    with pytest.raises(ValueError, match="session_id"):
+        parse_export(source)
