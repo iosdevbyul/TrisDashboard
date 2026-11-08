@@ -468,6 +468,13 @@
       text("server-info", "No diagnostics received");
       return;
     }
+    if (typeof info.uptime_seconds !== "number" ||
+        !isFinite(info.uptime_seconds) || info.uptime_seconds < 0) {
+      text("server-uptime", "Uptime unavailable");
+      text("server-info", "MacBook local API reachable");
+      text("server-updated", "Server clock unavailable");
+      return;
+    }
     var totalMinutes = Math.floor(info.uptime_seconds / 60);
     var days = Math.floor(totalMinutes / 1440);
     var hours = Math.floor((totalMinutes % 1440) / 60);
