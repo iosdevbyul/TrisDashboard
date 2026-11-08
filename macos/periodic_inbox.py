@@ -48,6 +48,19 @@ def write_run_state(home: Path, *, success: bool, files: int = 0, added: int = 0
             temporary.unlink(missing_ok=True)
 
 
+def _unique_state_keys(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate inbox state JSON key")
+        result[key] = value
+    return result
+
+
+def _reject_state_constant(value):
+    raise ValueError("Invalid inbox state JSON constant")
+
+
 def read_run_state(home: Path) -> dict:
     path = state_path(home)
     if path.is_symlink():
@@ -55,7 +68,9 @@ def read_run_state(home: Path) -> dict:
     try:
         if not path.is_file() or path.stat().st_size > 2048:
             return {"last_run_known": False}
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8"),
+                          object_pairs_hook=_unique_state_keys,
+                          parse_constant=_reject_state_constant)
         if (not isinstance(data, dict) or type(data.get("success")) is not bool
                 or not isinstance(data.get("checked_at_utc"), str)):
             return {"last_run_known": False}
