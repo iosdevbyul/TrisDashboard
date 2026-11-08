@@ -232,3 +232,12 @@ def test_corrupted_cached_quote_rows_are_ignored():
 def test_quote_symbols_reject_non_ascii_confusables(symbol):
     with pytest.raises(ValueError, match="Invalid quote symbol"):
         quote_symbols(symbol)
+
+
+def test_cached_quote_without_source_time_is_outdated():
+    from backend.quotes import refresh_quote_freshness
+    result = refresh_quote_freshness({"available": True, "quotes": [
+        {"symbol": "JEPQ", "price": "50", "outdated": False},
+        {"symbol": "QQQI", "outdated": False},
+    ]})
+    assert all(item["outdated"] for item in result["quotes"])
