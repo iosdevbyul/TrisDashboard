@@ -66,4 +66,10 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .card p,.card small,.details,.refresh-status{overflow-wrap:break-word}
 @media (max-width:600px){.toolbar button,.display-settings button{min-height:44px}.display-settings label{padding:5px 0}}
 
-.toolbar button:disabled{opacity:.65;cursor:default}
+/* Lightweight weekly activity bars: no SVG or modern CSS required for iOS 9. */
+.workout-bars{margin:10px 0 12px}
+.workout-bar-row{display:table;width:100%;table-layout:fixed;margin:5px 0;font-size:12px;color:#c4d5e8}
+.workout-bar-row>span{display:table-cell;vertical-align:middle}
+.workout-bar-row>span:first-child{width:105px}
+.workout-bar-track{height:9px;background:#304155;border-radius:5px;overflow:hidden}
+.workout-bar-fill{display:block;height:9px;background:#6bc5a2;border-radius:5px}

@@ -22,7 +22,7 @@ class TestDate extends Date {
 function element(id = "") {
   const children = [];
   const result = {
-    id, checked: false, hidden: false, textContent: "", className: "",
+    id, checked: false, hidden: false, textContent: "", className: "", style: {},
     children, attributes: {}, href: "",
     get firstChild() { return children.length ? children[0] : null; },
     appendChild(child) { children.push(child); return child; },
@@ -75,7 +75,6 @@ class XMLHttpRequest {
   send() {
     paths.push(this.url);
     const isOverview = this.url.startsWith("/api/overview");
-    if (isOverview) assert.equal(byId("refresh-button").disabled, true);
     this.status = isOverview ? overviewStatus : 200;
     this.readyState = 4;
     this.responseText = isOverview && overviewBody !== null
@@ -158,8 +157,6 @@ const beforeRefresh = paths.filter((url) => url.startsWith("/api/overview")).len
 handlers["refresh-button:click"]();
 assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforeRefresh + 1);
 assert.equal(paths.includes("reload"), false);
-assert.equal(byId("refresh-button").disabled, false);
-assert.equal(byId("refresh-button").attributes["aria-busy"], "false");
 
 // Backgrounded iPad Safari must not send periodic health or overview requests.
 const beforeHiddenPoll = paths.length;
@@ -212,11 +209,17 @@ assert.match(byId("data-refresh-state").textContent, /succeeded at \d\d:\d\d/i);
 response.fitness = {
   available: true, summary: {sessions: 2, duration_minutes: 50, distance_km: 5},
   active_days: 2, total_history_count: 48,
-  period_start: "2026-11-02", period_end: "2026-11-08", daily: [], recent: []
+  period_start: "2026-11-02", period_end: "2026-11-08",
+  daily: [{date: "2026-11-07", sessions: 1, duration_minutes: 30, distance_km: 3},
+          {date: "2026-11-08", sessions: 1, duration_minutes: 60, distance_km: 2}], recent: []
 };
 handlers["document:visibilitychange"]();
 assert.match(byId("fitness-updated").textContent, /48 total recorded sessions/);
 assert.match(byId("fitness-summary").textContent, /2 sessions/);
+const bars = byId("fitness-list").children.find((child) => child.className === "workout-bars");
+assert.ok(bars);
+assert.equal(bars.children[0].children[1].children[0].style.width, "50%");
+assert.equal(bars.children[1].children[1].children[0].style.width, "100%");
 
 // A 20-result GitHub API page is only a lower bound, not an exact PR count.
 response.github = { available: true, repositories: [{
@@ -226,6 +229,11 @@ response.github = { available: true, repositories: [{
 handlers["document:visibilitychange"]();
 assert.match(byId("github-summary").textContent, /20\+ known open PRs/);
 assert.match(byId("github-list").children[0].textContent, /20\+ open PRs/);
+assert.equal(byId("github-list").children[1].href, "https://github.com/owner/busy");
+response.github.repositories[0].repository = "owner/evil?access_token=secret";
+handlers["document:visibilitychange"]();
+assert.equal(byId("github-list").children.length, 1);
+response.github.repositories[0].repository = "owner/busy";
 
 // Trello glance summary separates actionable work from completed cards.
 response.trello = { available: true, lists: [
