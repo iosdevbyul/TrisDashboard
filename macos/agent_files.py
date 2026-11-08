@@ -8,6 +8,7 @@ def write_private_agent(path: Path, config: dict) -> tuple[int, int, int]:
     """Create once, refuse symlink targets and restrict settings paths to the owner."""
     payload = plistlib.dumps(config)
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    original = os.fstat(fd)
     try:
         with os.fdopen(fd, "wb") as file:
             file.write(payload)
@@ -15,7 +16,14 @@ def write_private_agent(path: Path, config: dict) -> tuple[int, int, int]:
         identity = path.lstat()
         return (identity.st_dev, identity.st_ino, identity.st_ctime_ns)
     except BaseException:
-        path.unlink(missing_ok=True)
+        # A replacement may have appeared after creation. Never delete it.
+        try:
+            current = path.lstat()
+            if (not path.is_symlink() and (current.st_dev, current.st_ino)
+                    == (original.st_dev, original.st_ino)):
+                path.unlink()
+        except FileNotFoundError:
+            pass
         raise
 
 
