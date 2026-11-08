@@ -5,6 +5,8 @@ import os
 
 def allowed_client(host: str | None, policy: str | None = None) -> bool:
     configured = os.environ.get("TRIS_ALLOWED_CLIENT_IPS", "") if policy is None else policy
+    if not isinstance(configured, str):
+        return False
     if not configured.strip():
         return True
     if not host:
@@ -26,6 +28,8 @@ def allowed_client(host: str | None, policy: str | None = None) -> bool:
 
 
 def validate_allowlist(value: str) -> str:
+    if not isinstance(value, str):
+        raise ValueError("Invalid client allowlist")
     parts = [part.strip() for part in value.split(",")]
     if not 1 <= len(parts) <= 32 or any(not part for part in parts):
         raise ValueError("Invalid client allowlist")
