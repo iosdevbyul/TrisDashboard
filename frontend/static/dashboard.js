@@ -17,6 +17,10 @@
   var consecutiveOverviewFailures = 0;
   var lastSuccessfulOverview = null;
   var refreshButton = document.getElementById("refresh-button");
+  var weatherFahrenheit = false;
+  var lastWeatherInfo = null;
+  try { weatherFahrenheit = window.localStorage.getItem("tris.dashboard.weather.fahrenheit") === "true"; }
+  catch (error) {}
   var agendaExpanded = false;
   var lastAgendaInfo = null;
 
@@ -582,25 +586,33 @@
     return "Conditions unavailable";
   }
 
+  function temperature(value) {
+    if (typeof value !== "number" || !isFinite(value)) { return "Unavailable"; }
+    return (weatherFahrenheit ? Math.round((value * 9 / 5 + 32) * 10) / 10 : value) +
+      (weatherFahrenheit ? " °F" : " °C");
+  }
+
   function showWeather(info) {
+    lastWeatherInfo = info;
+    document.getElementById("weather-unit-button").textContent = weatherFahrenheit ? "Switch to °C" : "Switch to °F";
     if (!info || !info.available) {
       text("weather-temp", "Unavailable");
       text("weather-details", "No weather data yet");
     } else {
-      text("weather-temp", info.temperature_c + " °C");
+      text("weather-temp", temperature(info.temperature_c));
       var details = info.location + " · " + weatherDescription(info.weather_code) +
         " · Humidity " + info.humidity_percent + "%";
       if (typeof info.wind_kmh === "number" && isFinite(info.wind_kmh) && info.wind_kmh >= 0) {
         details += " · Wind " + info.wind_kmh + " km/h";
       }
       if (info.feels_like_c !== null && typeof info.feels_like_c !== "undefined") {
-        details += " · Feels " + info.feels_like_c + " °C";
+        details += " · Feels " + temperature(info.feels_like_c);
       }
       if (info.today_high_c !== null && typeof info.today_high_c !== "undefined") {
-        details += " · High " + info.today_high_c + " °C";
+        details += " · High " + temperature(info.today_high_c);
       }
       if (info.today_low_c !== null && typeof info.today_low_c !== "undefined") {
-        details += " / Low " + info.today_low_c + " °C";
+        details += " / Low " + temperature(info.today_low_c);
       }
       if (info.rain_chance_percent !== null && typeof info.rain_chance_percent !== "undefined") {
         details += " · Rain " + info.rain_chance_percent + "%";
@@ -803,6 +815,13 @@
   document.getElementById("agenda-toggle").addEventListener("click", function () {
     agendaExpanded = !agendaExpanded;
     if (lastAgendaInfo) { showAgenda(lastAgendaInfo); }
+  });
+
+  document.getElementById("weather-unit-button").addEventListener("click", function () {
+    weatherFahrenheit = !weatherFahrenheit;
+    try { window.localStorage.setItem("tris.dashboard.weather.fahrenheit", String(weatherFahrenheit)); }
+    catch (error) {}
+    showWeather(lastWeatherInfo);
   });
 
   document.getElementById("refresh-button").addEventListener("click", function () {
