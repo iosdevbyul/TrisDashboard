@@ -275,6 +275,15 @@
       completedLine.textContent = "Average of last 5 completed calendar months: " + completedParts.join(" / ");
       list.appendChild(completedLine);
     }
+    var bestMonths = info.best_completed_months || {};
+    var bestCurrencies = Object.keys(bestMonths);
+    for (var bi = 0; bi < bestCurrencies.length; bi++) {
+      var bestRow = document.createElement("div");
+      bestRow.className = "repo-row";
+      bestRow.textContent = "Highest recorded completed month · " + bestCurrencies[bi] + " " +
+        bestMonths[bestCurrencies[bi]].amount + " (" + bestMonths[bestCurrencies[bi]].month + ")";
+      list.appendChild(bestRow);
+    }
     var symbolTotals = info.six_month_by_symbol || [];
     if (symbolTotals.length) {
       var symbolHeading = document.createElement("div");

@@ -75,6 +75,14 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     for previous_month in months[:-1]:
         for currency, amount in history[previous_month].items():
             complete_month_totals[currency] = complete_month_totals.get(currency, Decimal("0")) + amount
+    best_completed_months = {}
+    for completed in months[:-1]:
+        for currency, amount in history[completed].items():
+            prior = best_completed_months.get(currency)
+            if prior is None or amount > prior["amount_decimal"]:
+                best_completed_months[currency] = {"month": completed, "amount_decimal": amount}
+    best_completed_months = {currency: {"month": item["month"], "amount": str(item["amount_decimal"])}
+                             for currency, item in sorted(best_completed_months.items())}
     complete_month_average = {currency: str((amount / Decimal(5)).quantize(
         Decimal("0.01"), rounding=ROUND_HALF_UP)) for currency, amount in sorted(complete_month_totals.items())}
     monthly_average = {currency: str((amount / Decimal(6)).quantize(
@@ -85,6 +93,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             "six_month_totals": {key: str(value) for key, value in sorted(history_totals.items())},
             "observed_monthly_average": monthly_average,
             "completed_month_average": complete_month_average,
+            "best_completed_months": best_completed_months,
             "six_month_by_symbol": [
                 {"symbol": symbol, "currency": currency, "amount": str(amount),
                  "currency_share_percent": str((amount * Decimal(100) / history_totals[currency]).quantize(
