@@ -44,3 +44,11 @@ def test_import_paths_must_not_be_in_source_repository():
         safe_path(repo / "frontend" / "private.json")
     with pytest.raises(ValueError):
         safe_path(repo / "tests" / "private.json")
+
+
+def test_import_once_rejects_identical_source_and_destination(tmp_path):
+    export = tmp_path / "export.json"
+    export.write_text('{"schema_version":1,"sessions":[]}')
+    with pytest.raises(ValueError, match="must differ"):
+        import_once(export, export)
+    assert export.read_text() == '{"schema_version":1,"sessions":[]}'
