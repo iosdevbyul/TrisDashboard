@@ -101,15 +101,22 @@
     var active = 0;
     var unavailable = 0;
     var stale = 0;
+    var sourceIssues = [];
     for (var i = 0; i < names.length; i++) {
       var info = payload[names[i]];
       if (info && info.available) {
         active++;
-        if (info.stale || (info.quality && info.quality.outdated)) { stale++; }
+        if (info.stale || (info.quality && info.quality.outdated)) {
+          stale++;
+          sourceIssues.push(names[i] + " stale");
+        }
       } else if (info && info.configured !== false) {
         unavailable++;
+        sourceIssues.push(names[i] + " unavailable");
       }
     }
+    text("source-health-details", sourceIssues.length ? "Needs attention: " + sourceIssues.join(" · ") :
+      "No stale or unavailable configured sources.");
     text("glance-sources", active + "/" + names.length + " ready" +
       (stale ? " · " + stale + " stale" : "") +
       (unavailable ? " · " + unavailable + " unavailable" : ""));
