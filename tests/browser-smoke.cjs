@@ -236,6 +236,19 @@ assert.ok(bars);
 assert.equal(bars.children[0].children[1].children[0].style.width, "50%");
 assert.equal(bars.children[1].children[1].children[0].style.width, "100%");
 
+// Agenda can expand beyond the first eight entries without reloading Safari.
+response.agenda = { available:true, window_start:"2026-11-09", window_end:"2026-11-23",
+  upcoming_count:10, today_event_count:10, tomorrow_event_count:0,
+  events:Array.from({length:10}, (_,i)=>({date:"2026-11-09",title:"Event "+i,time:""})) };
+handlers["document:visibilitychange"]();
+assert.equal(byId("agenda-toggle").hidden, false);
+assert.equal(byId("agenda-list").children.length, 9);
+handlers["agenda-toggle:click"]();
+assert.equal(byId("agenda-list").children.length, 11);
+assert.equal(byId("agenda-toggle").attributes["aria-expanded"], "true");
+handlers["agenda-toggle:click"]();
+assert.equal(byId("agenda-list").children.length, 9);
+
 // A 20-result GitHub API page is only a lower bound, not an exact PR count.
 response.github = { available: true, repositories: [{
   repository: "owner/busy", available: true, open_pr_count: 20,

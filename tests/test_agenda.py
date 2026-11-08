@@ -99,7 +99,7 @@ def test_today_event_count_uses_full_source_not_preview_limit(tmp_path):
     data = load_agenda(file_with(tmp_path, entries), today=date(2026, 11, 8))
     assert data["today_event_count"] == 10
     assert data["upcoming_count"] == 11
-    assert len(data["events"]) == 8
+    assert len(data["events"]) == 11
     assert load_agenda(file_with(tmp_path, []), today=date(2026, 11, 8))["today_event_count"] == 0
 
 
@@ -110,7 +110,7 @@ def test_tomorrow_count_handles_month_boundary_and_preview_limit(tmp_path):
     assert data["today_event_count"] == 1
     assert data["tomorrow_event_count"] == 10
     assert data["upcoming_count"] == 11
-    assert len(data["events"]) == 8
+    assert len(data["events"]) == 11
 
 
 def test_next_seven_days_count_includes_today_and_excludes_day_eight(tmp_path):
@@ -148,3 +148,12 @@ def test_seven_day_busy_days_count_unique_dates_not_events(tmp_path):
     assert data["next_seven_days_count"] == 3
     assert data["next_seven_busy_days"] == 2
     assert load_agenda(file_with(tmp_path, []), today=date(2026, 11, 9))["next_seven_busy_days"] == 0
+
+
+def test_agenda_extended_preview_is_bounded_and_explicit(tmp_path):
+    entries = [{"date":"2026-11-09", "title":"Event " + str(i)} for i in range(45)]
+    data = load_agenda(file_with(tmp_path, entries), today=date(2026, 11, 9))
+    assert data["upcoming_count"] == 45
+    assert len(data["events"]) == 30
+    assert data["events_truncated"] is True
+    assert load_agenda(file_with(tmp_path, []), today=date(2026, 11, 9))["events_truncated"] is False
