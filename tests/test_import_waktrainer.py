@@ -272,3 +272,16 @@ def test_v2_non_ascii_session_ids_rejected_before_import(tmp_path, session_id):
     }], version=2)
     with pytest.raises(ValueError, match="session_id"):
         parse_export(source)
+
+
+@pytest.mark.parametrize("raw", [
+    '{"schema_version":2,"schema_version":1,"sessions":[]}',
+    '{"schema_version":2,"sessions":[{"session_id":"a","session_id":"b"}]}',
+    '{"schema_version":2,"sessions":[],"metadata":NaN}',
+    '{"schema_version":2,"sessions":[],"metadata":Infinity}',
+])
+def test_workout_export_rejects_duplicate_or_nonstandard_json(tmp_path, raw):
+    file = tmp_path / "ambiguous-export.json"
+    file.write_text(raw)
+    with pytest.raises(ValueError):
+        parse_export(file)
