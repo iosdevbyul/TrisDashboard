@@ -28,7 +28,8 @@ def csv_payload(path: Path, kind: str, as_of: str | None = None) -> dict:
         raise ValueError("CSV too large")
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
-        if (not reader.fieldnames or len(set(reader.fieldnames)) != len(reader.fieldnames)
+        if (not reader.fieldnames or any(not name or name != name.strip() for name in reader.fieldnames)
+                or len(set(reader.fieldnames)) != len(reader.fieldnames)
                 or not REQUIRED[kind].issubset(reader.fieldnames)
                 or not set(reader.fieldnames).issubset(FIELDS[kind])):
             raise ValueError("Invalid columns")

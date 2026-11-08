@@ -95,3 +95,12 @@ def test_import_overwrite_only_with_explicit_force(tmp_path):
     output.write_text("older data")
     assert import_finance(source, output, kind="portfolio", overwrite=True)["written"] is True
     assert json.loads(output.read_text())["positions"][0]["symbol"] == "SCHD"
+
+
+def test_finance_csv_rejects_padded_header_without_writing(tmp_path):
+    source = tmp_path / "bad.csv"
+    source.write_text("symbol, currency,quantity\\nJEPQ,USD,3\\n")
+    output = tmp_path / "holdings.json"
+    with pytest.raises(ValueError, match="Invalid columns"):
+        import_finance(source, output, kind="portfolio")
+    assert not output.exists()
