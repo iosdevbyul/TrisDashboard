@@ -63,3 +63,16 @@ def test_portfolio_path_is_allowed_but_must_be_absolute(tmp_path: Path):
     file.write_text('{"TRIS_PORTFOLIO_FILE": "private.json"}')
     with pytest.raises(ValueError, match="absolute JSON path"):
         read_public_settings(file)
+
+
+def test_coordinates_reject_non_finite_values(tmp_path):
+    import json
+    import pytest
+    from macos.service import read_public_settings
+    file = tmp_path / "settings.json"
+    for invalid in ("NaN", "Infinity", "-Infinity", "1e9999"):
+        file.write_text(json.dumps({"TRIS_LATITUDE": invalid}))
+        with pytest.raises(ValueError, match="Invalid coordinate"):
+            read_public_settings(file)
+    file.write_text(json.dumps({"TRIS_LATITUDE": 37.56, "TRIS_LONGITUDE": 126.97}))
+    assert read_public_settings(file)["TRIS_LATITUDE"] == "37.56"

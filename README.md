@@ -449,3 +449,7 @@ Run `.venv/bin/python -m macos.workout_bridge_check --json` on a MacBook to exer
 ### Validate complete workout LaunchAgent configuration
 
 Workout-inbox status now verifies the installed agent's expected label, fixed 15-minute interval, `RunAtLoad`, Python executable under the configured virtual environment and matching working directory. A file whose settings were altered or corrupted no longer appears as a correctly configured scheduler merely because it names the expected import command. The check inspects the plist only; actual launchd process execution still requires MacBook operational acceptance.
+
+### Non-finite location values
+
+Dashboard launchd settings now refuse invalid latitude/longitude values such as NaN and Infinity, even when those strings can be parsed as Python floating-point values. Only finite values in normal latitude/longitude ranges are accepted. This guards MacBook first-run deployment against malformed weather URLs and keeps the original settings file unchanged when validation fails.
