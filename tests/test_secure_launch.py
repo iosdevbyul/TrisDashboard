@@ -60,3 +60,22 @@ def test_keychain_lookup_error_does_not_block_public_dashboard():
         raise OSError("security unavailable")
     values = provider_environment({"TRIS_GITHUB_REPOS": "owner/public"}, lookup=missing)
     assert values == {"TRIS_GITHUB_REPOS": "owner/public"}
+
+
+import pytest
+
+
+@pytest.mark.parametrize("credential", [True, 17, [], {}, "  ", ""])
+def test_malformed_keychain_credentials_never_override_environment(credential):
+    from macos.secure_launch import credential_status
+    result = provider_environment({"TRIS_GITHUB_TOKEN": "existing"}, lookup=lambda _: credential)
+    assert result["TRIS_GITHUB_TOKEN"] == "existing"
+    assert all(value is False for value in credential_status(lookup=lambda _: credential).values())
+
+
+def test_keychain_error_types_fail_closed_without_leaking():
+    from macos.secure_launch import credential_status
+    def broken(_):
+        raise ValueError("private-keychain-failure")
+    assert all(value is False for value in credential_status(lookup=broken).values())
+    assert provider_environment({"SAFE": "ok"}, lookup=broken) == {"SAFE": "ok"}
