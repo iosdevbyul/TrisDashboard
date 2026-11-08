@@ -239,7 +239,7 @@ def quotes() -> dict:
         blocked = _QUOTE_RETRY_AT.get(key, 0) > now
         previous = _cache.get(key)
     if blocked:
-        if previous:
+        if previous and now - previous["time"] <= MAX_STALE_SECONDS:
             snapshot = dict(previous["data"])
             snapshot["stale"] = True
             snapshot["rate_limited_retry"] = True
