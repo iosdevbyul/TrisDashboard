@@ -122,3 +122,19 @@ def test_currency_allocations_require_complete_manual_prices(tmp_path):
         {"symbol": "JEPQ", "percent": "75.0"}, {"symbol": "SCHD", "percent": "25.0"}]
     assert "KRW" not in result["currency_allocations"]
     assert result["valuation_complete"] is False
+
+
+def test_largest_holding_is_currency_specific_and_requires_complete_prices(tmp_path):
+    data = load_portfolio(write_snapshot(tmp_path, [
+        {"symbol":"JEPQ","currency":"USD","quantity":2,"price":50},
+        {"symbol":"SCHD","currency":"USD","quantity":1,"price":70},
+        {"symbol":"KR","currency":"KRW","quantity":1,"price":5000},
+    ]))
+    assert data["largest_holdings"] == {
+        "USD":{"symbol":"JEPQ","market_value":"100"},
+        "KRW":{"symbol":"KR","market_value":"5000"}}
+    data = load_portfolio(write_snapshot(tmp_path, [
+        {"symbol":"JEPQ","currency":"USD","quantity":1,"price":100},
+        {"symbol":"SCHD","currency":"USD","quantity":1},
+    ]))
+    assert data["largest_holdings"] == {}
