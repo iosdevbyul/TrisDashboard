@@ -126,3 +126,19 @@ def test_observed_monthly_average_includes_empty_months_and_separates_currency(t
     assert data["observed_monthly_average"] == {"KRW": "100.00", "USD": "2.67"}
     assert data["six_month_totals"] == {"KRW": "600", "USD": "16"}
     assert load_dividends(snapshot(tmp_path, []), today=date(2026, 11, 8))["observed_monthly_average"] == {}
+
+
+def test_dividends_group_confirmed_last_six_months_by_symbol_and_currency(tmp_path):
+    source = snapshot(tmp_path, [
+        {"symbol":"JEPQ","currency":"USD","amount":"10.50","paid_on":"2026-11-01"},
+        {"symbol":"JEPQ","currency":"USD","amount":"5.25","paid_on":"2026-09-01"},
+        {"symbol":"QQQI","currency":"USD","amount":"3","paid_on":"2026-10-01"},
+        {"symbol":"KR","currency":"KRW","amount":"1000","paid_on":"2026-08-01"},
+        {"symbol":"OLD","currency":"USD","amount":"999","paid_on":"2026-04-01"},
+    ])
+    result = load_dividends(source, today=date(2026, 11, 9))
+    assert result["six_month_by_symbol"] == [
+        {"symbol":"KR","currency":"KRW","amount":"1000"},
+        {"symbol":"JEPQ","currency":"USD","amount":"15.75"},
+        {"symbol":"QQQI","currency":"USD","amount":"3"},
+    ]
