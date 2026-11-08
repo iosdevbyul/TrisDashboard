@@ -158,6 +158,7 @@ assert.equal(byId("panel-portfolio").hidden, false);
 byId("setting-pause-refresh").checked = true;
 handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
 assert.equal(window.trisDashboardRefreshPaused, true);
+assert.match(byId("refresh-cadence").textContent, /paused/);
 clockOffset += 11 * 60000;
 const beforePaused = paths.filter((url) => url.startsWith("/api/overview")).length;
 periodic.find((entry) => entry.delay === 60000).callback();
@@ -167,6 +168,7 @@ assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, befo
 byId("setting-pause-refresh").checked = false;
 handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
 assert.equal(window.trisDashboardRefreshPaused, false);
+assert.match(byId("refresh-cadence").textContent, /every 3 minutes/);
 
 byId("setting-compact").checked = true;
 handlers["setting-compact:change"].call(byId("setting-compact"));
