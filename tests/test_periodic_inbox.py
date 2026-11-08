@@ -191,3 +191,41 @@ def test_corrupted_status_file_returns_unknown(tmp_path):
     file.parent.mkdir(parents=True)
     file.write_text("invalid JSON")
     assert read_run_state(tmp_path) == {"last_run_known": False}
+
+
+def test_inbox_run_state_missing_timezone_is_unknown(tmp_path):
+    from macos.periodic_inbox import state_path, read_run_state
+    import json
+    file = state_path(tmp_path)
+    file.parent.mkdir(parents=True)
+    file.write_text(json.dumps({
+        "checked_at_utc": "2026-11-08T08:00:00",
+        "success": True, "new_workouts": 3,
+    }))
+    assert read_run_state(tmp_path) == {"last_run_known": False}
+
+
+def test_inbox_state_rejects_future_success_and_non_integer_count(tmp_path):
+    from datetime import datetime, timezone, timedelta
+    from macos.periodic_inbox import state_path, read_run_state
+    import json
+    file = state_path(tmp_path)
+    file.parent.mkdir(parents=True)
+    file.write_text(json.dumps({
+        "checked_at_utc": (datetime.now(timezone.utc) + timedelta(days=2)).isoformat(),
+        "success": True, "new_workouts": 1,
+    }))
+    assert read_run_state(tmp_path)["last_run_known"] is False
+    file.write_text(json.dumps({
+        "checked_at_utc": datetime.now(timezone.utc).isoformat(),
+        "success": True, "new_workouts": True,
+    }))
+    assert read_run_state(tmp_path)["last_run_known"] is False
+
+
+def test_status_broken_symlink_is_safe(tmp_path):
+    from macos.periodic_inbox import state_path, read_run_state
+    file = state_path(tmp_path)
+    file.parent.mkdir(parents=True)
+    file.symlink_to(tmp_path / "missing-target.json")
+    assert read_run_state(tmp_path) == {"last_run_known": False}
