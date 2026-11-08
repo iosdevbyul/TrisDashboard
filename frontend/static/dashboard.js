@@ -16,6 +16,7 @@
   var overviewRetryTimer = null;
   var consecutiveOverviewFailures = 0;
   var lastSuccessfulOverview = null;
+  var refreshButton = document.getElementById("refresh-button");
 
   function pad(number) { return number < 10 ? "0" + number : String(number); }
   function text(id, value) { document.getElementById(id).textContent = String(value); }
@@ -512,11 +513,17 @@
     var now = new Date().getTime();
     if (!force && now - lastDataStarted < 30000) { return; }
     lastDataStarted = now;
+    refreshButton.disabled = true;
+    refreshButton.textContent = "Refreshing...";
+    refreshButton.setAttribute("aria-busy", "true");
     clearOverviewRetry();
     var sequence = ++overviewSequence;
     if (overviewRequest && overviewRequest.readyState !== 4) { overviewRequest.abort(); }
     overviewRequest = get("/api/overview", function (ok, xhr) {
       if (sequence !== overviewSequence) { return; }
+      refreshButton.disabled = false;
+      refreshButton.textContent = "Refresh now";
+      refreshButton.setAttribute("aria-busy", "false");
       if (!ok) { retryOverview(); return; }
       try {
         var payload = JSON.parse(xhr.responseText);
