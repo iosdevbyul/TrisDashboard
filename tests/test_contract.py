@@ -52,3 +52,11 @@ def test_legacy_ipad_controls_have_touch_targets_and_keyboard_focus():
     js = client.get("/static/dashboard.js").text
     assert "=>" not in js
     assert "const " not in js
+
+
+def test_display_settings_has_explicit_close_control_for_touch_devices():
+    html = client.get("/").text
+    js = client.get("/static/preferences.js").text
+    assert 'id="close-display-settings"' in html
+    assert 'getElementById("close-display-settings").addEventListener("click"' in js
+    assert 'setAttribute("aria-expanded", "false")' in js
