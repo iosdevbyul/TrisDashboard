@@ -12,6 +12,11 @@ const paths = [];
 const scheduled = [];
 let overviewStatus = 200;
 let overviewBody = null;
+let healthBody = null;
+let clockOffset = 0;
+class TestDate extends Date {
+  constructor(...args) { super(...(args.length ? args : [Date.now() + clockOffset])); }
+}
 
 function element(id = "") {
   const children = [];
@@ -73,7 +78,7 @@ class XMLHttpRequest {
     this.readyState = 4;
     this.responseText = isOverview && overviewBody !== null
       ? overviewBody
-      : JSON.stringify(isOverview ? response : {status:"ok"});
+      : (isOverview ? JSON.stringify(response) : (healthBody === null ? '{"status":"ok"}' : healthBody));
     if (this.onreadystatechange) this.onreadystatechange();
   }
   abort() { this.readyState = 4; }
@@ -89,7 +94,7 @@ const window = {
 };
 
 const context = vm.createContext({
-  document, window, XMLHttpRequest, Date, JSON, Object, Math, String,
+  document, window, XMLHttpRequest, Date: TestDate, JSON, Object, Math, String,
   setInterval: () => 1,
   setTimeout: (callback, delay) => {
     scheduled.push({ callback, delay, cancelled: false });
@@ -168,5 +173,15 @@ handlers["document:visibilitychange"]();
 assert.match(byId("data-refresh-state").textContent, /failed/i);
 assert.equal(byId("quotes-summary").textContent, "1/1 quotes reported");
 assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
+
+// An HTTP 200 with an invalid health payload is not an online server.
+healthBody = '{"status":"not-ready"}';
+clockOffset += 3000;
+handlers["document:visibilitychange"]();
+assert.equal(byId("connection").textContent, "Server offline");
+healthBody = '{"status":"ok"}';
+clockOffset += 3000;
+handlers["document:visibilitychange"]();
+assert.equal(byId("connection").textContent, "Server online");
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
