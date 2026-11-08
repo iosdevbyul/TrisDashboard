@@ -68,8 +68,14 @@ def import_finance(source: Path, output: Path, *, kind: str, as_of: str | None =
             json.dump(payload, handle, ensure_ascii=False)
         validator(temp)
         if not dry_run:
-            os.replace(temp, output)
-            temp = None
+            if overwrite:
+                os.replace(temp, output)
+                temp = None
+            else:
+                # Atomic no-clobber create, even if another process writes after preflight.
+                os.link(temp, output)
+                temp.unlink()
+                temp = None
         return {"validated": len(payload["positions"] if kind == "portfolio" else payload["payments"]),
                 "written": not dry_run}
     finally:
