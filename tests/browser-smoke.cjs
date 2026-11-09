@@ -832,4 +832,32 @@ assert.equal(repairedChart.children[2].children[1].children[0].style.width,"50%"
 assert.ok(!byId("fitness-list").children.some(row => /Skipped 2 invalid daily/.test(row.textContent)));
 assert.ok(!byId("agenda-list").children.some(row => /Skipped 1 invalid calendar/.test(row.textContent)));
 
+// Secondary panels: invalid allocation, recent payment, workout and PR preview rows
+// must not prevent a successful overview refresh or hide valid sibling records.
+response.portfolio = {available:true,positions:[],totals:{},quality:{outdated:false},
+  currency_allocations:{USD:[null,{symbol:"JEPQ",percent:70},{symbol:"BAD",percent:140}]}};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},history:[],
+  recent:[null,{paid_on:"2026-11-07",symbol:"JEPQ",amount:"25",currency:"USD"}]};
+response.fitness = {available:true,summary:{sessions:1,duration_minutes:30,distance_km:2},
+  period_start:"2026-11-03",period_end:"2026-11-09",daily:[],
+  recent:[null,{date:"2026-11-09",type:"Running",duration_minutes:30}]};
+response.github = {available:true,repositories:[{available:true,repository:"owner/repo",
+  open_pr_count:1,open_prs:[null,{number:42,title:"Fix flow"}]}]};
+handlers["document:visibilitychange"]();
+assert.ok(byId("portfolio-list").children.some(row => /Skipped 2 invalid allocation entries/.test(row.textContent)));
+assert.ok(byId("portfolio-list").children.some(row => /JEPQ · 70%/.test(row.children[0]?.textContent || row.textContent)));
+assert.ok(byId("dividend-list").children.some(row => /Skipped 1 invalid recent dividend/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some(row => /JEPQ · 25 USD/.test(row.textContent)));
+assert.ok(byId("fitness-list").children.some(row => /Skipped 1 invalid recent workout/.test(row.textContent)));
+assert.ok(byId("fitness-list").children.some(row => /Running · 30 min/.test(row.textContent)));
+assert.ok(byId("github-list").children.some(row => /#42 Fix flow/.test(row.textContent)));
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+response.portfolio.currency_allocations.USD = [null];
+response.dividends.recent = [];
+response.fitness.recent = [];
+response.github.repositories[0].open_prs = {broken:true};
+handlers["document:visibilitychange"]();
+assert.ok(byId("github-list").children.some(row => /PR preview unavailable/.test(row.textContent)));
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
