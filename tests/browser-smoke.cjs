@@ -1098,4 +1098,38 @@ const beforeObsoleteCallback = paths.filter(url => url.startsWith("/api/overview
 obsoleteRetry.callback();
 assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeObsoleteCallback);
 
+// Foreground health recovery must not cause a second overview request.
+clockOffset += 3000;
+healthBody = '{"status":"error"}';
+periodic.find(item => item.delay === 15000).callback();
+assert.equal(byId("connection").textContent,"Server offline");
+healthBody = '{"status":"ok"}';
+const beforeForegroundOverview = paths.filter(url => url.startsWith("/api/overview")).length;
+handlers["document:visibilitychange"]();
+assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeForegroundOverview + 1);
+assert.equal(byId("connection").textContent,"Server online");
+// Hidden status must remain visible while minute ticker continues running.
+document.hidden = true;
+handlers["document:visibilitychange"]();
+const hiddenStatus = byId("data-refresh-state").textContent;
+periodic.find(item => item.delay === 60000).callback();
+assert.equal(byId("data-refresh-state").textContent,hiddenStatus);
+document.hidden = false;
+handlers["document:visibilitychange"]();
+// Pause status must remain visible instead of turning into a success-age label.
+byId("setting-pause-refresh").checked = true;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
+const pausedStatus = byId("data-refresh-state").textContent;
+periodic.find(item => item.delay === 60000).callback();
+assert.equal(byId("data-refresh-state").textContent,pausedStatus);
+byId("setting-pause-refresh").checked = false;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
+// When the wall clock rolls behind the last success, age cannot be called 0 minutes.
+clockOffset -= 2 * 60 * 60000;
+periodic.find(item => item.delay === 60000).callback();
+assert.match(byId("data-refresh-state").textContent,/Device clock changed; elapsed time unavailable/);
+clockOffset += 2 * 60 * 60000;
+handlers["refresh-button:click"]();
+healthBody = null;
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
