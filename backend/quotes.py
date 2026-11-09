@@ -100,6 +100,7 @@ def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
                           item.get("currency") in ("USD", "KRW"))
         if not valid_price or not valid_identity or not item.get("reported_at_utc"):
             item["outdated"] = True
+            item.pop("age_hours", None)
         if valid_price and valid_identity and item.get("reported_at_utc"):
             try:
                 timestamp = datetime.fromisoformat(item["reported_at_utc"])
