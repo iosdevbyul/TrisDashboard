@@ -647,7 +647,7 @@ response.quotes = {available:true,quotes:[
 ]};
 response.server.server_time_utc = {invalid:true};
 handlers["document:visibilitychange"]();
-assert.match(byId("github-summary").textContent,/^2 open PRs$/);
+assert.match(byId("github-summary").textContent,/^2\\+ known open PRs$/);
 assert.ok(byId("github-list").children.some(row => /PR count unavailable/.test(row.textContent)));
 assert.match(byId("trello-summary").textContent,/^1 cards · 0 Next · 1 In Progress$/);
 assert.ok(byId("trello-list").children.some(row => /Card count unavailable/.test(row.textContent)));
