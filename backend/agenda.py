@@ -57,6 +57,13 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
         if reference <= day <= end:
             upcoming.append({"date": day.isoformat(), "time": when, "title": title.strip()})
     upcoming.sort(key=lambda event: (event["date"], event["time"]))
+    counts_by_day = {}
+    for event in upcoming:
+        counts_by_day[event["date"]] = counts_by_day.get(event["date"], 0) + 1
+    busiest_day = None
+    if counts_by_day:
+        busiest_date = min(counts_by_day, key=lambda day: (-counts_by_day[day], day))
+        busiest_day = {"date": busiest_date, "events": counts_by_day[busiest_date]}
     timed_slots = {}
     for event in upcoming:
         if event["time"]:
@@ -76,6 +83,7 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
     return {"available": True, "configured": True, "source": "manual_local_calendar",
             "window_start": reference.isoformat(), "window_end": end.isoformat(),
             "upcoming_count": len(upcoming), "today_event_count": today_event_count,
+            "busiest_upcoming_day": busiest_day,
             "conflicting_time_slots": conflicting_slots,
             "conflicting_event_count": conflicting_events,
             "tomorrow_event_count": tomorrow_event_count,
