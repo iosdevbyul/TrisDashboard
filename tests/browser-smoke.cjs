@@ -694,4 +694,35 @@ assert.ok(!byId("trello-list").children.some(row => /Trello list entry unavailab
 assert.ok(!byId("quotes-list").children.some(row => /Quote entry unavailable/.test(row.textContent)));
 assert.match(byId("weather-updated").textContent,/Updated 2026-11-09 03:00 UTC/);
 
+// Malformed collection shapes must not break the overall overview refresh.
+response.quotes = {available:true,quotes:{invalid:"not an array"}};
+response.github = {available:true,repositories:{invalid:"not an array"}};
+response.trello = {available:true,lists:"not an array"};
+response.agenda = {available:true,upcoming_count:1,window_start:"2026-11-09",
+  window_end:"2026-11-23",events:{invalid:"not an array"}};
+handlers["document:visibilitychange"]();
+assert.ok(byId("quotes-list").children.some(row => /Quote list invalid/.test(row.textContent)));
+assert.ok(byId("github-list").children.some(row => /GitHub repository list invalid/.test(row.textContent)));
+assert.ok(byId("trello-list").children.some(row => /Trello list response invalid/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /Agenda events list invalid/.test(row.textContent)));
+assert.ok(!byId("quotes-list").children.some(row => /No provider quotes returned/.test(row.textContent)));
+assert.ok(!byId("github-list").children.some(row => /No GitHub repositories returned/.test(row.textContent)));
+assert.ok(!byId("trello-list").children.some(row => /No Trello lists returned/.test(row.textContent)));
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+// Recover on the next payload, with explicit empty arrays then with populated arrays.
+response.quotes.quotes = [];
+response.github.repositories = [];
+response.trello.lists = [];
+response.agenda.events = [];
+response.agenda.upcoming_count = 0;
+handlers["document:visibilitychange"]();
+assert.ok(!byId("quotes-list").children.some(row => /Quote list invalid/.test(row.textContent)));
+assert.ok(!byId("github-list").children.some(row => /GitHub repository list invalid/.test(row.textContent)));
+assert.ok(!byId("trello-list").children.some(row => /Trello list response invalid/.test(row.textContent)));
+assert.ok(!byId("agenda-list").children.some(row => /Agenda events list invalid/.test(row.textContent)));
+assert.ok(byId("quotes-list").children.some(row => /No provider quotes returned/.test(row.textContent)));
+assert.ok(byId("github-list").children.some(row => /No GitHub repositories returned/.test(row.textContent)));
+assert.ok(byId("trello-list").children.some(row => /No Trello lists returned/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /No upcoming events/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");

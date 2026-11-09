@@ -142,8 +142,15 @@
       text("quotes-updated", "Optional source · no live pricing guarantee");
       return;
     }
-    var rows = info.quotes || [];
-    if (!rows.length) {
+    var validQuotes = Object.prototype.toString.call(info.quotes) === "[object Array]";
+    var rows = validQuotes ? info.quotes : [];
+    if (!validQuotes) {
+      var invalidQuotes = document.createElement("div");
+      invalidQuotes.className = "repo-row";
+      invalidQuotes.textContent = "Quote list invalid. Provider data could not be displayed.";
+      list.appendChild(invalidQuotes);
+    }
+    if (validQuotes && !rows.length) {
       var noQuotes = document.createElement("div");
       noQuotes.className = "repo-row";
       noQuotes.textContent = "No provider quotes returned. No prices have been inferred.";
@@ -691,8 +698,15 @@
         list.appendChild(dailyCountLine);
       }
     }
-    var events = info.events || [];
-    if (info.upcoming_count === 0) {
+    var validEvents = Object.prototype.toString.call(info.events) === "[object Array]";
+    var events = validEvents ? info.events : [];
+    if (!validEvents) {
+      var invalidEvents = document.createElement("div");
+      invalidEvents.className = "repo-row";
+      invalidEvents.textContent = "Agenda events list invalid. Check local calendar file.";
+      list.appendChild(invalidEvents);
+    }
+    if (validEvents && info.upcoming_count === 0) {
       var noEvents = document.createElement("div");
       noEvents.className = "repo-row";
       noEvents.textContent = "No upcoming events in the 14-day calendar window.";
@@ -976,8 +990,15 @@
       text("github-updated", statusText(info));
       return;
     }
-    var repos = info.repositories || [];
-    if (!repos.length) {
+    var validRepositories = Object.prototype.toString.call(info.repositories) === "[object Array]";
+    var repos = validRepositories ? info.repositories : [];
+    if (!validRepositories) {
+      var invalidRepositories = document.createElement("div");
+      invalidRepositories.className = "repo-row";
+      invalidRepositories.textContent = "GitHub repository list invalid. Check provider response.";
+      list.appendChild(invalidRepositories);
+    }
+    if (validRepositories && !repos.length) {
       var noRepos = document.createElement("div");
       noRepos.className = "repo-row";
       noRepos.textContent = "No GitHub repositories returned by the configured provider.";
@@ -1062,8 +1083,15 @@
       text("trello-updated", info && info.configured ? "Board temporarily unavailable" : "Configure on MacBook");
       return;
     }
-    var columns = info.lists || [];
-    if (!columns.length) {
+    var validLists = Object.prototype.toString.call(info.lists) === "[object Array]";
+    var columns = validLists ? info.lists : [];
+    if (!validLists) {
+      var invalidLists = document.createElement("div");
+      invalidLists.className = "repo-row";
+      invalidLists.textContent = "Trello list response invalid. Check board data.";
+      list.appendChild(invalidLists);
+    }
+    if (validLists && !columns.length) {
       var noLists = document.createElement("div");
       noLists.className = "repo-row";
       noLists.textContent = "No Trello lists returned for the configured board.";
