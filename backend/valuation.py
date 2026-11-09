@@ -1,5 +1,5 @@
 """Clearly labeled *partial* portfolio valuation using optional source-stamped quotes."""
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, Overflow
 
 def quote_valuation(portfolio: dict, quotes: dict) -> dict:
     if not isinstance(portfolio, dict) or not portfolio.get("available"):
@@ -61,7 +61,10 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
             continue
         if not qty.is_finite() or qty < 0 or not price.is_finite() or price <= 0:
             continue
-        value = qty * price
+        try:
+            value = qty * price
+        except (InvalidOperation, Overflow, OverflowError):
+            continue
         totals[currency] = totals.get(currency, Decimal("0")) + value
         matched.append({"symbol": symbol, "currency": currency, "value": str(value),
                         "quote_time_utc": quote["reported_at_utc"]})
