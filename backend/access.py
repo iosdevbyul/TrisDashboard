@@ -22,6 +22,9 @@ def allowed_client(host: str | None, policy: str | None = None) -> bool:
         return False
     try:
         networks = [ipaddress.ip_network(entry, strict=False) for entry in rules]
+        networks = [ipaddress.ip_network((net.network_address.ipv4_mapped, net.prefixlen - 96), strict=False)
+                    if isinstance(net, ipaddress.IPv6Network) and net.prefixlen >= 96
+                    and net.network_address.ipv4_mapped is not None else net for net in networks]
     except ValueError:
         return False
     return any(address in network for network in networks)
