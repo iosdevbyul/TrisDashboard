@@ -169,6 +169,28 @@ assert.match(state["tris.dashboard.display.v1"], /"order":\[/);
 handlers["panel-down-fitness:click"]();
 assert.equal(moduleContainer.children[moduleContainer.children.length - 1].id, "panel-fitness");
 assert.equal(new Set(moduleContainer.children).size, 9);
+assert.equal(byId("panel-up-portfolio").disabled,true);
+assert.equal(byId("panel-down-fitness").disabled,true);
+assert.equal(byId("panel-up-fitness").disabled,false);
+const jumpContainer = byId("priority-jumps");
+assert.equal(jumpContainer.children.length,9);
+const defaultJumpOrder = ["portfolio","quotes","dividends","agenda","github","weather","trello","server","fitness"].map(x => "jump-link-" + x);
+assert.deepEqual(jumpContainer.children.map(x => x.id),defaultJumpOrder);
+// Move a non-edge panel: both cards and shortcut links must move in lockstep.
+handlers["panel-up-quotes:click"]();
+assert.equal(moduleContainer.children[0].id,"panel-quotes");
+assert.equal(jumpContainer.children[0].id,"jump-link-quotes");
+assert.equal(byId("panel-up-quotes").disabled,true);
+assert.equal(byId("panel-up-portfolio").disabled,false);
+assert.match(byId("panel-order-status").textContent,/Moved quotes to position 1 of 9/);
+assert.match(state["tris.dashboard.display.v1"],/"order":\["quotes","portfolio"/);
+// Restore only the order, preserving unrelated display preferences and visibility.
+handlers["reset-panel-order:click"]();
+assert.deepEqual(moduleContainer.children.map(x=>x.id),initialOrder);
+assert.deepEqual(jumpContainer.children.map(x=>x.id),defaultJumpOrder);
+assert.equal(byId("panel-up-portfolio").disabled,true);
+assert.equal(byId("panel-down-fitness").disabled,true);
+assert.equal(byId("panel-order-status").textContent,"Default panel order restored");
 
 byId("display-settings").hidden = true;
 handlers["settings-button:click"].call(byId("settings-button"));

@@ -63,6 +63,19 @@
       var orderedCard = document.querySelector('[data-panel="' + settings.order[o] + '"]');
       if (orderedCard) { container.appendChild(orderedCard); }
     }
+    // Keep the quick-jump sequence aligned with the user-defined card order.
+    var jumpBar = document.getElementById("priority-jumps");
+    for (var j = 0; j < settings.order.length; j++) {
+      var jump = document.getElementById("jump-link-" + settings.order[j]);
+      if (jump) { jumpBar.appendChild(jump); }
+    }
+    for (var p = 0; p < panelNames.length; p++) {
+      var position = settings.order.indexOf(panelNames[p]);
+      var upButton = document.getElementById("panel-up-" + panelNames[p]);
+      var downButton = document.getElementById("panel-down-" + panelNames[p]);
+      if (upButton) { upButton.disabled = position === 0; }
+      if (downButton) { downButton.disabled = position === settings.order.length - 1; }
+    }
     var visibleShortcuts = 0;
     for (var i = 0; i < panelNames.length; i++) {
       var name = panelNames[i];
@@ -94,6 +107,9 @@
     settings.order[next] = name;
     settings.order[index] = swap;
     apply(); store();
+    document.getElementById("panel-order-status").textContent =
+      "Moved " + name + " to position " + (settings.order.indexOf(name) + 1) +
+      " of " + settings.order.length;
   }
 
   function buildControls() {
@@ -128,6 +144,12 @@
       }(panelNames[i]));
     }
   }
+
+  document.getElementById("reset-panel-order").addEventListener("click", function () {
+    settings.order = panelNames.slice(0);
+    apply(); store();
+    document.getElementById("panel-order-status").textContent = "Default panel order restored";
+  });
 
   document.getElementById("settings-button").addEventListener("click", function () {
     var panel = document.getElementById("display-settings");
