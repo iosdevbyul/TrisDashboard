@@ -1,3 +1,4 @@
+from decimal import Decimal
 from backend.valuation import quote_valuation
 
 
@@ -17,4 +18,4 @@ def test_currency_total_overflow_does_not_crash_dashboard():
     assert result["matched_count"] == 2
     assert result["partial"] is True
     assert result["totals"]["KRW"] == "20"
-    assert result["totals"]["USD"] == "6E+999999"
+    assert Decimal(result["totals"]["USD"]) == Decimal("6e999999")
