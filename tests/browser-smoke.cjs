@@ -1889,4 +1889,44 @@ assert.match(byId("pinned-panel-message").textContent,/All pins cleared/);
 assert.equal(byId("view-history-status").textContent !== "",true);
 handlers["quick-view-all:click"]();
 
+// Temporary filter summary, multi-filter empty guidance and one-tap recovery.
+handlers["quick-view-all:click"]();
+handlers["source-filter-all:click"]();
+handlers["clear-temporary-filters:click"]();
+assert.equal(byId("clear-temporary-filters").disabled,true);
+assert.equal(byId("filter-summary-status").textContent,"No temporary filters");
+const originalDisplayState = state["tris.dashboard.display.v1"];
+const originalPinsState = state["tris.dashboard.pins.v1"];
+const originalViewHistory = byId("view-history-status").textContent;
+byId("panel-search-input").value="개발";
+handlers["panel-search-input:input"].call(byId("panel-search-input"));
+assert.equal(byId("filter-summary-status").textContent,"1 active filters: Search");
+assert.equal(byId("clear-temporary-filters").disabled,false);
+handlers["source-filter-issues:click"]();
+assert.equal(byId("filter-summary-status").textContent,"2 active filters: Search · Source: issues");
+assert.equal(byId("combined-filter-empty").hidden,false);
+assert.match(byId("combined-filter-empty").textContent,/Clear all filters/);
+assert.equal(byId("source-filter-empty").hidden,true);
+assert.equal(byId("panel-search-empty").hidden,true);
+assert.equal(byId("pinned-panel-empty").hidden,true);
+handlers["clear-temporary-filters:click"]();
+assert.equal(byId("filter-summary-status").textContent,"No temporary filters");
+assert.equal(byId("clear-temporary-filters").disabled,true);
+assert.equal(byId("combined-filter-empty").hidden,true);
+assert.equal(byId("panel-search-input").value,"");
+assert.equal(byId("source-filter-all").attributes["aria-pressed"],"true");
+assert.equal(byId("priority-jumps-count").textContent,"9 of 9 shortcuts available");
+assert.equal(state["tris.dashboard.display.v1"],originalDisplayState);
+assert.equal(state["tris.dashboard.pins.v1"],originalPinsState);
+assert.equal(byId("view-history-status").textContent,originalViewHistory);
+// Pinned-only is also included in summary without changing saved favorites.
+handlers["pin-github:click"]();
+handlers["quick-view-pinned:click"]();
+assert.equal(byId("filter-summary-status").textContent,"1 active filters: Pinned only");
+handlers["clear-temporary-filters:click"]();
+assert.equal(byId("quick-view-pinned").attributes["aria-pressed"],"false");
+assert.match(state["tris.dashboard.pins.v1"],/github/);
+handlers["pin-github:click"]();
+handlers["quick-view-all:click"]();
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
