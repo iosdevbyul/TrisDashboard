@@ -855,7 +855,8 @@
   }
 
   function updateLastSuccessAge() {
-    if (!lastSuccessfulOverviewAt || consecutiveOverviewFailures) { return; }
+    if (!lastSuccessfulOverviewAt || consecutiveOverviewFailures ||
+        (overviewRequest && overviewRequest.readyState !== 4)) { return; }
     var elapsed = Math.max(0, Math.floor((new Date().getTime() - lastSuccessfulOverviewAt) / 60000));
     text("data-refresh-state", "Last overview refresh succeeded at " + lastSuccessfulOverview +
       " · " + elapsed + " min ago.");
