@@ -32,7 +32,9 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
     workouts = payload["workouts"]
     if len(workouts) > 500:
         raise ValueError("Too many workouts")
-    reference = today or date.today()
+    if today is not None and (not isinstance(today, date) or isinstance(today, datetime)):
+        raise ValueError("Invalid workout reference date")
+    reference = date.today() if today is None else today
     start = reference - timedelta(days=6)
     weekly = []
     daily = {(start + timedelta(days=index)).isoformat():
