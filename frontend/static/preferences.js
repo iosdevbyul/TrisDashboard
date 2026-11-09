@@ -13,16 +13,32 @@
   var panelSearchQuery = "";
   // Match fixed display labels only: private card data is never searched or transmitted.
   var panelSearchLabels = {
-    portfolio: "portfolio assets holdings investments",
-    quotes: "quotes market stocks prices",
-    dividends: "dividends income payments",
-    agenda: "agenda calendar schedule events today",
-    github: "github development code repositories",
-    weather: "weather forecast temperature",
-    trello: "trello workflow tasks projects",
-    server: "server macbook health diagnostics",
-    fitness: "fitness workout exercise training"
+    portfolio: "portfolio assets holdings investments 포트폴리오 자산 보유 종목 투자",
+    quotes: "quotes market stocks prices stock price 시세 주식 주가 가격",
+    dividends: "dividends income payments 배당 배당금 수익",
+    agenda: "agenda calendar schedule events today 일정 달력 오늘 이벤트",
+    github: "github development code repositories 깃허브 개발 코드 저장소",
+    weather: "weather forecast temperature 날씨 기온 예보",
+    trello: "trello workflow tasks projects 트렐로 업무 할일 작업",
+    server: "server macbook health diagnostics 서버 맥북 연결 상태",
+    fitness: "fitness workout exercise training 운동 헬스 훈련"
   };
+  function matchesPanelSearch(name) {
+    if (panelSearchQuery === "") { return true; }
+    var terms = panelSearchQuery.split(/\s+/);
+    var keywords = panelSearchLabels[name];
+    for (var i = 0; i < terms.length; i++) {
+      if (keywords.indexOf(terms[i]) === -1) { return false; }
+    }
+    return true;
+  }
+  function clearPanelSearch() {
+    if (panelSearchQuery === "") { return; }
+    panelSearchQuery = "";
+    apply();
+    var field = document.getElementById("panel-search-input");
+    if (typeof field.focus === "function") { field.focus(); }
+  }
   function updateViewHistory() {
     document.getElementById("quick-previous-view").disabled = viewHistoryIndex <= 0;
     document.getElementById("quick-next-view").disabled =
@@ -203,11 +219,13 @@
       if (downButton) { downButton.disabled = position === settings.order.length - 1; }
     }
     var visibleShortcuts = 0;
+    var anyMatchingPanel = false;
     for (var i = 0; i < panelNames.length; i++) {
       var name = panelNames[i];
       var configuredVisible = settings.hidden.indexOf(name) === -1;
-      var visible = configuredVisible &&
-        (panelSearchQuery === "" || panelSearchLabels[name].indexOf(panelSearchQuery) !== -1);
+      var matchesSearch = matchesPanelSearch(name);
+      if (matchesSearch) { anyMatchingPanel = true; }
+      var visible = configuredVisible && matchesSearch;
       var card = document.querySelector('[data-panel="' + name + '"]');
       if (card) { card.hidden = !visible; }
       var toggle = document.getElementById("toggle-" + name);
@@ -229,6 +247,9 @@
     var searchActive = panelSearchQuery !== "";
     document.getElementById("panel-search-empty").hidden =
       !searchActive || visibleShortcuts !== 0;
+    document.getElementById("panel-search-empty").textContent = anyMatchingPanel ?
+      "Matching panels are hidden in Display settings. Show a matching panel or clear search." :
+      "No panel matches your search. Try another keyword or clear search.";
     document.getElementById("panel-search-count").textContent = searchActive ?
       visibleShortcuts + " matching visible panels" :
       visibleShortcuts + " panels available";
@@ -285,11 +306,13 @@
     panelSearchQuery = String(this.value || "").toLowerCase().replace(/^\s+|\s+$/g, "");
     apply();
   });
-  document.getElementById("panel-search-clear").addEventListener("click", function () {
-    panelSearchQuery = "";
-    apply();
-    if (typeof document.getElementById("panel-search-input").focus === "function") {
-      document.getElementById("panel-search-input").focus();
+  document.getElementById("panel-search-clear").addEventListener("click", clearPanelSearch);
+  document.getElementById("panel-search-input").addEventListener("keydown", function (event) {
+    if (event.keyCode === 27 || event.key === "Escape") {
+      if (panelSearchQuery !== "") {
+        if (typeof event.preventDefault === "function") { event.preventDefault(); }
+        clearPanelSearch();
+      }
     }
   });
 
