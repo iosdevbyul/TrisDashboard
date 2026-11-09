@@ -79,6 +79,7 @@
   }
 
   function checkServer() {
+    if (request && request.readyState !== 4) { return; }
     var now = new Date().getTime();
     if (now - lastRequestStarted < 2000) { return; }
     lastRequestStarted = now;
