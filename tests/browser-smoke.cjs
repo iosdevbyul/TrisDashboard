@@ -1454,4 +1454,35 @@ handlers["show-all-panels:click"]();
 byId("setting-refresh-minutes").value = "3";
 handlers["setting-refresh-minutes:change"].call(byId("setting-refresh-minutes"));
 
+// Active view always reflects actual saved visibility, not the last button clicked.
+const viewButtons = [
+  ["assets-only-panels","Assets view"],
+  ["development-only-panels","Development view"],
+  ["fitness-only-panels","Fitness view"],
+  ["today-only-panels","Today view"]
+];
+for (const [action,label] of viewButtons) {
+  handlers[action + ":click"]();
+  assert.match(byId("panel-preset-status").textContent,new RegExp(label));
+  for (const [other] of viewButtons) {
+    assert.equal(byId(other).attributes["aria-pressed"],other === action ? "true" : "false");
+  }
+}
+byId("toggle-fitness").checked = true;
+handlers["toggle-fitness:change"]();
+assert.match(byId("panel-preset-status").textContent,/Custom panel selection · 4 panels/);
+for (const [action] of viewButtons) {
+  assert.equal(byId(action).attributes["aria-pressed"],"false");
+}
+handlers["hide-all-panels:click"]();
+assert.equal(byId("panel-preset-status").textContent,"No panels visible");
+handlers["show-all-panels:click"]();
+assert.equal(byId("panel-preset-status").textContent,"All panels · 9 panels");
+handlers["assets-only-panels:click"]();
+const savedView = JSON.parse(state["tris.dashboard.display.v1"]);
+assert.deepEqual(savedView.hidden.sort(),["agenda","fitness","github","server","trello","weather"].sort());
+assert.equal(byId("assets-only-panels").attributes["aria-pressed"],"true");
+handlers["reset-settings:click"]();
+assert.equal(byId("panel-preset-status").textContent,"All panels · 9 panels");
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
