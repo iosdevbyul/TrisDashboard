@@ -305,6 +305,7 @@ assert.match(byId("source-health-details").textContent, /weather stale/);
 response.weather.cache_age_seconds = 901;
 handlers["document:visibilitychange"]();
 assert.match(byId("weather-updated").textContent, /15 min old/);
+assert.match(byId("source-health-details").textContent, /weather stale \(15 min old\)/);
 response.weather.cache_age_seconds = undefined;
 assert.match(byId("source-health-details").textContent, /trello unavailable/);
 response.weather.stale = false;
