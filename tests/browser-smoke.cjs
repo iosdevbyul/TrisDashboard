@@ -306,7 +306,9 @@ response.valuation = {
   available: true, matched_count: 1, position_count: 1,
   partial: false, totals: { USD: "150.75" }, stale: false
 };
+// Cancelled retry closures never refresh; resume with an explicit manual request.
 retry.callback();
+handlers["refresh-button:click"]();
 assert.match(byId("quotes-summary").textContent, /^1\/1 quotes reported · Oldest reading 3\.5h ago$/);
 assert.match(byId("quotes-list").children[0].textContent, /3\.5h old/);
 assert.match(byId("quotes-summary").textContent, /Oldest reading 3\.5h ago/);
