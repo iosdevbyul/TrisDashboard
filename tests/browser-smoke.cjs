@@ -925,4 +925,38 @@ assert.match(byId("dividend-summary").textContent,/USD 10/);
 assert.match(byId("agenda-summary").textContent,/3 upcoming events · 1 today · 2 tomorrow/);
 assert.match(byId("github-list").children[0].textContent,/CI success/);
 
+// Financial totals must not show invalid source amounts; partial GitHub counts
+// must not be presented as comprehensive, and agenda conflicts must be integers.
+response.portfolio = {available:true,positions:[
+  {symbol:"JEPQ",quantity:"2",currency:"USD",market_value:"-20"},
+  {symbol:"SCHD",quantity:"3",currency:"USD",market_value:"75"}],
+  totals:{USD:"75"},quality:{outdated:false}};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},
+  history:[],recent:[],six_month_totals:{USD:"-50",KRW:"2000"}};
+response.agenda = {available:true,upcoming_count:1,window_start:"2026-11-09",
+  window_end:"2026-11-23",events:[{date:"2026-11-09",title:"Meeting",time:""}],
+  conflicting_time_slots:1.5,conflicting_event_count:2};
+response.github = {available:true,repositories:[
+  {available:false,repository:"owner/offline"},
+  {available:true,repository:"owner/good",open_pr_count:2,open_prs:[]}]};
+handlers["document:visibilitychange"]();
+assert.ok(byId("portfolio-list").children.some(row => /JEPQ · 2 shares · price unavailable/.test(row.textContent)));
+assert.ok(byId("portfolio-list").children.some(row => /SCHD · 3 shares · 75 USD/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some(row => /Confirmed last 6 months: KRW 2000/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some(row => /Excluded 1 invalid six-month dividend totals/.test(row.textContent)));
+assert.doesNotMatch(byId("agenda-summary").textContent,/overlapping time slots/);
+assert.ok(!byId("agenda-list").children.some(row => /Review overlapping schedule/.test(row.textContent)));
+assert.match(byId("github-summary").textContent,/2\+ known open PRs/);
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+response.portfolio.positions[0].market_value = "40";
+response.dividends.six_month_totals.USD = "50";
+response.agenda.conflicting_time_slots = 1;
+response.github.repositories[0] = {available:true,repository:"owner/offline",
+  open_pr_count:1,open_prs:[]};
+handlers["document:visibilitychange"]();
+assert.ok(byId("portfolio-list").children.some(row => /JEPQ · 2 shares · 40 USD/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some(row => /Confirmed last 6 months: USD 50 \/ KRW 2000/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /Review overlapping schedule/.test(row.textContent)));
+assert.match(byId("github-summary").textContent,/^3 open PRs$/);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
