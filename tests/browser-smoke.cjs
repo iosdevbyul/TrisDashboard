@@ -1234,7 +1234,7 @@ handlers["fitness-detail-toggle:click"]();
 assert.equal(byId("dividend-list").hidden,true);
 assert.equal(byId("github-list").hidden,true);
 assert.equal(byId("fitness-list").hidden,true);
-assert.equal(byId("dividend-detail-toggle").attributes["aria-expanded"],"false");
+assert.equal(byId("dividends-detail-toggle").attributes["aria-expanded"],"false");
 assert.equal(state["tris.dashboard.details.github"],"collapsed");
 assert.equal(state["tris.dashboard.details.fitness"],"collapsed");
 handlers["refresh-button:click"]();
