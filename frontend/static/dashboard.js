@@ -94,7 +94,10 @@
 
   function statusText(info) {
     if (!info || !info.available) { return "Unavailable"; }
-    return info.stale ? "Last known data (stale)" : "Updated " + (info.updated_at ? info.updated_at.replace("T", " ").slice(0, 16) + " UTC" : "recently");
+    return info.stale ? "Last known data (stale)" +
+      (typeof info.cache_age_seconds === "number" && isFinite(info.cache_age_seconds) &&
+       info.cache_age_seconds >= 0 ? " · " + Math.floor(info.cache_age_seconds / 60) + " min old" : "") :
+      "Updated " + (info.updated_at ? info.updated_at.replace("T", " ").slice(0, 16) + " UTC" : "recently");
   }
 
   function showSummary(payload) {
