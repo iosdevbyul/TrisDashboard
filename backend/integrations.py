@@ -158,7 +158,11 @@ def github() -> dict:
                 runs = runs_payload["workflow_runs"]
                 if not isinstance(runs, list):
                     raise ValueError("Unexpected workflow response")
-                latest = runs[0] if runs else None
+                latest = runs[0] if runs and isinstance(runs[0], dict) else None
+                safe_pulls = [item for item in pulls if isinstance(item, dict)
+                              and type(item.get("number")) is int and item["number"] > 0
+                              and isinstance(item.get("title"), str)
+                              and isinstance(item.get("html_url"), str)]
                 ci = {
                     "status": latest.get("status", "unknown"),
                     "conclusion": latest.get("conclusion"),
@@ -169,7 +173,7 @@ def github() -> dict:
                                 "open_pr_count": len(pulls), "open_pr_count_truncated": len(pulls) == 20,
                                 "latest_ci": ci,
                                 "open_prs": [{"number": item["number"], "title": item["title"][:120],
-                                              "url": item["html_url"]} for item in pulls[:3]]})
+                                              "url": item["html_url"]} for item in safe_pulls[:3]]})
                 successful += 1
             except (OSError, ValueError, TypeError, KeyError, HTTPError, URLError):
                 # One failing repository must not erase the others.
