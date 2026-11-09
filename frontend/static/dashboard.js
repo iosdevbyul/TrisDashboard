@@ -859,6 +859,11 @@
     }
   }
 
+  window.trisDashboardCancelPendingRetry = function () {
+    clearOverviewRetry();
+    text("data-refresh-state", "Automatic refresh paused · Manual refresh available.");
+  };
+
   function retryOverview() {
     consecutiveOverviewFailures += 1;
     text("glance-updated", "Refresh failed");
