@@ -157,6 +157,7 @@ assert.equal(new Set(moduleContainer.children).size, 9);
 byId("display-settings").hidden = true;
 handlers["settings-button:click"].call(byId("settings-button"));
 assert.equal(byId("display-settings").hidden, false);
+assert.equal(byId("setting-compact").focused, true);
 handlers["document:keydown"]({keyCode: 27});
 assert.equal(byId("display-settings").hidden, true);
 assert.equal(byId("settings-button").attributes["aria-expanded"], "false");
