@@ -57,6 +57,13 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
         if reference <= day <= end:
             upcoming.append({"date": day.isoformat(), "time": when, "title": title.strip()})
     upcoming.sort(key=lambda event: (event["date"], event["time"]))
+    timed_slots = {}
+    for event in upcoming:
+        if event["time"]:
+            slot = (event["date"], event["time"])
+            timed_slots[slot] = timed_slots.get(slot, 0) + 1
+    conflicting_slots = sum(1 for count in timed_slots.values() if count > 1)
+    conflicting_events = sum(count for count in timed_slots.values() if count > 1)
     seven_day_end = (reference + timedelta(days=min(6, remaining_days))).isoformat()
     next_seven_days_count = sum(1 for event in upcoming if event["date"] <= seven_day_end)
     next_seven_busy_days = len({event["date"] for event in upcoming if event["date"] <= seven_day_end})
@@ -69,6 +76,8 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
     return {"available": True, "configured": True, "source": "manual_local_calendar",
             "window_start": reference.isoformat(), "window_end": end.isoformat(),
             "upcoming_count": len(upcoming), "today_event_count": today_event_count,
+            "conflicting_time_slots": conflicting_slots,
+            "conflicting_event_count": conflicting_events,
             "tomorrow_event_count": tomorrow_event_count,
             "next_seven_days_count": next_seven_days_count,
             "next_seven_busy_days": next_seven_busy_days,
