@@ -74,13 +74,16 @@
       if (name === "portfolio" || name === "dividends" ||
           name === "github" || name === "fitness" ||
           name === "agenda" || name === "weather" ||
-          name === "trello" || name === "server") {
+          name === "trello" || name === "server" ||
+          name === "quotes") {
         var shortcut = document.getElementById("jump-link-" + name);
         shortcut.hidden = !visible;
         if (visible) { visibleShortcuts++; }
       }
     }
     document.getElementById("priority-jumps-empty").hidden = visibleShortcuts !== 0;
+    document.getElementById("priority-jumps-count").textContent =
+      visibleShortcuts + " of " + panelNames.length + " shortcuts available";
   }
 
   function movePanel(name, direction) {
