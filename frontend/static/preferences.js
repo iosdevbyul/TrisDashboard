@@ -384,5 +384,6 @@
     }
   });
 
-  buildControls(); restore(); savedVisible = readSavedView(); apply();
+  buildControls(); restore(); apply();
+  savedVisible = readSavedView(); updateSavedView();
 }());
