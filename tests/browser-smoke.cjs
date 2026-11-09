@@ -106,8 +106,9 @@ class XMLHttpRequest {
 const state = {};
 const window = {
   localStorage: {
-    getItem: () => null,
-    setItem: (key, value) => { state[key] = value; }
+    getItem: (key) => Object.prototype.hasOwnProperty.call(state,key) ? state[key] : null,
+    setItem: (key, value) => { state[key] = value; },
+    removeItem: (key) => { delete state[key]; }
   },
   location: { reload() { paths.push("reload"); } }
 };
@@ -1519,5 +1520,39 @@ for (const [name] of quickViewCases) {
   assert.equal(byId("quick-view-" + name).attributes["aria-pressed"],"false");
 }
 assert.equal(byId("priority-jumps-count").textContent,"9 of 9 shortcuts available");
+
+// Saved custom view: explicit save, one-tap restore, All view and delete.
+assert.equal(byId("quick-view-mine").disabled,true);
+assert.equal(byId("clear-my-view").disabled,true);
+assert.equal(byId("quick-view-all").attributes["aria-pressed"],"true");
+handlers["assets-only-panels:click"]();
+handlers["save-my-view:click"]();
+assert.equal(byId("saved-view-status").textContent,"Saved view: 3 panels · Active");
+assert.equal(byId("quick-view-mine").disabled,false);
+assert.equal(byId("quick-view-mine").attributes["aria-pressed"],"true");
+assert.deepEqual(JSON.parse(state["tris.dashboard.my-view.v1"]),["portfolio","quotes","dividends"]);
+handlers["quick-view-today:click"]();
+assert.equal(byId("quick-view-mine").attributes["aria-pressed"],"false");
+handlers["quick-view-mine:click"]();
+assert.equal(byId("quick-view-mine").attributes["aria-pressed"],"true");
+assert.equal(byId("panel-portfolio").hidden,false);
+assert.equal(byId("panel-weather").hidden,true);
+handlers["quick-view-all:click"]();
+assert.equal(byId("quick-view-all").attributes["aria-pressed"],"true");
+assert.equal(byId("priority-jumps-count").textContent,"9 of 9 shortcuts available");
+assert.equal(byId("quick-view-mine").attributes["aria-pressed"],"false");
+handlers["hide-all-panels:click"]();
+handlers["save-my-view:click"]();
+assert.equal(byId("saved-view-status").textContent,"Show at least one panel before saving a view");
+assert.deepEqual(JSON.parse(state["tris.dashboard.my-view.v1"]),["portfolio","quotes","dividends"]);
+handlers["quick-view-mine:click"]();
+assert.equal(byId("priority-jumps-count").textContent,"3 of 9 shortcuts available");
+handlers["clear-my-view:click"]();
+assert.equal(byId("quick-view-mine").disabled,true);
+assert.equal(byId("clear-my-view").disabled,true);
+assert.equal(byId("quick-view-mine").attributes["aria-pressed"],"false");
+assert.equal(byId("saved-view-status").textContent,"No saved view");
+assert.equal(state["tris.dashboard.my-view.v1"],undefined);
+handlers["show-all-panels:click"]();
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
