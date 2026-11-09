@@ -321,8 +321,25 @@
     var zeroQuantity = info.zero_quantity_symbols_by_currency || {};
     var zeroCurrencies = Object.keys(zeroQuantity);
     for (var z = 0; z < zeroCurrencies.length; z++) {
-      var symbols = zeroQuantity[zeroCurrencies[z]];
-      if (!symbols || !symbols.length) { continue; }
+      var rawSymbols = zeroQuantity[zeroCurrencies[z]];
+      if (Object.prototype.toString.call(rawSymbols) !== "[object Array]") {
+        var invalidZeroList = document.createElement("div");
+        invalidZeroList.className = "repo-row";
+        invalidZeroList.textContent = "Zero-quantity symbol list unavailable · " + zeroCurrencies[z];
+        list.appendChild(invalidZeroList);
+        continue;
+      }
+      var symbols = rawSymbols.filter(function (symbol) {
+        return typeof symbol === "string" && symbol.length > 0;
+      });
+      if (symbols.length !== rawSymbols.length) {
+        var invalidZeroSymbols = document.createElement("div");
+        invalidZeroSymbols.className = "repo-row";
+        invalidZeroSymbols.textContent = "Skipped " + (rawSymbols.length - symbols.length) +
+          " invalid zero-quantity symbols · " + zeroCurrencies[z];
+        list.appendChild(invalidZeroSymbols);
+      }
+      if (!symbols.length) { continue; }
       var zeroRow = document.createElement("div");
       zeroRow.className = "repo-row";
       zeroRow.textContent = "Review zero-quantity positions · " +
@@ -404,11 +421,18 @@
     var largestHoldings = info.largest_holdings || {};
     var largestCurrencies = Object.keys(largestHoldings);
     for (var lh = 0; lh < largestCurrencies.length; lh++) {
+      var lc = largestCurrencies[lh];
+      var largest = largestHoldings[lc];
+      if (!largest || typeof largest !== "object" ||
+          typeof largest.symbol !== "string" || !largest.symbol ||
+          largest.market_value === null || largest.market_value === "" ||
+          typeof largest.market_value === "boolean" ||
+          !isFinite(Number(largest.market_value)) ||
+          Number(largest.market_value) < 0) { continue; }
       var largestRow = document.createElement("div");
       largestRow.className = "repo-row";
-      var lc = largestCurrencies[lh];
       largestRow.textContent = "Largest manually valued holding · " + lc + " " +
-        largestHoldings[lc].symbol + " (" + largestHoldings[lc].market_value + ")";
+        largest.symbol + " (" + largest.market_value + ")";
       list.appendChild(largestRow);
     }
     if (valuation && valuation.available) {
@@ -474,10 +498,13 @@
     var paymentCounts = info.monthly_payment_counts || {};
     var countCurrencies = Object.keys(paymentCounts);
     for (var pc = 0; pc < countCurrencies.length; pc++) {
+      var paidCount = paymentCounts[countCurrencies[pc]];
+      if (typeof paidCount !== "number" || !isFinite(paidCount) ||
+          paidCount < 0 || Math.floor(paidCount) !== paidCount) { continue; }
       var paymentLine = document.createElement("div");
       paymentLine.className = "repo-row";
       paymentLine.textContent = "Confirmed " + info.month + " payments · " + countCurrencies[pc] +
-        " " + paymentCounts[countCurrencies[pc]] + " entries";
+        " " + paidCount + " entries";
       list.appendChild(paymentLine);
     }
     var monthlyPayers = info.monthly_unique_paying_symbols || {};
@@ -821,15 +848,17 @@
         info.next_seven_free_days;
       list.appendChild(openDays);
     }
-    var dailyCounts = info.next_seven_daily_counts || [];
+    var dailyCounts = Object.prototype.toString.call(info.next_seven_daily_counts) ===
+      "[object Array]" ? info.next_seven_daily_counts : [];
     if (dailyCounts.length) {
       var dailyCountLine = document.createElement("div");
       dailyCountLine.className = "repo-row";
       var countParts = [];
       for (var dc = 0; dc < dailyCounts.length; dc++) {
         var item = dailyCounts[dc];
-        if (item && typeof item.date === "string" &&
-            typeof item.events === "number" && isFinite(item.events) && item.events >= 0) {
+        if (item && validCalendarDate(item.date) &&
+            typeof item.events === "number" && isFinite(item.events) &&
+            item.events >= 0 && Math.floor(item.events) === item.events) {
           countParts.push(item.date.slice(5) + " " + item.events);
         }
       }
