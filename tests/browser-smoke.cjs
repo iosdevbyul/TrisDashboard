@@ -673,7 +673,7 @@ response.quotes = {available:true,quotes:[null,{symbol:"JEPQ",currency:"USD",
   price:"50",reported_at_utc:"2026-11-09T03:00:00Z"}]};
 handlers["document:visibilitychange"]();
 assert.match(byId("weather-updated").textContent,/Updated recently/);
-assert.match(byId("github-summary").textContent,/2 open PRs/);
+assert.equal(byId("github-summary").textContent,"2+ known open PRs");
 assert.ok(byId("github-list").children.some(row =>
   /Repository entry unavailable/.test(row.textContent)));
 assert.match(byId("trello-summary").textContent,/3 cards · 3 Next/);
