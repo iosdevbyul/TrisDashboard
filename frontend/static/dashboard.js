@@ -132,6 +132,7 @@
     var stale = 0;
     var unconfigured = 0;
     var sourceIssues = [];
+    var states = {};
     var issues = document.getElementById("source-health-links");
     while (issues.firstChild) { issues.removeChild(issues.firstChild); }
     for (var i = 0; i < names.length; i++) {
@@ -159,6 +160,7 @@
       } else {
         unavailable++;
       }
+      states[name] = state;
       var card = document.getElementById("panel-" + name);
       var marker = sourceMarkers[name];
       if (!marker) {
@@ -190,6 +192,9 @@
       }
     }
     issues.hidden = sourceIssues.length === 0;
+    if (typeof window.trisDashboardSetSourceStates === "function") {
+      window.trisDashboardSetSourceStates(states);
+    }
     text("source-health-details", sourceIssues.length ?
       "Needs attention: " + sourceIssues.length + " sources · " + sourceIssues.join(" · ") +
       " · Select a source below to inspect it." :
