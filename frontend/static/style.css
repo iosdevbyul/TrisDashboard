@@ -117,3 +117,12 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .detail-toggle{display:inline-block;margin:0 0 10px 0;padding:6px 10px;border:1px solid #455b75;border-radius:6px;background:#26374c;color:#e8f1fc;font-size:13px;cursor:pointer}
 .detail-toggle:focus{outline:2px solid #93c5fd;outline-offset:2px}
 .details[hidden]{display:none}
+
+/* Native hash navigation works on legacy Safari without an additional script. */
+.priority-jumps{margin:0 0 18px;padding:10px 12px;background:#1b2737;border:1px solid #35475f;border-radius:9px;line-height:2}
+.priority-jumps-label{display:inline-block;margin-right:12px;color:#9db1cc;font-size:11px;letter-spacing:1px}
+.priority-jumps a{display:inline-block;margin:3px 8px 3px 0;padding:3px 10px;color:#e8f1fc;background:#26374c;border:1px solid #455b75;border-radius:6px;text-decoration:none;font-size:13px}
+.priority-jumps a:hover,.priority-jumps a:focus{outline:2px solid #93c5fd;outline-offset:2px}
+.priority-jumps a[hidden],#priority-jumps-empty[hidden]{display:none}
+#priority-jumps-empty{font-size:13px;color:#b5c7dc}
+.card:target{border-color:#93c5fd}
