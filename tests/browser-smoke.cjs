@@ -1426,4 +1426,32 @@ handlers["show-all-panels:click"]();
 assert.equal(byId("priority-jumps-count").textContent,"9 of 9 shortcuts available");
 assert.equal(byId("priority-jumps-empty").hidden,true);
 
+// Four single-focus view presets preserve saved card ordering and refresh preferences.
+const defaultOrderBeforePreset = moduleContainer.children.map(card => card.id);
+byId("setting-refresh-minutes").value = "10";
+handlers["setting-refresh-minutes:change"].call(byId("setting-refresh-minutes"));
+const presetCases = [
+  ["assets-only-panels",["portfolio","quotes","dividends"],"Assets view"],
+  ["development-only-panels",["github","trello"],"Development view"],
+  ["fitness-only-panels",["fitness","weather"],"Fitness view"],
+  ["today-only-panels",["agenda","weather","server"],"Today view"]
+];
+for (const [action,visible,label] of presetCases) {
+  handlers[action + ":click"]();
+  assert.equal(byId("panel-preset-status").textContent,label + " · " + visible.length + " panels");
+  assert.equal(byId("priority-jumps-count").textContent,visible.length + " of 9 shortcuts available");
+  for (const panel of ["portfolio","quotes","dividends","agenda","github","weather","trello","server","fitness"]) {
+    const shouldShow = visible.includes(panel);
+    assert.equal(byId("panel-" + panel).hidden,!shouldShow);
+    assert.equal(byId("jump-link-" + panel).hidden,!shouldShow);
+    assert.equal(byId("toggle-" + panel).checked,shouldShow);
+  }
+  assert.equal(byId("setting-refresh-minutes").value,"10");
+  assert.equal(window.trisDashboardRefreshMinutes,10);
+  assert.deepEqual(moduleContainer.children.map(card => card.id),defaultOrderBeforePreset);
+}
+handlers["show-all-panels:click"]();
+byId("setting-refresh-minutes").value = "3";
+handlers["setting-refresh-minutes:change"].call(byId("setting-refresh-minutes"));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
