@@ -1638,6 +1638,9 @@
       }
       button.textContent = expanded ? "Hide details" : "Show details";
       button.setAttribute("aria-expanded", expanded ? "true" : "false");
+      if (panelName === "agenda" && lastAgendaInfo) {
+        showAgenda(lastAgendaInfo);
+      }
       updateDetailCount();
     }
     function setExpanded(value) {
