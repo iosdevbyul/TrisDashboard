@@ -365,13 +365,15 @@ assert.match(byId("data-refresh-state").textContent, /failed/i);
 assert.match(byId("quotes-summary").textContent, /^1\/1 quotes reported · Oldest reading 3\.5h ago$/);
 assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
 
-// A 200 response that fails during card rendering must not claim refresh success.
+// An incomplete manual snapshot should not block rendering other dashboard cards.
 overviewBody = null;
-response.portfolio = {available: true, positions: [], quality: {outdated: false}};
+response.portfolio = {available: true, positions: [
+  {symbol: "JEPQ", quantity: "2", currency: "USD"}],
+  quality: {outdated: false}};
 handlers["document:visibilitychange"]();
-assert.match(byId("data-refresh-state").textContent, /failed/i);
-assert.doesNotMatch(byId("data-refresh-state").textContent, /succeeded/i);
-assert.notEqual(byId("weather-updated").textContent, "Invalid server response");
+assert.match(byId("data-refresh-state").textContent, /succeeded/i);
+assert.match(byId("portfolio-updated").textContent, /time unavailable/);
+assert.match(byId("portfolio-list").children[0].textContent, /price unavailable/);
 response.portfolio = {available: false, configured: false};
 
 // An HTTP 200 with an invalid health payload is not an online server.
