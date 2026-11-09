@@ -35,6 +35,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     reference = date.today() if today is None else today
     totals = {}
     monthly_payment_counts = {}
+    monthly_by_symbol = {}
     month = reference.isoformat()[:7]
     months = []
     for offset in range(5, -1, -1):
@@ -67,6 +68,8 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         if paid_month == month:
             totals[currency] = totals.get(currency, Decimal("0")) + amount
             monthly_payment_counts[currency] = monthly_payment_counts.get(currency, 0) + 1
+            symbol_key = (ticker, currency)
+            monthly_by_symbol[symbol_key] = monthly_by_symbol.get(symbol_key, Decimal("0")) + amount
         if paid_month in history:
             symbol_key = (ticker, currency)
             by_symbol[symbol_key] = by_symbol.get(symbol_key, Decimal("0")) + amount
@@ -75,6 +78,13 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             monthly[currency] = monthly.get(currency, Decimal("0")) + amount
         recent.append({"symbol": ticker, "currency": currency, "paid_on": paid_on.isoformat(), "amount": str(amount)})
     recent.sort(key=lambda item: item["paid_on"], reverse=True)
+    monthly_top_payers = {}
+    for (symbol, currency), amount in sorted(monthly_by_symbol.items()):
+        previous = monthly_top_payers.get(currency)
+        if previous is None or amount > previous["amount_decimal"]:
+            monthly_top_payers[currency] = {"symbol": symbol, "amount_decimal": amount}
+    monthly_top_payers = {currency: {"symbol": record["symbol"], "amount": str(record["amount_decimal"])}
+                          for currency, record in sorted(monthly_top_payers.items())}
     history_totals = {}
     for monthly in history.values():
         for currency, amount in monthly.items():
@@ -120,6 +130,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     return {"available": True, "configured": True, "source": "manual_confirmed_payments",
             "month": month, "monthly_totals": {key: str(value) for key, value in sorted(totals.items())},
             "monthly_payment_counts": dict(sorted(monthly_payment_counts.items())),
+            "monthly_top_payers": monthly_top_payers,
             "six_month_totals": {key: str(value) for key, value in sorted(history_totals.items())},
             "six_month_paying_symbols": dict(sorted(unique_paying_symbols.items())),
             "six_month_paid_months": dict(sorted(months_with_payments.items())),

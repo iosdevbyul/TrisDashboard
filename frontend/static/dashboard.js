@@ -238,7 +238,10 @@
       var missingLine = document.createElement("div");
       missingLine.className = "repo-row";
       missingLine.textContent = "Manual price missing · " + missingCurrencies[mp] + " " +
-        missingPrices[missingCurrencies[mp]] + " holdings (excluded from manual valuation)";
+        missingPrices[missingCurrencies[mp]] + " holdings (excluded from manual valuation)" +
+        ((info.unpriced_symbols_by_currency || {})[missingCurrencies[mp]] &&
+         (info.unpriced_symbols_by_currency || {})[missingCurrencies[mp]].length ?
+          " · " + (info.unpriced_symbols_by_currency || {})[missingCurrencies[mp]].join(", ") : "");
       list.appendChild(missingLine);
     }
     var largestHoldings = info.largest_holdings || {};
@@ -293,6 +296,15 @@
       paymentLine.textContent = "Confirmed " + info.month + " payments · " + countCurrencies[pc] +
         " " + paymentCounts[countCurrencies[pc]] + " entries";
       list.appendChild(paymentLine);
+    }
+    var currentTop = info.monthly_top_payers || {};
+    var topCurrencies = Object.keys(currentTop);
+    for (var tp = 0; tp < topCurrencies.length; tp++) {
+      var payerRow = document.createElement("div");
+      payerRow.className = "repo-row";
+      payerRow.textContent = "Highest confirmed payer this month · " + topCurrencies[tp] + " " +
+        currentTop[topCurrencies[tp]].symbol + " (" + currentTop[topCurrencies[tp]].amount + ")";
+      list.appendChild(payerRow);
     }
     var sixMonthTotals = info.six_month_totals || {};
     var historicCurrencies = Object.keys(sixMonthTotals);
@@ -468,6 +480,9 @@
     var busiest = info.busiest_upcoming_day;
     var busiestLabel = busiest && typeof busiest.date === "string" ?
       " · Busiest " + busiest.date + " (" + busiest.events + ")" : "";
+    var freeLabel = typeof info.first_free_day_in_next_seven === "string" ?
+      " · First free " + info.first_free_day_in_next_seven :
+      (typeof info.first_free_day_in_next_seven !== "undefined" ? " · No free day in next 7" : "");
     var todayCount = typeof info.today_event_count === "number" ?
       " · " + info.today_event_count + " today" : "";
     var tomorrowCount = typeof info.tomorrow_event_count === "number" ?
@@ -478,7 +493,7 @@
       " · " + info.next_seven_days_count + " in next 7 days" : "";
     var conflicts = typeof info.conflicting_time_slots === "number" && info.conflicting_time_slots > 0 ?
       " · " + info.conflicting_time_slots + " overlapping time slots" : "";
-    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + conflicts + busiestLabel + nextLabel);
+    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + conflicts + busiestLabel + freeLabel + nextLabel);
     if (info.next_event && typeof info.next_event.title === "string") {
       var nextRow = document.createElement("div");
       nextRow.className = "repo-row";
@@ -591,7 +606,9 @@
         " sessions · " + activities[a].duration_minutes + " min · " +
         activities[a].distance_km + " km" +
         (typeof activities[a].session_share_percent === "number" ?
-          " · " + activities[a].session_share_percent + "% of sessions" : "");
+          " · " + activities[a].session_share_percent + "% of sessions" : "") +
+        (typeof activities[a].time_share_percent === "number" ?
+          " · " + activities[a].time_share_percent + "% of workout time" : "");
       list.appendChild(activityLine);
     }
     var daily = info.daily || [];
