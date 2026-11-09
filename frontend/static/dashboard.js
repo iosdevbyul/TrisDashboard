@@ -1611,6 +1611,35 @@
     }, 10000);
   }
 
+  // Each dense panel can be collapsed independently on narrow Safari displays.
+  // Preserve the selection across reloads while keeping summary and timestamps visible.
+  function bindDetailToggle(panelName, targetIds) {
+    var button = document.getElementById(panelName + "-detail-toggle");
+    var key = "tris.dashboard.details." + panelName;
+    var expanded = true;
+    try { expanded = window.localStorage.getItem(key) !== "collapsed"; }
+    catch (error) {}
+    function applyDetailVisibility() {
+      for (var i = 0; i < targetIds.length; i++) {
+        document.getElementById(targetIds[i]).hidden = !expanded;
+      }
+      button.textContent = expanded ? "Hide details" : "Show details";
+      button.setAttribute("aria-expanded", expanded ? "true" : "false");
+    }
+    button.addEventListener("click", function () {
+      expanded = !expanded;
+      applyDetailVisibility();
+      try { window.localStorage.setItem(key, expanded ? "expanded" : "collapsed"); }
+      catch (error) {}
+    });
+    applyDetailVisibility();
+  }
+
+  bindDetailToggle("portfolio", ["portfolio-list", "portfolio-quote-values"]);
+  bindDetailToggle("dividends", ["dividend-list"]);
+  bindDetailToggle("github", ["github-list"]);
+  bindDetailToggle("fitness", ["fitness-list"]);
+
   document.getElementById("agenda-toggle").addEventListener("click", function () {
     agendaExpanded = !agendaExpanded;
     if (lastAgendaInfo) { showAgenda(lastAgendaInfo); }
