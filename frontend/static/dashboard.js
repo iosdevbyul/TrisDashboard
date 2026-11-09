@@ -232,6 +232,15 @@
         " " + concentration[concentrationCurrencies[cc]] + "% of priced holdings";
       list.appendChild(concentrationRow);
     }
+    var missingPrices = info.unpriced_positions_by_currency || {};
+    var missingCurrencies = Object.keys(missingPrices);
+    for (var mp = 0; mp < missingCurrencies.length; mp++) {
+      var missingLine = document.createElement("div");
+      missingLine.className = "repo-row";
+      missingLine.textContent = "Manual price missing · " + missingCurrencies[mp] + " " +
+        missingPrices[missingCurrencies[mp]] + " holdings (excluded from manual valuation)";
+      list.appendChild(missingLine);
+    }
     var largestHoldings = info.largest_holdings || {};
     var largestCurrencies = Object.keys(largestHoldings);
     for (var lh = 0; lh < largestCurrencies.length; lh++) {
@@ -276,6 +285,15 @@
       label.push(currencies[i] + " " + totals[currencies[i]]);
     }
     text("dividend-summary", label.length ? label.join(" / ") : "No recorded payments this month");
+    var paymentCounts = info.monthly_payment_counts || {};
+    var countCurrencies = Object.keys(paymentCounts);
+    for (var pc = 0; pc < countCurrencies.length; pc++) {
+      var paymentLine = document.createElement("div");
+      paymentLine.className = "repo-row";
+      paymentLine.textContent = "Confirmed " + info.month + " payments · " + countCurrencies[pc] +
+        " " + paymentCounts[countCurrencies[pc]] + " entries";
+      list.appendChild(paymentLine);
+    }
     var sixMonthTotals = info.six_month_totals || {};
     var historicCurrencies = Object.keys(sixMonthTotals);
     if (historicCurrencies.length) {
@@ -447,6 +465,9 @@
     var nextIn = info.next_event_in_days;
     var nextLabel = typeof nextIn === "number" && nextIn >= 0 ?
       " · Next " + (nextIn === 0 ? "today" : nextIn === 1 ? "tomorrow" : "in " + nextIn + " days") : "";
+    var busiest = info.busiest_upcoming_day;
+    var busiestLabel = busiest && typeof busiest.date === "string" ?
+      " · Busiest " + busiest.date + " (" + busiest.events + ")" : "";
     var todayCount = typeof info.today_event_count === "number" ?
       " · " + info.today_event_count + " today" : "";
     var tomorrowCount = typeof info.tomorrow_event_count === "number" ?
@@ -457,7 +478,7 @@
       " · " + info.next_seven_days_count + " in next 7 days" : "";
     var conflicts = typeof info.conflicting_time_slots === "number" && info.conflicting_time_slots > 0 ?
       " · " + info.conflicting_time_slots + " overlapping time slots" : "";
-    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + conflicts + nextLabel);
+    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + conflicts + busiestLabel + nextLabel);
     if (info.next_event && typeof info.next_event.title === "string") {
       var nextRow = document.createElement("div");
       nextRow.className = "repo-row";
@@ -516,6 +537,13 @@
       (typeof info.rest_days === "number" ? info.rest_days + " rest days · " : "") +
       info.period_start + " to " + info.period_end;
     list.appendChild(total);
+    if (info.longest_session && typeof info.longest_session.duration_minutes === "number") {
+      var longestRow = document.createElement("div");
+      longestRow.className = "repo-row";
+      longestRow.textContent = "Longest session (last 7 days) · " + info.longest_session.type +
+        " · " + info.longest_session.duration_minutes + " min · " + info.longest_session.date;
+      list.appendChild(longestRow);
+    }
     if (info.peak_active_day && typeof info.peak_active_day.duration_minutes === "number") {
       var peakInfo = document.createElement("div");
       peakInfo.className = "repo-row";

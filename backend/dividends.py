@@ -34,6 +34,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         raise ValueError("Invalid dividend reference date")
     reference = date.today() if today is None else today
     totals = {}
+    monthly_payment_counts = {}
     month = reference.isoformat()[:7]
     months = []
     for offset in range(5, -1, -1):
@@ -65,6 +66,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         paid_month = paid_on.isoformat()[:7]
         if paid_month == month:
             totals[currency] = totals.get(currency, Decimal("0")) + amount
+            monthly_payment_counts[currency] = monthly_payment_counts.get(currency, 0) + 1
         if paid_month in history:
             symbol_key = (ticker, currency)
             by_symbol[symbol_key] = by_symbol.get(symbol_key, Decimal("0")) + amount
@@ -117,6 +119,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         for currency, amount in sorted(history_totals.items())}
     return {"available": True, "configured": True, "source": "manual_confirmed_payments",
             "month": month, "monthly_totals": {key: str(value) for key, value in sorted(totals.items())},
+            "monthly_payment_counts": dict(sorted(monthly_payment_counts.items())),
             "six_month_totals": {key: str(value) for key, value in sorted(history_totals.items())},
             "six_month_paying_symbols": dict(sorted(unique_paying_symbols.items())),
             "six_month_paid_months": dict(sorted(months_with_payments.items())),
