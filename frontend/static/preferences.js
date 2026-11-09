@@ -100,10 +100,12 @@
         label.appendChild(document.createTextNode(" " + name));
         var up = document.createElement("button");
         up.type = "button";
+        up.id = "panel-up-" + name;
         up.textContent = "Move " + name + " up";
         up.addEventListener("click", function () { movePanel(name, -1); });
         var down = document.createElement("button");
         down.type = "button";
+        down.id = "panel-down-" + name;
         down.textContent = "Move " + name + " down";
         down.addEventListener("click", function () { movePanel(name, 1); });
         label.appendChild(up);
