@@ -106,8 +106,9 @@ class XMLHttpRequest {
 const state = {};
 const window = {
   localStorage: {
-    getItem: () => null,
-    setItem: (key, value) => { state[key] = value; }
+    getItem: (key) => Object.prototype.hasOwnProperty.call(state,key) ? state[key] : null,
+    setItem: (key, value) => { state[key] = value; },
+    removeItem: (key) => { delete state[key]; }
   },
   location: { reload() { paths.push("reload"); } }
 };
@@ -1551,6 +1552,7 @@ assert.equal(byId("quick-view-mine").disabled,true);
 assert.equal(byId("clear-my-view").disabled,true);
 assert.equal(byId("quick-view-mine").attributes["aria-pressed"],"false");
 assert.equal(byId("saved-view-status").textContent,"No saved view");
+assert.equal(state["tris.dashboard.my-view.v1"],undefined);
 handlers["show-all-panels:click"]();
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
