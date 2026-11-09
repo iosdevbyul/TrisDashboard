@@ -1581,7 +1581,8 @@
     var interval = window.trisDashboardRefreshMinutes || 3;
     if (!document.hidden && !window.trisDashboardRefreshPaused &&
         overviewRetryTimer === null &&
-        new Date().getTime() - lastDataStarted >= interval * 60000) {
+        (new Date().getTime() < lastDataStarted ||
+         new Date().getTime() - lastDataStarted >= interval * 60000)) {
       loadOverview(false);
     }
   }, 60000);
