@@ -259,9 +259,14 @@
       var item = positions[i];
       var row = document.createElement("div");
       row.className = "repo-row";
+      var knownValue = item.market_value !== null &&
+        typeof item.market_value !== "undefined" &&
+        item.market_value !== "" && typeof item.market_value !== "boolean" &&
+        isFinite(Number(item.market_value)) && Number(item.market_value) >= 0 &&
+        typeof item.currency === "string" && item.currency.length > 0;
       row.textContent = item.symbol + " · " + item.quantity + " shares" +
-        (item.market_value !== null && typeof item.market_value !== "undefined" ?
-          " · " + item.market_value + " " + item.currency : " · price unavailable");
+        (knownValue ? " · " + item.market_value + " " + item.currency :
+          " · price unavailable");
       list.appendChild(row);
     }
     var totals = info.totals || {};
@@ -517,15 +522,30 @@
     }
     var sixMonthTotals = info.six_month_totals || {};
     var historicCurrencies = Object.keys(sixMonthTotals);
-    if (historicCurrencies.length) {
+    var sixMonthParts = [];
+    var invalidSixMonthTotals = 0;
+    for (var s = 0; s < historicCurrencies.length; s++) {
+      var sixMonthValue = sixMonthTotals[historicCurrencies[s]];
+      if (sixMonthValue === null || sixMonthValue === "" ||
+          typeof sixMonthValue === "boolean" || !isFinite(Number(sixMonthValue)) ||
+          Number(sixMonthValue) < 0) {
+        invalidSixMonthTotals++;
+        continue;
+      }
+      sixMonthParts.push(historicCurrencies[s] + " " + sixMonthValue);
+    }
+    if (sixMonthParts.length) {
       var sixMonth = document.createElement("div");
       sixMonth.className = "portfolio-total";
-      var sixMonthParts = [];
-      for (var s = 0; s < historicCurrencies.length; s++) {
-        sixMonthParts.push(historicCurrencies[s] + " " + sixMonthTotals[historicCurrencies[s]]);
-      }
       sixMonth.textContent = "Confirmed last 6 months: " + sixMonthParts.join(" / ");
       list.appendChild(sixMonth);
+    }
+    if (invalidSixMonthTotals) {
+      var invalidSixMonthRow = document.createElement("div");
+      invalidSixMonthRow.className = "repo-row";
+      invalidSixMonthRow.textContent = "Excluded " + invalidSixMonthTotals +
+        " invalid six-month dividend totals.";
+      list.appendChild(invalidSixMonthRow);
     }
     var dividendSymbols = info.six_month_paying_symbols || {};
     var dividendMonths = info.six_month_paid_months || {};
@@ -760,14 +780,15 @@
       " · " + info.next_seven_busy_days + " busy days" : "";
     var weekCount = validCount(info.next_seven_days_count) ?
       " · " + info.next_seven_days_count + " in next 7 days" : "";
-    var conflicts = typeof info.conflicting_time_slots === "number" && info.conflicting_time_slots > 0 ?
+    var conflicts = validCount(info.conflicting_time_slots) &&
+      info.conflicting_time_slots > 0 ?
       " · " + info.conflicting_time_slots + " overlapping time slots" : "";
     text("agenda-summary", (validCount(info.upcoming_count) ?
       info.upcoming_count : "Unknown") + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + conflicts + busiestLabel + freeLabel + nextLabel);
-    if (typeof info.conflicting_time_slots === "number" &&
-        isFinite(info.conflicting_time_slots) && info.conflicting_time_slots > 0 &&
-        typeof info.conflicting_event_count === "number" &&
-        isFinite(info.conflicting_event_count) && info.conflicting_event_count >= 2) {
+    if (validCount(info.conflicting_time_slots) &&
+        info.conflicting_time_slots > 0 &&
+        validCount(info.conflicting_event_count) &&
+        info.conflicting_event_count >= 2) {
       var conflictRow = document.createElement("div");
       conflictRow.className = "repo-row";
       conflictRow.textContent = "Review overlapping schedule · " +
@@ -1190,13 +1211,14 @@
       list.appendChild(noRepos);
     }
     var total = 0;
-    var truncated = false;
+    var truncated = !validRepositories;
     for (var i = 0; i < repos.length; i++) {
       if (!repos[i] || typeof repos[i] !== "object") {
         var invalidRepository = document.createElement("div");
         invalidRepository.className = "repo-row";
         invalidRepository.textContent = "Repository entry unavailable";
         list.appendChild(invalidRepository);
+        truncated = true;
         continue;
       }
       if (!repos[i].available) {
@@ -1204,6 +1226,7 @@
         failed.className = "repo-row";
         failed.textContent = repos[i].repository + " · Unavailable";
         list.appendChild(failed);
+        truncated = true;
         continue;
       }
       var prCount = repos[i].open_pr_count;
@@ -1214,6 +1237,7 @@
         invalidPR.textContent = String(repos[i].repository || "Repository") +
           " · PR count unavailable";
         list.appendChild(invalidPR);
+        truncated = true;
         continue;
       }
       total += prCount;
