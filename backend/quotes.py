@@ -101,6 +101,7 @@ def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
         if not valid_price or not valid_identity or not item.get("reported_at_utc"):
             item["outdated"] = True
             item.pop("age_hours", None)
+            item.pop("last_quote_at_utc", None)
         if valid_price and valid_identity and item.get("reported_at_utc"):
             try:
                 timestamp = datetime.fromisoformat(item["reported_at_utc"])
@@ -112,6 +113,7 @@ def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
             except (ValueError, TypeError):
                 item["outdated"] = True
                 item.pop("age_hours", None)
+                item.pop("last_quote_at_utc", None)
         readings.append(item)
     result["quotes"] = readings
     return result
