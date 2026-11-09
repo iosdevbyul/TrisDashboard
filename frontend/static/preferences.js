@@ -10,6 +10,9 @@
   var viewHistoryIndex = -1;
   var replayingViewHistory = false;
   var viewHistoryLimit = 10;
+  var pinsKey = "tris.dashboard.pins.v1";
+  var pinned = [];
+  var pinnedOnly = false;
   var panelSearchQuery = "";
   var sourceFilter = "all";
   var sourceStates = null;
@@ -51,10 +54,55 @@
     }
     return true;
   }
-  function firstSearchResult() {
+  function displayOrder() {
+    var result = [];
     for (var i = 0; i < settings.order.length; i++) {
-      var name = settings.order[i];
-      if (settings.hidden.indexOf(name) === -1 && matchesPanelSearch(name)) {
+      if (pinned.indexOf(settings.order[i]) !== -1) { result.push(settings.order[i]); }
+    }
+    for (var j = 0; j < settings.order.length; j++) {
+      if (pinned.indexOf(settings.order[j]) === -1) { result.push(settings.order[j]); }
+    }
+    return result;
+  }
+  function storePins() {
+    try { window.localStorage.setItem(pinsKey, JSON.stringify(pinned)); } catch (error) {}
+  }
+  function restorePins() {
+    try {
+      var saved = JSON.parse(window.localStorage.getItem(pinsKey));
+      if (Object.prototype.toString.call(saved) !== "[object Array]") { return; }
+      for (var i = 0; i < saved.length; i++) {
+        if (typeof saved[i] === "string" && panelNames.indexOf(saved[i]) !== -1 &&
+            pinned.indexOf(saved[i]) === -1) { pinned.push(saved[i]); }
+      }
+    } catch (error) {}
+  }
+  function togglePin(name) {
+    var idx = pinned.indexOf(name);
+    if (idx === -1) { pinned.push(name); } else { pinned.splice(idx, 1); }
+    if (pinnedOnly && !pinned.length) { pinnedOnly = false; }
+    storePins(); apply();
+  }
+  function buildPinButtons() {
+    for (var i = 0; i < panelNames.length; i++) {
+      (function (name) {
+        var card = document.getElementById("panel-" + name);
+        var button = document.createElement("button");
+        button.id = "pin-" + name;
+        button.type = "button";
+        button.className = "pin-panel-button";
+        button.addEventListener("click", function () { togglePin(name); });
+        card.appendChild(button);
+      }(panelNames[i]));
+    }
+  }
+  function firstSearchResult() {
+    var ordered = displayOrder();
+    for (var i = 0; i < ordered.length; i++) {
+      var name = ordered[i];
+      if ((sourceFilter === "all" ? settings.hidden.indexOf(name) === -1 : true) &&
+          (!pinnedOnly || pinned.indexOf(name) !== -1) &&
+          matchesSourceFilter(name) && matchesPanelSearch(name)) {
         return document.getElementById("panel-" + name);
       }
     }
@@ -70,6 +118,7 @@
   window.trisDashboardRevealPanel = function (name) {
     if (panelNames.indexOf(name) === -1) { return; }
     sourceFilter = "all";
+    pinnedOnly = false;
     panelSearchQuery = "";
     var hiddenIndex = settings.hidden.indexOf(name);
     if (hiddenIndex !== -1) { settings.hidden.splice(hiddenIndex, 1); store(); }
@@ -245,15 +294,16 @@
     var searchField = document.getElementById("panel-search-input");
     searchField.value = panelSearchQuery;
     document.getElementById("panel-search-clear").disabled = panelSearchQuery === "";
+    var orderedPanels = displayOrder();
     var container = document.getElementById("dashboard-modules");
-    for (var o = 0; o < settings.order.length; o++) {
-      var orderedCard = document.querySelector('[data-panel="' + settings.order[o] + '"]');
+    for (var o = 0; o < orderedPanels.length; o++) {
+      var orderedCard = document.querySelector('[data-panel="' + orderedPanels[o] + '"]');
       if (orderedCard) { container.appendChild(orderedCard); }
     }
     // Keep the quick-jump sequence aligned with the user-defined card order.
     var jumpBar = document.getElementById("priority-jumps");
-    for (var j = 0; j < settings.order.length; j++) {
-      var jump = document.getElementById("jump-link-" + settings.order[j]);
+    for (var j = 0; j < orderedPanels.length; j++) {
+      var jump = document.getElementById("jump-link-" + orderedPanels[j]);
       if (jump) { jumpBar.appendChild(jump); }
     }
     for (var p = 0; p < panelNames.length; p++) {
@@ -263,6 +313,17 @@
       if (upButton) { upButton.disabled = position === 0; }
       if (downButton) { downButton.disabled = position === settings.order.length - 1; }
     }
+    for (var pn = 0; pn < panelNames.length; pn++) {
+      var pinName = panelNames[pn];
+      var pinButton = document.getElementById("pin-" + pinName);
+      pinButton.textContent = pinned.indexOf(pinName) === -1 ? "Pin panel" : "Unpin panel";
+      pinButton.setAttribute("aria-label",
+        (pinned.indexOf(pinName) === -1 ? "Pin " : "Unpin ") + pinName);
+      pinButton.setAttribute("aria-pressed", pinned.indexOf(pinName) === -1 ? "false" : "true");
+    }
+    document.getElementById("quick-view-pinned").setAttribute("aria-pressed", pinnedOnly ? "true" : "false");
+    document.getElementById("quick-view-pinned").disabled = pinned.length === 0;
+    document.getElementById("pinned-panel-count").textContent = pinned.length + " pinned";
     var visibleShortcuts = 0;
     var anyMatchingPanel = false;
     var hiddenMatchingPanels = 0;
@@ -273,7 +334,8 @@
       if (matchesSearch) { anyMatchingPanel = true; }
       if (matchesSearch && !configuredVisible) { hiddenMatchingPanels++; }
       var visible = (sourceFilter === "all" ? configuredVisible : true) &&
-        matchesSearch && matchesSourceFilter(name);
+        matchesSearch && matchesSourceFilter(name) &&
+        (!pinnedOnly || pinned.indexOf(name) !== -1);
       var card = document.querySelector('[data-panel="' + name + '"]');
       if (card) { card.hidden = !visible; }
       var toggle = document.getElementById("toggle-" + name);
@@ -306,7 +368,7 @@
       "Showing all configured panels" : sourceMatching + " " + sourceFilter + " sources" +
       (panelSearchQuery ? " · search also applied" : "");
     document.getElementById("source-filter-empty").hidden =
-      sourceFilter === "all" || visibleShortcuts !== 0;
+      sourceFilter === "all" || visibleShortcuts !== 0 || pinnedOnly;
     document.getElementById("source-filter-empty").textContent = sourceMatching ?
       "No " + sourceFilter + " sources match the current search. Clear the search or choose All." :
       "No " + sourceFilter + " sources. Choose All to restore the dashboard.";
@@ -323,6 +385,11 @@
     document.getElementById("panel-search-count").textContent = searchActive ?
       visibleShortcuts + " matching visible panels" :
       visibleShortcuts + " panels available";
+    document.getElementById("pinned-panel-empty").hidden =
+      !pinnedOnly || visibleShortcuts !== 0;
+    document.getElementById("pinned-panel-empty").textContent =
+      pinned.length ? "Pinned panels are hidden by the current search or source status. Clear the filters or show all panels." :
+      "No pinned panels. Pin a panel to create your favorites.";
     updateActiveView();
   }
 
@@ -524,7 +591,13 @@
     }(viewPresets[q]));
   }
 
+  document.getElementById("quick-view-pinned").addEventListener("click", function () {
+    if (!pinned.length) { return; }
+    pinnedOnly = !pinnedOnly;
+    apply();
+  });
   document.getElementById("quick-view-all").addEventListener("click", function () {
+    pinnedOnly = false;
     settings.hidden = [];
     apply(); store();
   });
@@ -584,6 +657,9 @@
   document.getElementById("reset-settings").addEventListener("click", function () {
     var wasPaused = settings.pauseRefresh;
     sourceFilter = "all";
+    pinnedOnly = false;
+    pinned = [];
+    storePins();
     settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, pauseRefresh: false, hidden: [], order: panelNames.slice(0)};
     apply(); store();
     if (wasPaused && typeof window.trisDashboardResumeRefresh === "function") {
@@ -591,6 +667,6 @@
     }
   });
 
-  buildControls(); restore(); apply();
+  buildControls(); restore(); restorePins(); buildPinButtons(); apply();
   savedVisible = readSavedView(); updateSavedView();
 }());

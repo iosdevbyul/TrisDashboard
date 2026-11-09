@@ -42,6 +42,7 @@
     <span id="source-filter-count" role="status" aria-live="polite">Waiting for source data</span>
   </nav>
   <p id="source-filter-empty" class="empty-panels" role="status" hidden>No sources match this view. Choose All to restore the dashboard.</p>
+  <p id="pinned-panel-empty" class="empty-panels" role="status" hidden>Pinned panels are hidden. Clear the filters to view them.</p>
   <p id="data-refresh-state" class="refresh-status" role="status">Waiting for the first data refresh.</p>
   <div class="toolbar">
     <button type="button" id="refresh-button">Refresh now</button>
@@ -54,6 +55,8 @@
     <button type="button" id="quick-view-fitness" aria-pressed="false">Fitness</button>
     <button type="button" id="quick-view-today" aria-pressed="false">Today</button>
     <button type="button" id="quick-view-all" aria-pressed="false">All</button>
+    <button type="button" id="quick-view-pinned" aria-pressed="false">Pinned only</button>
+    <span id="pinned-panel-count" role="status" aria-live="polite">0 pinned</span>
     <button type="button" id="quick-view-mine" aria-pressed="false" disabled>My view</button>
     <button type="button" id="quick-save-my-view">Save view</button>
     <button type="button" id="quick-previous-view" disabled>Previous view</button>
