@@ -790,4 +790,46 @@ assert.ok(!byId("dividend-list").children.some(row => /Dividend history list inv
 assert.ok(!byId("fitness-list").children.some(row => /Daily workout list invalid/.test(row.textContent)));
 assert.ok(!byId("agenda-list").children.some(row => /Skipped 1 invalid calendar events/.test(row.textContent)));
 
+// Domain validity: nonpositive quotes, negative payments, impossible dates and distances.
+response.quotes = {available:true,quotes:[
+  {symbol:"ZERO",currency:"USD",price:"0",reported_at_utc:"2026-11-09T00:00:00Z"},
+  {symbol:"NEG",currency:"USD",price:"-10",reported_at_utc:"2026-11-09T00:00:00Z"},
+  {symbol:"GOOD",currency:"USD",price:"15.5",reported_at_utc:"2026-11-09T00:00:00Z"}]};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},
+  history:[{month:"2026-10",totals:{USD:"20"}},
+    {month:"2026-11",totals:{USD:"-10"}}],recent:[]};
+response.fitness = {available:true,summary:{sessions:1,duration_minutes:30,distance_km:2},
+  period_start:"2026-11-03",period_end:"2026-11-09",
+  daily:[{date:"2026-11-31",sessions:1,duration_minutes:20,distance_km:1},
+    {date:"2026-11-08",sessions:1,duration_minutes:20,distance_km:-3},
+    {date:"2026-11-09",sessions:1,duration_minutes:30,distance_km:2}],recent:[]};
+response.agenda = {available:true,upcoming_count:2,window_start:"2026-11-09",
+  window_end:"2026-11-23",events:[
+    {date:"2026-11-31",time:"",title:"Impossible"},
+    {date:"2026-11-09",time:"",title:"Valid"}]};
+handlers["document:visibilitychange"]();
+assert.match(byId("quotes-summary").textContent,/^1\/3 quotes reported/);
+assert.ok(byId("quotes-list").children.filter(row => /Quote unavailable/.test(row.textContent)).length === 2);
+const usdChart = byId("dividend-list").children.find(row => row.className === "dividend-bars");
+assert.ok(usdChart);
+assert.equal(usdChart.children[2].children[1].children[0].style.width,"0%");
+assert.match(usdChart.children[2].children[0].textContent,/Invalid amount/);
+assert.ok(byId("fitness-list").children.some(row => /Skipped 2 invalid daily workout entries/.test(row.textContent)));
+assert.ok(byId("fitness-list").children.some(row => /2026-11-09 · 1 sessions/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /Skipped 1 invalid calendar events/.test(row.textContent)));
+assert.ok(!byId("agenda-list").children.some(row => /Impossible/.test(row.textContent)));
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+response.quotes.quotes[0].price = "12";
+response.quotes.quotes[1].price = "10";
+response.dividends.history[1].totals.USD = "10";
+response.fitness.daily = [response.fitness.daily[2]];
+response.agenda.events = [response.agenda.events[1]];
+response.agenda.upcoming_count = 1;
+handlers["document:visibilitychange"]();
+assert.match(byId("quotes-summary").textContent,/^3\/3 quotes reported/);
+const repairedChart = byId("dividend-list").children.find(row => row.className === "dividend-bars");
+assert.equal(repairedChart.children[2].children[1].children[0].style.width,"50%");
+assert.ok(!byId("fitness-list").children.some(row => /Skipped 2 invalid daily/.test(row.textContent)));
+assert.ok(!byId("agenda-list").children.some(row => /Skipped 1 invalid calendar/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
