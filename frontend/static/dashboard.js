@@ -142,6 +142,12 @@
       return;
     }
     var rows = info.quotes || [];
+    if (!rows.length) {
+      var noQuotes = document.createElement("div");
+      noQuotes.className = "repo-row";
+      noQuotes.textContent = "No provider quotes returned. No prices have been inferred.";
+      list.appendChild(noQuotes);
+    }
     var successful = 0;
     var outdated = 0;
     var oldestHours = null;
@@ -184,6 +190,12 @@
     }
     var positions = info.positions || [];
     text("portfolio-summary", positions.length + " holdings");
+    if (!positions.length) {
+      var noPositions = document.createElement("div");
+      noPositions.className = "repo-row";
+      noPositions.textContent = "No holdings in the manual snapshot.";
+      list.appendChild(noPositions);
+    }
     for (var i = 0; i < positions.length; i++) {
       var item = positions[i];
       var row = document.createElement("div");
@@ -657,6 +669,12 @@
       }
     }
     var events = info.events || [];
+    if (info.upcoming_count === 0) {
+      var noEvents = document.createElement("div");
+      noEvents.className = "repo-row";
+      noEvents.textContent = "No upcoming events in the 14-day calendar window.";
+      list.appendChild(noEvents);
+    }
     var visibleEventCount = agendaExpanded ? events.length : Math.min(8, events.length);
     toggle.hidden = events.length <= 8;
     toggle.textContent = agendaExpanded ? "Show fewer events" : "Show more events";
@@ -701,6 +719,12 @@
     }
     var summary = info.summary;
     text("fitness-summary", summary.sessions + " sessions · " + summary.duration_minutes + " min");
+    if (summary.sessions === 0) {
+      var noWorkouts = document.createElement("div");
+      noWorkouts.className = "repo-row";
+      noWorkouts.textContent = "No workouts recorded in the last 7 days.";
+      list.appendChild(noWorkouts);
+    }
     var total = document.createElement("div");
     total.textContent = "Distance " + summary.distance_km + " km · " +
       (typeof info.active_days === "number" ? "Active " + info.active_days + "/7 days · " : "") +
