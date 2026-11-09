@@ -63,7 +63,7 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
             continue
         try:
             value = qty * price
-        except (InvalidOperation, OverflowError):
+        except (InvalidOperation, Overflow, OverflowError):
             continue
         totals[currency] = totals.get(currency, Decimal("0")) + value
         matched.append({"symbol": symbol, "currency": currency, "value": str(value),
