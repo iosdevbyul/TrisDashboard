@@ -1127,10 +1127,17 @@ byId("setting-pause-refresh").checked = false;
 handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
 // When the wall clock rolls behind the last success, age cannot be called 0 minutes.
 clockOffset -= 2 * 60 * 60000;
+deferNextOverview = true;
 periodic.find(item => item.delay === 60000).callback();
 assert.match(byId("data-refresh-state").textContent,/Device clock changed; elapsed time unavailable/);
+const clockRollbackRequest = pendingOverviews.pop();
+assert.ok(clockRollbackRequest);
+document.hidden = true;
+handlers["document:visibilitychange"]();
+assert.equal(clockRollbackRequest.aborted,true);
 clockOffset += 2 * 60 * 60000;
-handlers["refresh-button:click"]();
+document.hidden = false;
+handlers["document:visibilitychange"]();
 healthBody = null;
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
