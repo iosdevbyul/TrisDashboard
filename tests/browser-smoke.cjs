@@ -168,6 +168,10 @@ byId("setting-pause-refresh").checked = true;
 handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
 assert.equal(window.trisDashboardRefreshPaused, true);
 assert.match(byId("refresh-cadence").textContent, /paused/);
+const beforePausedForeground = paths.filter((url) => url.startsWith("/api/overview")).length;
+handlers["document:visibilitychange"]();
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforePausedForeground,
+  "Foregrounding Safari while paused must not fetch an overview");
 clockOffset += 11 * 60000;
 const beforePaused = paths.filter((url) => url.startsWith("/api/overview")).length;
 periodic.find((entry) => entry.delay === 60000).callback();
