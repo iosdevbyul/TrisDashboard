@@ -72,7 +72,9 @@
       var toggle = document.getElementById("toggle-" + name);
       if (toggle) { toggle.checked = visible; }
       if (name === "portfolio" || name === "dividends" ||
-          name === "github" || name === "fitness") {
+          name === "github" || name === "fitness" ||
+          name === "agenda" || name === "weather" ||
+          name === "trello" || name === "server") {
         var shortcut = document.getElementById("jump-link-" + name);
         shortcut.hidden = !visible;
         if (visible) { visibleShortcuts++; }
