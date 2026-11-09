@@ -36,6 +36,14 @@
     <button type="button" id="refresh-button">Refresh now</button>
     <button type="button" id="settings-button" aria-expanded="false" aria-controls="display-settings">Display settings</button>
   </div>
+  <nav class="priority-jumps" aria-label="Jump to priority panels">
+    <span class="priority-jumps-label">QUICK JUMP</span>
+    <a id="jump-link-portfolio" href="#panel-portfolio">Portfolio</a>
+    <a id="jump-link-dividends" href="#panel-dividends">Dividends</a>
+    <a id="jump-link-github" href="#panel-github">Development</a>
+    <a id="jump-link-fitness" href="#panel-fitness">Fitness</a>
+    <span id="priority-jumps-empty" hidden>Show a priority panel in Display settings to enable quick jump.</span>
+  </nav>
   <div class="display-settings" id="display-settings" hidden>
     <label><input id="setting-compact" type="checkbox"> Compact cards</label>
     <label><input id="setting-dim" type="checkbox"> Dim display</label>
@@ -67,7 +75,7 @@
   </div>
   <p id="empty-panels" class="empty-panels" role="status" hidden>All panels are hidden. Open Display settings and choose Show all panels to restore them.</p>
   <section class="cards" id="dashboard-modules" tabindex="-1" aria-label="Dashboard modules">
-    <article class="card" data-panel="portfolio">
+    <article class="card" id="panel-portfolio" data-panel="portfolio" tabindex="-1">
       <h2>Portfolio · Manual snapshot</h2>
       <p id="portfolio-summary">Not configured</p>
       <button type="button" class="detail-toggle" id="portfolio-detail-toggle" aria-expanded="true" aria-controls="portfolio-list portfolio-quote-values">Hide details</button>
@@ -82,7 +90,7 @@
       <div id="quotes-list" class="details">Optional Twelve Data source</div>
       <small id="quotes-updated">Source time and data freshness shown; not guaranteed live</small>
     </article>
-    <article class="card" data-panel="dividends">
+    <article class="card" id="panel-dividends" data-panel="dividends" tabindex="-1">
       <h2>Dividends · Recorded payments</h2>
       <p id="dividend-summary">Not configured</p>
       <button type="button" class="detail-toggle" id="dividends-detail-toggle" aria-expanded="true" aria-controls="dividend-list">Hide details</button>
@@ -97,7 +105,7 @@
       <button type="button" id="agenda-toggle" hidden aria-expanded="false">Show more events</button>
       <small id="agenda-updated">Local manually entered events</small>
     </article>
-    <article class="card" data-panel="github">
+    <article class="card" id="panel-github" data-panel="github" tabindex="-1">
       <h2>GitHub development</h2>
       <p id="github-summary">Loading</p>
       <button type="button" class="detail-toggle" id="github-detail-toggle" aria-expanded="true" aria-controls="github-list">Hide details</button>
@@ -126,7 +134,7 @@
       <div id="server-info" class="details">Checking service uptime</div>
       <small id="server-updated">Local diagnostics</small>
     </article>
-    <article class="card" data-panel="fitness">
+    <article class="card" id="panel-fitness" data-panel="fitness" tabindex="-1">
       <h2>Fitness · Recent 7 days</h2>
       <p id="fitness-summary">Not configured</p>
       <button type="button" class="detail-toggle" id="fitness-detail-toggle" aria-expanded="true" aria-controls="fitness-list">Hide details</button>
