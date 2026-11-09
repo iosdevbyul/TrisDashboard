@@ -50,7 +50,18 @@ def get_json(url: str, headers: dict | None = None) -> dict:
         payload = response.read(MAX_PROVIDER_RESPONSE_BYTES + 1)
         if len(payload) > MAX_PROVIDER_RESPONSE_BYTES:
             raise ValueError("Provider JSON response too large")
-        return json.loads(payload)
+        def unique_keys(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError("Duplicate provider JSON key")
+                result[key] = value
+            return result
+
+        def reject_constant(value):
+            raise ValueError("Invalid provider JSON constant")
+
+        return json.loads(payload, object_pairs_hook=unique_keys, parse_constant=reject_constant)
 
 
 def cached(key: str, loader, *, ttl: int = TTL_SECONDS) -> dict:
