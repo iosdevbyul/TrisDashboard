@@ -224,6 +224,7 @@ assert.match(byId("data-refresh-state").textContent, /failed/i);
 assert.match(byId("data-refresh-state").textContent, /Last successful update at \d\d:\d\d/);
 const retry = scheduled.find((item) => item.delay === 30000 && !item.cancelled);
 assert.ok(retry, "First failed overview should retry after 30 seconds");
+assert.match(byId("data-refresh-state").textContent, /retry in 30s/);
 
 // On successful retry, the quote and partial valuation cards must render safely.
 overviewStatus = 200;

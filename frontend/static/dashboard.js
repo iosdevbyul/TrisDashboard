@@ -855,7 +855,7 @@
 
   function retryOverview() {
     consecutiveOverviewFailures += 1;
-    text("glance-updated", "Refresh failed · retry scheduled");
+    text("glance-updated", "Refresh failed");
     text("data-refresh-state", "Data refresh failed. " +
       (lastSuccessfulOverview ? "Last successful update at " + lastSuccessfulOverview + "." :
        "No successful update yet."));
@@ -867,6 +867,9 @@
     // A bounded backoff prevents hammering an unavailable MacBook.
     var delays = [30000, 60000, 120000, 180000];
     var delay = delays[Math.min(consecutiveOverviewFailures - 1, delays.length - 1)];
+    text("data-refresh-state", "Data refresh failed · retry in " + (delay / 1000) +
+      "s. " + (lastSuccessfulOverview ? "Last successful update at " + lastSuccessfulOverview + "." :
+      "No successful update yet."));
     overviewRetryTimer = setTimeout(function () {
       overviewRetryTimer = null;
       if (!document.hidden) { loadOverview(true); }
