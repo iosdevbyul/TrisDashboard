@@ -122,11 +122,14 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             break
         ongoing_streak += 1
     modified = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
-    age_hours = max(0.0, (datetime.now(timezone.utc) - modified).total_seconds()) / 3600
+    age_seconds = (datetime.now(timezone.utc) - modified).total_seconds()
+    file_mtime_in_future = age_seconds < -600
+    age_hours = max(0.0, age_seconds) / 3600
     return {"available": True, "configured": True, "source": "manual_export",
             "file_updated_utc": modified.isoformat(),
             "file_age_hours": round(age_hours, 1),
             "file_older_than_week": age_hours > 168,
+            "file_mtime_in_future": file_mtime_in_future,
             "period_start": start.isoformat(), "period_end": reference.isoformat(),
             "active_days": active_days,
             "peak_active_day": peak_active_day,
@@ -141,7 +144,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
                         "distance_km": round(totals["distance_km"], 2)},
             "recent": weekly[:5], "daily": [
                 {"date": day, **summary} for day, summary in sorted(daily.items())
-            ], "stale": False,
+            ], "stale": file_mtime_in_future,
             "total_history_count": len(workouts),
             "stable_id_count": stable_id_count}
 
