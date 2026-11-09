@@ -97,7 +97,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
     for day_summary in daily.values():
         day_summary["duration_minutes"] = round(day_summary["duration_minutes"], 1)
         day_summary["distance_km"] = round(day_summary["distance_km"], 2)
-    weekly.sort(key=lambda item: item["date"], reverse=True)
+    weekly.sort(key=lambda item: (item["date"], item["duration_minutes"], item["type"]), reverse=True)
     longest_session = None
     if weekly:
         longest = max(weekly, key=lambda item: (item["duration_minutes"], item["date"], item["type"]))
