@@ -49,6 +49,10 @@
       <option value="5">Every 5 minutes</option>
       <option value="10">Every 10 minutes</option>
     </select>
+    <div class="settings-label">Detail visibility</div>
+    <p id="detail-visibility-count" role="status" aria-live="polite">Detail visibility loading</p>
+    <button type="button" id="expand-all-details">Expand all details</button>
+    <button type="button" id="collapse-all-details">Collapse all details</button>
     <div class="settings-label">Visible panels</div>
     <div id="panel-visibility"></div>
     <button type="button" id="close-display-settings">Close settings</button>
@@ -88,6 +92,7 @@
     <article class="card" data-panel="agenda">
       <h2>Agenda · Next 14 days</h2>
       <p id="agenda-summary">Not configured</p>
+      <button type="button" class="detail-toggle" id="agenda-detail-toggle" aria-expanded="true" aria-controls="agenda-list agenda-toggle">Hide details</button>
       <div id="agenda-list" class="details">Private local schedule</div>
       <button type="button" id="agenda-toggle" hidden aria-expanded="false">Show more events</button>
       <small id="agenda-updated">Local manually entered events</small>

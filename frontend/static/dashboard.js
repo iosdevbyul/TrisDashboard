@@ -821,6 +821,9 @@
   function showAgenda(info) {
     lastAgendaInfo = info;
     var toggle = document.getElementById("agenda-toggle");
+    var detailExpanded = document.getElementById("agenda-detail-toggle").getAttribute ?
+      document.getElementById("agenda-detail-toggle").getAttribute("aria-expanded") !== "false" :
+      document.getElementById("agenda-detail-toggle").attributes["aria-expanded"] !== "false";
     var list = document.getElementById("agenda-list");
     while (list.firstChild) { list.removeChild(list.firstChild); }
     if (!info || !info.available) {
@@ -941,7 +944,7 @@
       list.appendChild(noEvents);
     }
     var visibleEventCount = agendaExpanded ? events.length : Math.min(8, events.length);
-    toggle.hidden = events.length <= 8;
+    toggle.hidden = !detailExpanded || events.length <= 8;
     toggle.textContent = agendaExpanded ? "Show fewer events" : "Show more events";
     if (info.events_truncated) {
       toggle.textContent += " (first " + events.length + " of " + info.upcoming_count + ")";
@@ -1613,6 +1616,16 @@
 
   // Each dense panel can be collapsed independently on narrow Safari displays.
   // Preserve the selection across reloads while keeping summary and timestamps visible.
+  var detailControllers = [];
+  function updateDetailCount() {
+    var expanded = 0;
+    for (var i = 0; i < detailControllers.length; i++) {
+      if (detailControllers[i].isExpanded()) { expanded++; }
+    }
+    text("detail-visibility-count", expanded + " of " + detailControllers.length +
+      " panels showing details");
+  }
+
   function bindDetailToggle(panelName, targetIds) {
     var button = document.getElementById(panelName + "-detail-toggle");
     var key = "tris.dashboard.details." + panelName;
@@ -1625,13 +1638,22 @@
       }
       button.textContent = expanded ? "Hide details" : "Show details";
       button.setAttribute("aria-expanded", expanded ? "true" : "false");
+      if (panelName === "agenda" && lastAgendaInfo) {
+        showAgenda(lastAgendaInfo);
+      }
+      updateDetailCount();
     }
-    button.addEventListener("click", function () {
-      expanded = !expanded;
+    function setExpanded(value) {
+      expanded = value;
       applyDetailVisibility();
       try { window.localStorage.setItem(key, expanded ? "expanded" : "collapsed"); }
       catch (error) {}
+    }
+    detailControllers.push({
+      isExpanded: function () { return expanded; },
+      setExpanded: setExpanded
     });
+    button.addEventListener("click", function () { setExpanded(!expanded); });
     applyDetailVisibility();
   }
 
@@ -1643,6 +1665,19 @@
   bindDetailToggle("trello", ["trello-list"]);
   bindDetailToggle("weather", ["weather-details"]);
   bindDetailToggle("server", ["server-info"]);
+  bindDetailToggle("agenda", ["agenda-list", "agenda-toggle"]);
+
+  function setAllDetails(expanded) {
+    for (var i = 0; i < detailControllers.length; i++) {
+      detailControllers[i].setExpanded(expanded);
+    }
+  }
+  document.getElementById("expand-all-details").addEventListener("click", function () {
+    setAllDetails(true);
+  });
+  document.getElementById("collapse-all-details").addEventListener("click", function () {
+    setAllDetails(false);
+  });
 
   document.getElementById("agenda-toggle").addEventListener("click", function () {
     agendaExpanded = !agendaExpanded;
