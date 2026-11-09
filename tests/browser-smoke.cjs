@@ -541,4 +541,41 @@ assert.ok(!byId("fitness-list").children.some((row) => /Consecutive rest days th
 assert.ok(!byId("dividend-list").children.some((row) => /Days since most recent confirmed payment/.test(row.textContent)));
 assert.ok(!byId("portfolio-list").children.some((row) => /Manual price completeness/.test(row.textContent)));
 
+// Visual coverage and conflict details use validated provider values only.
+response.portfolio = {available:true,positions:[],totals:{},quality:{outdated:false},
+  price_coverage_percent_by_currency:{USD:50}};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},
+  six_month_paying_symbols:{USD:2},six_month_paid_months:{USD:3},
+  history:[],recent:[]};
+response.fitness = {available:true,summary:{sessions:3,duration_minutes:75,distance_km:0},
+  active_day_percent:42.9,period_start:"2026-11-03",period_end:"2026-11-09",
+  daily:[],recent:[]};
+response.agenda = {available:true,upcoming_count:3,window_start:"2026-11-09",
+  window_end:"2026-11-23",conflicting_time_slots:1,conflicting_event_count:2,events:[]};
+handlers["document:visibilitychange"]();
+const manualCoverageBar = byId("portfolio-list").children.find((row) =>
+  row.className === "allocation-row" && /Price coverage USD/.test(row.children[0].textContent));
+assert.ok(manualCoverageBar);
+assert.equal(manualCoverageBar.children[1].children[0].style.width,"50%");
+const paymentCoverageBar = byId("dividend-list").children.find((row) =>
+  row.className === "allocation-row" && /3\/6 months with payments/.test(row.children[0].textContent));
+assert.ok(paymentCoverageBar);
+assert.equal(paymentCoverageBar.children[1].children[0].style.width,"50%");
+const activeCoverageBar = byId("fitness-list").children.find((row) =>
+  row.className === "allocation-row" && /Active days \(last 7\) · 42.9%/.test(row.children[0].textContent));
+assert.ok(activeCoverageBar);
+assert.equal(activeCoverageBar.children[1].children[0].style.width,"42.9%");
+assert.ok(byId("agenda-list").children.some((row) =>
+  /Review overlapping schedule · 1 shared time slots, 2 events/.test(row.textContent)));
+// Invalid percentages and incomplete conflict counters must be ignored.
+response.portfolio.price_coverage_percent_by_currency.USD = 120;
+response.dividends.six_month_paid_months.USD = -1;
+response.fitness.active_day_percent = -5;
+delete response.agenda.conflicting_event_count;
+handlers["document:visibilitychange"]();
+assert.ok(!byId("portfolio-list").children.some((row) => row.className === "allocation-row"));
+assert.ok(!byId("dividend-list").children.some((row) => row.className === "allocation-row"));
+assert.ok(!byId("fitness-list").children.some((row) => row.className === "allocation-row"));
+assert.ok(!byId("agenda-list").children.some((row) => /Review overlapping schedule/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
