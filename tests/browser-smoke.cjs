@@ -1310,4 +1310,40 @@ assert.equal(byId("agenda-toggle").hidden,true); // One event does not need pagi
 assert.equal(byId("portfolio-quote-values").hidden,false);
 assert.equal(byId("detail-visibility-count").textContent,"9 of 9 panels showing details");
 
+// Four native anchor shortcuts must always target real, visible priority cards.
+const priorityShortcuts = ["portfolio","dividends","github","fitness"];
+for (const panel of priorityShortcuts) {
+  assert.ok(html.includes('id="panel-' + panel + '"'));
+  assert.ok(html.includes('href="#panel-' + panel + '"'));
+  assert.equal(byId("jump-link-" + panel).hidden,false);
+}
+assert.equal(byId("priority-jumps-empty").hidden,true);
+// Focus preset keeps all priority shortcuts available.
+handlers["focus-panels:click"]();
+for (const panel of priorityShortcuts) {
+  assert.equal(byId("jump-link-" + panel).hidden,false);
+}
+// Minimal preset hides all shortcuts rather than pointing into invisible cards.
+handlers["minimal-panels:click"]();
+for (const panel of priorityShortcuts) {
+  assert.equal(byId("jump-link-" + panel).hidden,true);
+}
+assert.equal(byId("priority-jumps-empty").hidden,false);
+// Hiding and restoring every card synchronizes native shortcut visibility.
+handlers["show-all-panels:click"]();
+assert.equal(byId("priority-jumps-empty").hidden,true);
+for (const panel of priorityShortcuts) {
+  assert.equal(byId("jump-link-" + panel).hidden,false);
+}
+handlers["hide-all-panels:click"]();
+for (const panel of priorityShortcuts) {
+  assert.equal(byId("jump-link-" + panel).hidden,true);
+}
+assert.equal(byId("priority-jumps-empty").hidden,false);
+handlers["reset-settings:click"]();
+for (const panel of priorityShortcuts) {
+  assert.equal(byId("jump-link-" + panel).hidden,false);
+}
+assert.equal(byId("priority-jumps-empty").hidden,true);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
