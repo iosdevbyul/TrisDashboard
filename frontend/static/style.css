@@ -148,3 +148,7 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .view-switcher button[aria-pressed="true"]{border-color:#93c5fd;font-weight:bold;text-decoration:underline}
 .view-switcher button:disabled{opacity:.45;cursor:default}
 #saved-view-status{overflow-wrap:break-word}
+
+/* Personal-view feedback and quick actions remain legible on narrow Safari displays. */
+#saved-view-preview{overflow-wrap:break-word;word-wrap:break-word;line-height:1.5}
+.view-switcher button:disabled{opacity:.45;cursor:default}
