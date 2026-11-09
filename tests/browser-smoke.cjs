@@ -1850,6 +1850,11 @@ assert.equal(byId("view-history-status").textContent,pinnedHistoryBefore);
 handlers["pin-github:click"]();
 assert.match(state["tris.dashboard.pins.v1"],/github/);
 handlers["reset-settings:click"]();
+assert.deepEqual(JSON.parse(state["tris.dashboard.pins.v1"]),["github"]);
+assert.equal(byId("pin-github").attributes["aria-pressed"],"true");
+assert.match(byId("display-reset-status").textContent,/Pinned favorites and My view were kept/);
+// The standalone Clear pins action, not Reset display, owns favorite deletion.
+handlers["clear-all-pins:click"]();
 assert.deepEqual(JSON.parse(state["tris.dashboard.pins.v1"]),[]);
 assert.equal(byId("pin-github").attributes["aria-pressed"],"false");
 
@@ -1931,5 +1936,39 @@ assert.equal(byId("quick-view-pinned").attributes["aria-pressed"],"false");
 assert.match(state["tris.dashboard.pins.v1"],/github/);
 handlers["pin-github:click"]();
 handlers["quick-view-all:click"]();
+
+// Safe reset preserves separate favorites and My view, and supports one undo.
+handlers["quick-view-all:click"]();
+handlers["quick-view-fitness:click"]();
+byId("setting-large-text").checked = true;
+handlers["setting-large-text:change"].call(byId("setting-large-text"));
+byId("setting-refresh-minutes").value = "10";
+handlers["setting-refresh-minutes:change"].call(byId("setting-refresh-minutes"));
+handlers["pin-weather:click"]();
+handlers["quick-save-my-view:click"]();
+const beforeSafetyReset = state["tris.dashboard.display.v1"];
+const beforeSafetyPins = state["tris.dashboard.pins.v1"];
+const beforeSafetyView = state["tris.dashboard.my-view.v1"];
+handlers["reset-settings:click"]();
+assert.equal(byId("undo-display-reset").disabled,false);
+assert.equal(byId("setting-large-text").checked,false);
+assert.equal(byId("setting-refresh-minutes").value,"3");
+assert.equal(byId("panel-fitness").hidden,false);
+assert.equal(byId("panel-portfolio").hidden,false);
+assert.equal(state["tris.dashboard.pins.v1"],beforeSafetyPins);
+assert.equal(state["tris.dashboard.my-view.v1"],beforeSafetyView);
+assert.match(byId("display-reset-status").textContent,/Undo is available/);
+handlers["undo-display-reset:click"]();
+assert.equal(byId("undo-display-reset").disabled,true);
+assert.equal(state["tris.dashboard.display.v1"],beforeSafetyReset);
+assert.equal(byId("setting-large-text").checked,true);
+assert.equal(byId("setting-refresh-minutes").value,"10");
+assert.equal(byId("panel-portfolio").hidden,true);
+assert.equal(byId("panel-fitness").hidden,false);
+assert.equal(state["tris.dashboard.pins.v1"],beforeSafetyPins);
+assert.equal(state["tris.dashboard.my-view.v1"],beforeSafetyView);
+assert.match(byId("display-reset-status").textContent,/Previous display preferences restored/);
+handlers["clear-all-pins:click"]();
+handlers["reset-settings:click"]();
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
