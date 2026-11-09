@@ -1280,4 +1280,33 @@ for (const [panel,detail] of extraDetails) {
 assert.equal(byId("portfolio-list").hidden,false);
 assert.equal(byId("fitness-list").hidden,false);
 
+// Bulk detail controls and agenda disclosure are independent of event pagination.
+assert.equal(byId("detail-visibility-count").textContent,"9 of 9 panels showing details");
+const agendaHeadline = byId("agenda-summary").textContent;
+handlers["agenda-detail-toggle:click"]();
+assert.equal(byId("agenda-list").hidden,true);
+assert.equal(byId("agenda-toggle").hidden,true);
+assert.equal(byId("agenda-summary").textContent,agendaHeadline);
+assert.equal(byId("agenda-detail-toggle").attributes["aria-expanded"],"false");
+assert.equal(state["tris.dashboard.details.agenda"],"collapsed");
+assert.equal(byId("detail-visibility-count").textContent,"8 of 9 panels showing details");
+handlers["refresh-button:click"]();
+assert.equal(byId("agenda-list").hidden,true);
+assert.equal(byId("agenda-toggle").hidden,true);
+handlers["collapse-all-details:click"]();
+for (const panel of ["portfolio","dividends","github","fitness","quotes","trello","weather","server","agenda"]) {
+  assert.equal(byId(panel + "-detail-toggle").attributes["aria-expanded"],"false");
+  assert.equal(state["tris.dashboard.details." + panel],"collapsed");
+}
+assert.equal(byId("portfolio-quote-values").hidden,true);
+assert.equal(byId("detail-visibility-count").textContent,"0 of 9 panels showing details");
+handlers["expand-all-details:click"]();
+for (const panel of ["portfolio","dividends","github","fitness","quotes","trello","weather","server","agenda"]) {
+  assert.equal(byId(panel + "-detail-toggle").attributes["aria-expanded"],"true");
+  assert.equal(state["tris.dashboard.details." + panel],"expanded");
+}
+assert.equal(byId("agenda-list").hidden,false);
+assert.equal(byId("portfolio-quote-values").hidden,false);
+assert.equal(byId("detail-visibility-count").textContent,"9 of 9 panels showing details");
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
