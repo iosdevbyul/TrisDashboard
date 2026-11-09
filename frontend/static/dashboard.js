@@ -12,6 +12,7 @@
   var lastRequestStarted = 0;
   var lastDataStarted = 0;
   var requestSequence = 0;
+  var suppressNextReconnectRefresh = false;
   var overviewSequence = 0;
   var overviewRetryTimer = null;
   var overviewRetryGeneration = 0;
@@ -75,7 +76,8 @@
       lastCheck.textContent = "Checked " + pad(new Date().getHours()) + ":" + pad(new Date().getMinutes());
       if (wasOffline) {
         wasOffline = false;
-        if (!document.hidden && !window.trisDashboardRefreshPaused &&
+        if (!suppressNextReconnectRefresh && !document.hidden &&
+            !window.trisDashboardRefreshPaused &&
             (!overviewRequest || overviewRequest.readyState === 4)) { loadOverview(true); }
       }
     } else {
@@ -106,6 +108,7 @@
         catch (error) { online = false; }
       }
       if (sequence === requestSequence) { setConnection(online); }
+      suppressNextReconnectRefresh = false;
     });
   }
 
@@ -1440,9 +1443,16 @@
   }
 
   function updateLastSuccessAge() {
-    if (!lastSuccessfulOverviewAt || consecutiveOverviewFailures ||
+    if (document.hidden || window.trisDashboardRefreshPaused ||
+        !lastSuccessfulOverviewAt || consecutiveOverviewFailures ||
         (overviewRequest && overviewRequest.readyState !== 4)) { return; }
-    var elapsed = Math.max(0, Math.floor((new Date().getTime() - lastSuccessfulOverviewAt) / 60000));
+    var elapsedMs = new Date().getTime() - lastSuccessfulOverviewAt;
+    if (elapsedMs < 0) {
+      text("data-refresh-state", "Last overview refresh succeeded at " +
+        lastSuccessfulOverview + " · Device clock changed; elapsed time unavailable.");
+      return;
+    }
+    var elapsed = Math.floor(elapsedMs / 60000);
     text("data-refresh-state", "Last overview refresh succeeded at " + lastSuccessfulOverview +
       " · " + elapsed + " min ago.");
   }
@@ -1601,7 +1611,7 @@
   }, 60000);
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) {
-      tick(); checkServer();
+      tick(); suppressNextReconnectRefresh = true; checkServer();
       if (!window.trisDashboardRefreshPaused &&
           (!overviewRequest || overviewRequest.readyState === 4)) { loadOverview(true); }
     } else {
