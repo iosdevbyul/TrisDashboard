@@ -107,6 +107,8 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
         activity["session_share_percent"] = round(activity["sessions"] * 100 / totals["sessions"], 1) if totals["sessions"] else 0.0
     dominant_activity = dict(activity_breakdown[0]) if activity_breakdown else None
     active_days = sum(1 for day in daily.values() if day["sessions"] > 0)
+    rest_days = len(daily) - active_days
+    active_day_percent = round(active_days * 100 / len(daily), 1)
     peak_day = max(daily.items(), key=lambda item: (item[1]["duration_minutes"], item[0]))
     peak_active_day = {"date": peak_day[0], "duration_minutes": peak_day[1]["duration_minutes"]}
     if not active_days:
@@ -135,6 +137,8 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "file_mtime_in_future": file_mtime_in_future,
             "period_start": start.isoformat(), "period_end": reference.isoformat(),
             "active_days": active_days,
+            "rest_days": rest_days,
+            "active_day_percent": active_day_percent,
             "peak_active_day": peak_active_day,
             "average_active_day_minutes": average_active_day_minutes,
             "average_session_minutes": average_session_minutes,
