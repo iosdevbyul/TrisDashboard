@@ -57,6 +57,7 @@
       "Data refreshes every " + settings.refreshMinutes + " minutes";
     window.trisDashboardRefreshMinutes = settings.refreshMinutes;
     window.trisDashboardRefreshPaused = settings.pauseRefresh;
+    document.getElementById("empty-panels").hidden = settings.hidden.length !== panelNames.length;
     var container = document.getElementById("dashboard-modules");
     for (var o = 0; o < settings.order.length; o++) {
       var orderedCard = document.querySelector('[data-panel="' + settings.order[o] + '"]');
