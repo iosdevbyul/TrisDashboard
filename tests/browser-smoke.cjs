@@ -860,4 +860,30 @@ handlers["document:visibilitychange"]();
 assert.ok(byId("github-list").children.some(row => /PR preview unavailable/.test(row.textContent)));
 assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
 
+// Metadata must not crash overview updates or display invented provenance.
+response.trello = {available:true,lists:[{name:"Next",count:2,cards:{bad:true}},
+  {name:"In Progress",count:2,cards:[null,"Real task"]}]};
+response.fitness = {available:true,summary:null,period_start:"2026-11-03",
+  period_end:"2026-11-09",daily:[],recent:[],file_updated_utc:123};
+response.portfolio = {available:true,positions:[],totals:{},
+  quality:{outdated:true,threshold_hours:"not numeric"}};
+handlers["document:visibilitychange"]();
+assert.ok(byId("trello-list").children.some(row => /Card preview unavailable · Next/.test(row.textContent)));
+assert.ok(byId("trello-list").children.some(row => row.className === "trello-preview" && row.textContent === "Real task"));
+assert.match(byId("fitness-summary").textContent,/Workout summary unavailable/);
+assert.match(byId("fitness-updated").textContent,/Invalid workout summary/);
+assert.match(byId("portfolio-updated").textContent,/OUTDATED \(threshold unavailable\)/);
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+response.fitness.summary = {sessions:1,duration_minutes:30,distance_km:2};
+handlers["document:visibilitychange"]();
+assert.match(byId("fitness-summary").textContent,/1 sessions · 30 min/);
+assert.doesNotMatch(byId("fitness-updated").textContent,/Local file updated 123/);
+response.fitness.file_updated_utc = "2026-11-09T04:30:00Z";
+response.portfolio.quality.threshold_hours = 24;
+response.trello.lists[0].cards = ["Next task"];
+handlers["document:visibilitychange"]();
+assert.match(byId("fitness-updated").textContent,/Local file updated 2026-11-09 04:30 UTC/);
+assert.match(byId("portfolio-updated").textContent,/OUTDATED \(older than 24h\)/);
+assert.ok(!byId("trello-list").children.some(row => /Card preview unavailable/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
