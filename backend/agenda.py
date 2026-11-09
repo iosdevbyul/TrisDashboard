@@ -44,7 +44,9 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
         day = date.fromisoformat(raw_day)
         title = item.get("title")
         if (not isinstance(title, str) or not title.strip() or len(title) > 120
-                or any(ord(char) < 32 or ord(char) == 127 for char in title)):
+                or any(ord(char) < 32 or ord(char) == 127 or
+                       0x202A <= ord(char) <= 0x202E or
+                       0x2066 <= ord(char) <= 0x2069 for char in title)):
             raise ValueError("Invalid event title")
         when = item.get("time", "")
         if not isinstance(when, str) or (when and not _TIME_PATTERN.fullmatch(when)):
