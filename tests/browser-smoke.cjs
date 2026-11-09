@@ -632,4 +632,36 @@ assert.ok(!byId("dividend-list").children.some(row => /No confirmed dividend pay
 assert.ok(!byId("github-list").children.some(row => /No GitHub repositories returned/.test(row.textContent)));
 assert.ok(!byId("trello-list").children.some(row => /No Trello lists returned/.test(row.textContent)));
 
+// Damaged provider metadata must not make aggregate summaries NaN or mask clock errors.
+response.github = {available:true,repositories:[
+  {repository:"owner/bad",available:true,open_pr_count:"unknown",open_prs:[]},
+  {repository:"owner/good",available:true,open_pr_count:2,open_prs:[]}
+]};
+response.trello = {available:true,lists:[
+  {name:"Next",count:"broken",cards:[]},
+  {name:"In Progress",count:1,cards:[]}
+]};
+response.quotes = {available:true,quotes:[
+  {symbol:"JEPQ",currency:"USD",price:"50",reported_at_utc:123},
+  {symbol:"SCHD",currency:"USD",price:"40",reported_at_utc:"2026-11-09T03:00:00Z"}
+]};
+response.server.server_time_utc = {invalid:true};
+handlers["document:visibilitychange"]();
+assert.match(byId("github-summary").textContent,/^2 open PRs$/);
+assert.ok(byId("github-list").children.some(row => /PR count unavailable/.test(row.textContent)));
+assert.match(byId("trello-summary").textContent,/^1 cards · 0 Next · 1 In Progress$/);
+assert.ok(byId("trello-list").children.some(row => /Card count unavailable/.test(row.textContent)));
+assert.match(byId("quotes-summary").textContent,/^1\/2 quotes reported/);
+assert.match(byId("quotes-list").children[0].textContent,/Quote unavailable/);
+assert.equal(byId("server-updated").textContent,"Server clock unavailable");
+response.github.repositories[0].open_pr_count = 3;
+response.trello.lists[0].count = 2;
+response.quotes.quotes[0].reported_at_utc = "2026-11-09T03:01:00Z";
+response.server.server_time_utc = "2026-11-09T03:02:00Z";
+handlers["document:visibilitychange"]();
+assert.match(byId("github-summary").textContent,/^5 open PRs$/);
+assert.match(byId("trello-summary").textContent,/^3 cards · 2 Next · 1 In Progress$/);
+assert.match(byId("quotes-summary").textContent,/^2\/2 quotes reported/);
+assert.match(byId("server-updated").textContent,/Server clock: 2026-11-09 03:02 UTC/);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");

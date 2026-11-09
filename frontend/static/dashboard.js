@@ -154,7 +154,9 @@
     for (var i = 0; i < rows.length; i++) {
       var line = document.createElement("div");
       line.className = "repo-row";
-      if (rows[i].price && rows[i].reported_at_utc) {
+      if (rows[i] && rows[i].price &&
+          typeof rows[i].reported_at_utc === "string" &&
+          /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/.test(rows[i].reported_at_utc)) {
         successful++;
         if (typeof rows[i].age_hours === "number" && isFinite(rows[i].age_hours) && rows[i].age_hours >= 0) {
           oldestHours = oldestHours === null ? rows[i].age_hours : Math.max(oldestHours, rows[i].age_hours);
@@ -166,7 +168,8 @@
             " · " + rows[i].age_hours + "h old" : "") +
           (rows[i].outdated ? " · OUTDATED" : "");
       } else {
-        line.textContent = rows[i].symbol + " · Quote unavailable";
+        line.textContent = (rows[i] && typeof rows[i].symbol === "string" ?
+          rows[i].symbol : "Unknown symbol") + " · Quote unavailable";
       }
       list.appendChild(line);
     }
@@ -982,7 +985,17 @@
         list.appendChild(failed);
         continue;
       }
-      total += repos[i].open_pr_count;
+      var prCount = repos[i].open_pr_count;
+      if (typeof prCount !== "number" || !isFinite(prCount) ||
+          prCount < 0 || Math.floor(prCount) !== prCount) {
+        var invalidPR = document.createElement("div");
+        invalidPR.className = "repo-row";
+        invalidPR.textContent = String(repos[i].repository || "Repository") +
+          " · PR count unavailable";
+        list.appendChild(invalidPR);
+        continue;
+      }
+      total += prCount;
       if (repos[i].open_pr_count_truncated) { truncated = true; }
       var row = document.createElement("div");
       row.className = "repo-row";
@@ -1045,13 +1058,23 @@
     var nextCount = 0;
     var progressCount = 0;
     for (var i = 0; i < columns.length; i++) {
-      total += columns[i].count;
+      var cardCount = columns[i].count;
+      if (typeof cardCount !== "number" || !isFinite(cardCount) ||
+          cardCount < 0 || Math.floor(cardCount) !== cardCount) {
+        var invalidCards = document.createElement("div");
+        invalidCards.className = "repo-row";
+        invalidCards.textContent = String(columns[i].name || "List") +
+          " · Card count unavailable";
+        list.appendChild(invalidCards);
+        continue;
+      }
+      total += cardCount;
       var listName = String(columns[i].name || "").toLowerCase().replace(/^\s+|\s+$/g, "");
-      if (listName === "next") { nextCount += columns[i].count; }
-      if (listName === "in progress") { progressCount += columns[i].count; }
+      if (listName === "next") { nextCount += cardCount; }
+      if (listName === "in progress") { progressCount += cardCount; }
       var row = document.createElement("div");
       row.className = "repo-row";
-      row.textContent = columns[i].name + " · " + columns[i].count +
+      row.textContent = columns[i].name + " · " + cardCount +
         (columns[i].count_truncated ? "+ cards (limit reached)" : " cards");
       list.appendChild(row);
       var names = columns[i].cards || [];
@@ -1091,7 +1114,11 @@
     var uptime = days ? days + "d " + hours + "h" : hours ? hours + "h " + minutes + "m" : minutes + "m";
     text("server-uptime", uptime + " online");
     text("server-info", "MacBook local API reachable");
-    text("server-updated", "Server clock: " + String(info.server_time_utc || "").replace("T", " ").slice(0, 16) + " UTC");
+    var serverClock = info.server_time_utc;
+    text("server-updated", typeof serverClock === "string" &&
+      /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/.test(serverClock) ?
+      "Server clock: " + serverClock.replace("T", " ").slice(0, 16) + " UTC" :
+      "Server clock unavailable");
   }
 
   function updateLastSuccessAge() {
