@@ -49,6 +49,13 @@
     <button type="button" id="quick-previous-view" disabled>Previous view</button>
     <button type="button" id="quick-next-view" disabled>Next view</button>
   </nav>
+  <div class="panel-search" role="search" aria-label="Find dashboard panels">
+    <label for="panel-search-input">FIND PANEL</label>
+    <input type="search" id="panel-search-input" placeholder="Search panel names" autocomplete="off">
+    <button type="button" id="panel-search-clear" disabled>Clear search</button>
+    <span id="panel-search-count" role="status" aria-live="polite">9 panels available</span>
+  </div>
+  <p id="panel-search-empty" class="empty-panels" role="status" hidden>No matching visible panels. Clear search or change the display settings.</p>
   <nav class="priority-jumps" id="priority-jumps" tabindex="-1" aria-label="Jump to priority panels">
     <span class="priority-jumps-label">QUICK JUMP</span>
     <a id="jump-link-portfolio" href="#panel-portfolio">Portfolio</a>
