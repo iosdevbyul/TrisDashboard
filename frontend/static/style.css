@@ -136,3 +136,10 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 
 /* Indicate active view without relying on color alone; Safari 9 compatible. */
 #assets-only-panels[aria-pressed="true"],#development-only-panels[aria-pressed="true"],#fitness-only-panels[aria-pressed="true"],#today-only-panels[aria-pressed="true"]{border-color:#93c5fd;font-weight:bold;text-decoration:underline}
+
+/* Direct view switching from the top toolbar, without opening settings. */
+.view-switcher{margin:0 0 12px;padding:9px 12px;border:1px solid #35475f;border-radius:9px;background:#1b2737;line-height:2}
+.view-switcher-label{display:inline-block;margin-right:9px;color:#9db1cc;font-size:11px;letter-spacing:1px}
+.view-switcher button{display:inline-block;margin:3px 6px 3px 0;padding:5px 10px;border:1px solid #455b75;border-radius:6px;background:#26374c;color:#e8f1fc;font-size:13px;cursor:pointer}
+.view-switcher button[aria-pressed="true"]{border-color:#93c5fd;font-weight:bold;text-decoration:underline}
+.view-switcher button:focus{outline:2px solid #93c5fd;outline-offset:2px}
