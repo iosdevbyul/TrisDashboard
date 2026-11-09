@@ -81,6 +81,10 @@
     panel.hidden = !panel.hidden;
     this.setAttribute("aria-expanded", panel.hidden ? "false" : "true");
     if (panel.hidden && typeof this.focus === "function") { this.focus(); }
+    if (!panel.hidden) {
+      var firstControl = document.getElementById("setting-compact");
+      if (firstControl && typeof firstControl.focus === "function") { firstControl.focus(); }
+    }
   });
   document.getElementById("close-display-settings").addEventListener("click", function () {
     document.getElementById("display-settings").hidden = true;
