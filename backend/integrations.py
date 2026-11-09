@@ -200,11 +200,14 @@ def github() -> dict:
                 safe_pulls = [item for item in pulls if isinstance(item, dict)
                               and type(item.get("number")) is int and item["number"] > 0
                               and isinstance(item.get("title"), str)
-                              and isinstance(item.get("html_url"), str)]
+                              and item.get("html_url") == ("https://github.com/" + repo + "/pull/" + str(item["number"]))]
                 ci = {
                     "status": latest.get("status", "unknown"),
                     "conclusion": latest.get("conclusion"),
-                    "url": latest.get("html_url"),
+                    "url": (latest.get("html_url") if isinstance(latest.get("html_url"), str)
+                            and latest["html_url"].startswith("https://github.com/" + repo + "/actions/runs/")
+                            and latest["html_url"].removeprefix("https://github.com/" + repo + "/actions/runs/").isdigit()
+                            else None),
                     "name": latest.get("name", "Workflow"),
                 } if latest else None
                 results.append({"repository": repo, "available": True,
