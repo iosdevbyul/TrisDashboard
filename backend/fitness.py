@@ -110,6 +110,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
     activity_breakdown.sort(key=lambda entry: (-entry["duration_minutes"], entry["type"]))
     for activity in activity_breakdown:
         activity["session_share_percent"] = round(activity["sessions"] * 100 / totals["sessions"], 1) if totals["sessions"] else 0.0
+        activity["time_share_percent"] = round(activity["duration_minutes"] * 100 / totals["minutes"], 1) if totals["minutes"] else 0.0
     dominant_activity = dict(activity_breakdown[0]) if activity_breakdown else None
     active_days = sum(1 for day in daily.values() if day["sessions"] > 0)
     rest_days = len(daily) - active_days
