@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+<a href="#dashboard-modules" class="skip-link">Skip to dashboard modules</a>
 <main class="dashboard">
   <header class="header">
     <div class="header-time">
@@ -60,7 +61,7 @@
   <div class="offline-banner" id="offline-banner" aria-live="polite" hidden>
     MacBook server is unreachable. Showing the last loaded dashboard.
   </div>
-  <section class="cards" aria-label="Dashboard modules">
+  <section class="cards" id="dashboard-modules" tabindex="-1" aria-label="Dashboard modules">
     <article class="card" data-panel="portfolio">
       <h2>Portfolio · Manual snapshot</h2>
       <p id="portfolio-summary">Not configured</p>
