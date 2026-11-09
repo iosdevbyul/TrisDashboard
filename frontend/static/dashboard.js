@@ -93,6 +93,7 @@
   function checkServer() {
     if (request && request.readyState !== 4) { return; }
     var now = new Date().getTime();
+    if (now < lastRequestStarted) { lastRequestStarted = 0; }
     if (now - lastRequestStarted < 2000) { return; }
     lastRequestStarted = now;
     var sequence = ++requestSequence;
@@ -1451,12 +1452,24 @@
     }
   }
 
+  function cancelActiveOverview() {
+    if (overviewRequest && overviewRequest.readyState !== 4) {
+      overviewSequence++;
+      overviewRequest.abort();
+      overviewRequest = null;
+      refreshButton.disabled = false;
+      refreshButton.textContent = "Refresh now";
+      refreshButton.setAttribute("aria-busy", "false");
+    }
+  }
+
   window.trisDashboardResumeRefresh = function () {
     if (!document.hidden) { loadOverview(true); }
   };
 
   window.trisDashboardCancelPendingRetry = function () {
     clearOverviewRetry();
+    cancelActiveOverview();
     text("data-refresh-state", "Automatic refresh paused · Manual refresh available.");
   };
 
@@ -1490,6 +1503,7 @@
   function loadOverview(force) {
     if (!force && overviewRequest && overviewRequest.readyState !== 4) { return; }
     var now = new Date().getTime();
+    if (now < lastDataStarted) { lastDataStarted = 0; }
     if (!force && now - lastDataStarted < 30000) { return; }
     lastDataStarted = now;
     refreshButton.disabled = true;
@@ -1547,6 +1561,7 @@
   });
 
   document.getElementById("refresh-button").addEventListener("click", function () {
+    consecutiveOverviewFailures = 0;
     text("data-refresh-state", "Refreshing dashboard data...");
     checkServer();
     loadOverview(true);
@@ -1575,6 +1590,10 @@
       tick(); checkServer();
       if (!window.trisDashboardRefreshPaused &&
           (!overviewRequest || overviewRequest.readyState === 4)) { loadOverview(true); }
-    } else { clearOverviewRetry(); }
+    } else {
+      clearOverviewRetry();
+      cancelActiveOverview();
+      text("data-refresh-state", "Tab hidden · Automatic data requests suspended.");
+    }
   });
 }());
