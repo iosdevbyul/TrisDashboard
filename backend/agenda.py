@@ -85,6 +85,7 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
     next_event_days = ((date.fromisoformat(upcoming[0]["date"]) - reference).days
                        if upcoming else None)
     next_event = dict(upcoming[0]) if upcoming else None
+    next_timed_event = next((dict(event) for event in upcoming if event["time"]), None)
     return {"available": True, "configured": True, "source": "manual_local_calendar",
             "window_start": reference.isoformat(), "window_end": end.isoformat(),
             "upcoming_count": len(upcoming), "today_event_count": today_event_count,
@@ -97,6 +98,7 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
             "first_free_day_in_next_seven": first_free_day,
             "next_event_in_days": next_event_days,
             "next_event": next_event,
+            "next_timed_event": next_timed_event,
             "events": upcoming[:30], "events_truncated": len(upcoming) > 30,
             "stale": False}
 
