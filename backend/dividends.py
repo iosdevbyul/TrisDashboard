@@ -49,6 +49,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         ticker, currency = entry.get("symbol"), entry.get("currency")
         if not isinstance(ticker, str) or not 1 <= len(ticker) <= 20 or not all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-_" for c in ticker):
             raise ValueError("Invalid symbol")
+        ticker = ticker.upper()
         if currency not in CURRENCIES:
             raise ValueError("Unsupported currency")
         raw_paid = entry.get("paid_on")
