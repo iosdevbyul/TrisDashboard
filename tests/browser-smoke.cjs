@@ -231,6 +231,14 @@ assert.match(byId("data-refresh-state").textContent, /Last successful update at 
 const retry = scheduled.find((item) => item.delay === 30000 && !item.cancelled);
 assert.ok(retry, "First failed overview should retry after 30 seconds");
 assert.match(byId("data-refresh-state").textContent, /retry in 30s/);
+// A queued retry must respect pause changes even when its callback fires later.
+byId("setting-pause-refresh").checked = true;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
+const beforePausedRetry = paths.filter((url) => url.startsWith("/api/overview")).length;
+retry.callback();
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforePausedRetry);
+byId("setting-pause-refresh").checked = false;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
 
 // On successful retry, the quote and partial valuation cards must render safely.
 overviewStatus = 200;
