@@ -133,3 +133,6 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 #priority-jumps-count{display:inline-block;margin-left:6px;color:#9db1cc;font-size:12px;white-space:nowrap}
 #back-to-top{color:#c9dcf3;text-decoration:underline}
 #back-to-top:focus{outline:2px solid #93c5fd;outline-offset:2px}
+
+/* Indicate active view without relying on color alone; Safari 9 compatible. */
+#assets-only-panels[aria-pressed="true"],#development-only-panels[aria-pressed="true"],#fitness-only-panels[aria-pressed="true"],#today-only-panels[aria-pressed="true"]{border-color:#93c5fd;font-weight:bold;text-decoration:underline}
