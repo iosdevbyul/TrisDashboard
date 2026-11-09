@@ -46,10 +46,10 @@
   // Active view is derived from visible panels, not from the last button clicked.
   // That also restores the correct label after a saved layout is reopened.
   var viewPresets = [
-    {id: "assets-only-panels", name: "Assets view", panels: ["portfolio", "quotes", "dividends"]},
-    {id: "development-only-panels", name: "Development view", panels: ["github", "trello"]},
-    {id: "fitness-only-panels", name: "Fitness view", panels: ["fitness", "weather"]},
-    {id: "today-only-panels", name: "Today view", panels: ["agenda", "weather", "server"]}
+    {id: "assets-only-panels", quickId: "quick-view-assets", name: "Assets view", panels: ["portfolio", "quotes", "dividends"]},
+    {id: "development-only-panels", quickId: "quick-view-development", name: "Development view", panels: ["github", "trello"]},
+    {id: "fitness-only-panels", quickId: "quick-view-fitness", name: "Fitness view", panels: ["fitness", "weather"]},
+    {id: "today-only-panels", quickId: "quick-view-today", name: "Today view", panels: ["agenda", "weather", "server"]}
   ];
   function updateActiveView() {
     var visible = [];
@@ -64,6 +64,7 @@
         if (visible.indexOf(preset.panels[k]) === -1) { matches = false; }
       }
       document.getElementById(preset.id).setAttribute("aria-pressed", matches ? "true" : "false");
+      document.getElementById(preset.quickId).setAttribute("aria-pressed", matches ? "true" : "false");
       if (matches) { selected = preset.name; }
     }
     document.getElementById("panel-preset-status").textContent = selected ?
@@ -279,6 +280,14 @@
   document.getElementById("today-only-panels").addEventListener("click", function () {
     applyVisibilityPreset(["agenda", "weather", "server"], "Today view");
   });
+
+  for (var q = 0; q < viewPresets.length; q++) {
+    (function (preset) {
+      document.getElementById(preset.quickId).addEventListener("click", function () {
+        applyVisibilityPreset(preset.panels, preset.name);
+      });
+    }(viewPresets[q]));
+  }
 
   document.getElementById("show-all-panels").addEventListener("click", function () {
     settings.hidden = [];

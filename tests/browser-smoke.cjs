@@ -1488,4 +1488,36 @@ assert.equal(byId("assets-only-panels").attributes["aria-pressed"],"true");
 handlers["reset-settings:click"]();
 assert.equal(byId("panel-preset-status").textContent,"All panels · 9 panels");
 
+// Four one-tap view controls work outside Display settings and mirror pressed state.
+const quickViewCases = [
+  ["assets","assets-only-panels",["portfolio","quotes","dividends"]],
+  ["development","development-only-panels",["github","trello"]],
+  ["fitness","fitness-only-panels",["fitness","weather"]],
+  ["today","today-only-panels",["agenda","weather","server"]]
+];
+const beforeQuickOrder = moduleContainer.children.map(card => card.id);
+byId("display-settings").hidden = true;
+for (const [name,settingId,visible] of quickViewCases) {
+  assert.ok(html.includes('id="quick-view-' + name + '" aria-pressed="false"'));
+  handlers["quick-view-" + name + ":click"]();
+  assert.equal(byId("display-settings").hidden,true);
+  assert.equal(byId("quick-view-" + name).attributes["aria-pressed"],"true");
+  assert.equal(byId(settingId).attributes["aria-pressed"],"true");
+  assert.equal(byId("priority-jumps-count").textContent,visible.length + " of 9 shortcuts available");
+  for (const panel of ["portfolio","quotes","dividends","agenda","github","weather","trello","server","fitness"]) {
+    assert.equal(byId("panel-" + panel).hidden,!visible.includes(panel));
+  }
+  for (const [other] of quickViewCases) {
+    assert.equal(byId("quick-view-" + other).attributes["aria-pressed"],other === name ? "true" : "false");
+  }
+  assert.deepEqual(moduleContainer.children.map(card => card.id),beforeQuickOrder);
+}
+handlers["assets-only-panels:click"]();
+assert.equal(byId("quick-view-assets").attributes["aria-pressed"],"true");
+handlers["show-all-panels:click"]();
+for (const [name] of quickViewCases) {
+  assert.equal(byId("quick-view-" + name).attributes["aria-pressed"],"false");
+}
+assert.equal(byId("priority-jumps-count").textContent,"9 of 9 shortcuts available");
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
