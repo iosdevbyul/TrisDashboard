@@ -2,6 +2,7 @@
 import json
 import math
 import hashlib
+from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor, wait
 import os
 import threading
@@ -69,19 +70,19 @@ def cached(key: str, loader, *, ttl: int = TTL_SECONDS) -> dict:
     with _lock:
         previous = _cache.get(key)
         if previous and now - previous["time"] < ttl:
-            return dict(previous["data"])
+            return deepcopy(previous["data"])
     try:
         fresh = dict(loader())
         fresh["updated_at"] = datetime.now(timezone.utc).isoformat()
         fresh["stale"] = False
     except (OSError, ValueError, KeyError, TypeError, HTTPError, URLError) as error:
         if previous and now - previous["time"] <= MAX_STALE_SECONDS:
-            fallback = dict(previous["data"])
+            fallback = deepcopy(previous["data"])
             fallback["stale"] = True
             return fallback
         return {"available": False, "stale": True, "error": "temporarily unavailable"}
     with _lock:
-        _cache[key] = {"time": time.monotonic(), "data": dict(fresh)}
+        _cache[key] = {"time": time.monotonic(), "data": deepcopy(fresh)}
     return fresh
 
 
