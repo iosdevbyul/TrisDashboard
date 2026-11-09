@@ -14,6 +14,7 @@
   var requestSequence = 0;
   var overviewSequence = 0;
   var overviewRetryTimer = null;
+  var overviewRetryGeneration = 0;
   var consecutiveOverviewFailures = 0;
   var lastSuccessfulOverview = null;
   var lastSuccessfulOverviewAt = 0;
@@ -74,7 +75,7 @@
       lastCheck.textContent = "Checked " + pad(new Date().getHours()) + ":" + pad(new Date().getMinutes());
       if (wasOffline) {
         wasOffline = false;
-        if (!window.trisDashboardRefreshPaused &&
+        if (!document.hidden && !window.trisDashboardRefreshPaused &&
             (!overviewRequest || overviewRequest.readyState === 4)) { loadOverview(true); }
       }
     } else {
@@ -91,6 +92,7 @@
   }
 
   function checkServer() {
+    if (document.hidden) { return; }
     if (request && request.readyState !== 4) { return; }
     var now = new Date().getTime();
     if (now < lastRequestStarted) { lastRequestStarted = 0; }
@@ -1446,9 +1448,18 @@
   }
 
   function clearOverviewRetry() {
+    overviewRetryGeneration++;
     if (overviewRetryTimer !== null) {
       clearTimeout(overviewRetryTimer);
       overviewRetryTimer = null;
+    }
+  }
+
+  function cancelActiveHealthCheck() {
+    if (request && request.readyState !== 4) {
+      requestSequence++;
+      request.abort();
+      request = null;
     }
   }
 
@@ -1494,7 +1505,9 @@
     text("data-refresh-state", "Data refresh failed · retry in " + (delay / 1000) +
       "s. " + (lastSuccessfulOverview ? "Last successful update at " + lastSuccessfulOverview + "." :
       "No successful update yet."));
+    var retryGeneration = overviewRetryGeneration;
     overviewRetryTimer = setTimeout(function () {
+      if (retryGeneration !== overviewRetryGeneration) { return; }
       overviewRetryTimer = null;
       if (!document.hidden && !window.trisDashboardRefreshPaused) { loadOverview(true); }
     }, delay);
@@ -1593,6 +1606,7 @@
           (!overviewRequest || overviewRequest.readyState === 4)) { loadOverview(true); }
     } else {
       clearOverviewRetry();
+      cancelActiveHealthCheck();
       cancelActiveOverview();
       text("data-refresh-state", "Tab hidden · Automatic data requests suspended.");
     }
