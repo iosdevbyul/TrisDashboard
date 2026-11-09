@@ -886,4 +886,43 @@ assert.match(byId("fitness-updated").textContent,/Local file updated 2026-11-09 
 assert.match(byId("portfolio-updated").textContent,/OUTDATED \(older than 24h\)/);
 assert.ok(!byId("trello-list").children.some(row => /Card preview unavailable/.test(row.textContent)));
 
+// Reject incorrect totals/counts and unrecognized CI states without losing valid data.
+response.portfolio = {available:true,positions:[
+  {symbol:"BAD",currency:"USD",quantity:-5,market_value:null},
+  {symbol:"GOOD",currency:"USD",quantity:"3",market_value:"150"}],
+  totals:{USD:"150"},quality:{outdated:false}};
+response.dividends = {available:true,month:"2026-11",
+  monthly_totals:{USD:"-10",KRW:"2000"},history:[],recent:[]};
+response.agenda = {available:true,upcoming_count:-1,
+  today_event_count:-4,tomorrow_event_count:2.5,
+  next_seven_busy_days:10,next_seven_days_count:3,
+  next_event_in_days:1.5,
+  window_start:"2026-11-09",window_end:"2026-11-23",events:[]};
+response.github = {available:true,repositories:[{
+  available:true,repository:"owner/repo",open_pr_count:1,open_prs:[],
+  latest_ci:{status:"completed",conclusion:{invalid:true}}}]};
+handlers["document:visibilitychange"]();
+assert.match(byId("portfolio-summary").textContent,/^1 holdings$/);
+assert.ok(byId("portfolio-list").children.some(row => /Skipped 1 invalid holding/.test(row.textContent)));
+assert.match(byId("dividend-summary").textContent,/KRW 2000/);
+assert.doesNotMatch(byId("dividend-summary").textContent,/USD/);
+assert.ok(byId("dividend-list").children.some(row => /Excluded 1 invalid monthly dividend totals/.test(row.textContent)));
+assert.match(byId("agenda-summary").textContent,/Unknown upcoming events/);
+assert.doesNotMatch(byId("agenda-summary").textContent,/-4 today|2.5 tomorrow|10 busy days|Next in 1.5/);
+assert.match(byId("github-list").children[0].textContent,/CI unknown/);
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+response.portfolio.positions[0].quantity = "2";
+response.dividends.monthly_totals.USD = "10";
+response.agenda.upcoming_count = 3;
+response.agenda.today_event_count = 1;
+response.agenda.tomorrow_event_count = 2;
+response.agenda.next_seven_busy_days = 3;
+response.agenda.next_event_in_days = 1;
+response.github.repositories[0].latest_ci = {status:"completed",conclusion:"success"};
+handlers["document:visibilitychange"]();
+assert.match(byId("portfolio-summary").textContent,/^2 holdings$/);
+assert.match(byId("dividend-summary").textContent,/USD 10/);
+assert.match(byId("agenda-summary").textContent,/3 upcoming events · 1 today · 2 tomorrow/);
+assert.match(byId("github-list").children[0].textContent,/CI success/);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
