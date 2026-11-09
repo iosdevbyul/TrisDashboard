@@ -203,6 +203,20 @@
       total.textContent = "Values: " + parts.join(" / ") + (info.valuation_complete ? "" : " (partial)");
       list.appendChild(total);
     }
+    var priceCoverage = info.price_coverage_by_currency || {};
+    var coverageKeys = Object.keys(priceCoverage);
+    for (var pk = 0; pk < coverageKeys.length; pk++) {
+      var currencyKey = coverageKeys[pk];
+      var coverage = priceCoverage[currencyKey];
+      if (!coverage || typeof coverage.total !== "number" || typeof coverage.priced !== "number" ||
+          !isFinite(coverage.total) || !isFinite(coverage.priced) ||
+          coverage.total < 0 || coverage.priced < 0 || coverage.priced > coverage.total) { continue; }
+      var coverageLine = document.createElement("div");
+      coverageLine.className = "repo-row";
+      coverageLine.textContent = "Manual price coverage · " + currencyKey + " " +
+        coverage.priced + "/" + coverage.total + " holdings priced";
+      list.appendChild(coverageLine);
+    }
     var allocations = info.currency_allocations || {};
     var allocationCurrencies = Object.keys(allocations);
     for (var c = 0; c < allocationCurrencies.length; c++) {
@@ -307,6 +321,17 @@
       paymentLine.textContent = "Confirmed " + info.month + " payments · " + countCurrencies[pc] +
         " " + paymentCounts[countCurrencies[pc]] + " entries";
       list.appendChild(paymentLine);
+    }
+    var monthlyPayers = info.monthly_unique_paying_symbols || {};
+    var payerCurrencies = Object.keys(monthlyPayers);
+    for (var up = 0; up < payerCurrencies.length; up++) {
+      var payerCount = monthlyPayers[payerCurrencies[up]];
+      if (typeof payerCount !== "number" || !isFinite(payerCount) || payerCount < 0) { continue; }
+      var uniquePayerLine = document.createElement("div");
+      uniquePayerLine.className = "repo-row";
+      uniquePayerLine.textContent = "Distinct confirmed payers this month · " +
+        payerCurrencies[up] + " " + payerCount + " holdings";
+      list.appendChild(uniquePayerLine);
     }
     var currentTop = info.monthly_top_payers || {};
     var topCurrencies = Object.keys(currentTop);
@@ -512,6 +537,15 @@
         info.next_event.date + (info.next_event.time ? " " + info.next_event.time : "");
       list.appendChild(nextRow);
     }
+    if (info.next_timed_event && typeof info.next_timed_event.title === "string" &&
+        typeof info.next_timed_event.date === "string" &&
+        typeof info.next_timed_event.time === "string" && info.next_timed_event.time) {
+      var nextTimedRow = document.createElement("div");
+      nextTimedRow.className = "repo-row";
+      nextTimedRow.textContent = "Next timed event: " + info.next_timed_event.title +
+        " · " + info.next_timed_event.date + " " + info.next_timed_event.time;
+      list.appendChild(nextTimedRow);
+    }
     var events = info.events || [];
     var visibleEventCount = agendaExpanded ? events.length : Math.min(8, events.length);
     toggle.hidden = events.length <= 8;
@@ -601,6 +635,15 @@
       streak.textContent = "7-day window: longest " + info.longest_streak_days +
         " consecutive active days · Through today " + (info.ongoing_streak_days || 0) + " days";
       list.appendChild(streak);
+    }
+    if (typeof info.longest_rest_streak_days === "number" &&
+        isFinite(info.longest_rest_streak_days) &&
+        info.longest_rest_streak_days >= 0 && info.longest_rest_streak_days <= 7) {
+      var restStreak = document.createElement("div");
+      restStreak.className = "repo-row";
+      restStreak.textContent = "Longest consecutive rest period (last 7 days) · " +
+        info.longest_rest_streak_days + " days";
+      list.appendChild(restStreak);
     }
     if (info.dominant_activity && typeof info.dominant_activity.type === "string") {
       var dominant = document.createElement("div");
