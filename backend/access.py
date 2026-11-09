@@ -17,8 +17,8 @@ def allowed_client(host: str | None, policy: str | None = None) -> bool:
             address = address.ipv4_mapped
     except ValueError:
         return False
-    rules = [entry.strip() for entry in configured.split(",") if entry.strip()]
-    if not rules or len(rules) > 32:
+    rules = [entry.strip() for entry in configured.split(",")]
+    if not rules or len(rules) > 32 or any(not entry for entry in rules):
         return False
     try:
         networks = [ipaddress.ip_network(entry, strict=False) for entry in rules]
