@@ -1306,6 +1306,7 @@ for (const panel of ["portfolio","dividends","github","fitness","quotes","trello
   assert.equal(state["tris.dashboard.details." + panel],"expanded");
 }
 assert.equal(byId("agenda-list").hidden,false);
+assert.equal(byId("agenda-toggle").hidden,true); // One event does not need pagination.
 assert.equal(byId("portfolio-quote-values").hidden,false);
 assert.equal(byId("detail-visibility-count").textContent,"9 of 9 panels showing details");
 
