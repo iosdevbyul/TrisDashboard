@@ -1571,12 +1571,50 @@ handlers["quick-previous-view:click"]();
 assert.equal(byId("saved-view-status").textContent,"Saved view: 3 panels · Active");
 assert.equal(byId("panel-portfolio").hidden,false);
 assert.equal(byId("panel-weather").hidden,true);
-// A second Previous view reverses the last switch; it does not lose history.
-handlers["quick-previous-view:click"]();
+// Forward returns to the view just left; history is not modified by replay.
+assert.equal(byId("quick-next-view").disabled,false);
+handlers["quick-next-view:click"]();
 assert.equal(byId("panel-weather").hidden,false);
 assert.equal(byId("panel-portfolio").hidden,true);
+assert.equal(byId("quick-next-view").disabled,true);
 handlers["clear-my-view:click"]();
 assert.equal(byId("saved-view-preview").textContent,"Saved panels: none");
+handlers["quick-view-all:click"]();
+
+// Bounded view history: back/forward, branch invalidation, readable status and clear.
+handlers["assets-only-panels:click"]();
+handlers["quick-view-today:click"]();
+handlers["quick-view-fitness:click"]();
+assert.equal(byId("quick-previous-view").disabled,false);
+assert.equal(byId("quick-next-view").disabled,true);
+assert.match(byId("view-history-status").textContent,/View history: \d+ of \d+/);
+handlers["quick-previous-view:click"]();
+assert.equal(byId("panel-agenda").hidden,false);
+assert.equal(byId("panel-fitness").hidden,true);
+assert.equal(byId("quick-next-view").disabled,false);
+handlers["quick-previous-view:click"]();
+handlers["quick-view-development:click"]();
+assert.equal(byId("quick-next-view").disabled,true);
+assert.equal(byId("panel-github").hidden,false);
+assert.equal(byId("panel-agenda").hidden,true);
+// Repeated identical selection does not add another history entry.
+const historyBeforeRepeat = byId("view-history-status").textContent;
+handlers["quick-view-development:click"]();
+assert.equal(byId("view-history-status").textContent,historyBeforeRepeat);
+// A clear retains the visible layout and resets both navigation directions.
+handlers["clear-view-history:click"]();
+assert.equal(byId("view-history-status").textContent,"View history: 1 of 1");
+assert.equal(byId("quick-previous-view").disabled,true);
+assert.equal(byId("quick-next-view").disabled,true);
+assert.equal(byId("clear-view-history").disabled,true);
+assert.equal(byId("panel-github").hidden,false);
+// History max length should never exceed ten entries even after many view switches.
+for (let i = 0; i < 15; i++) {
+  handlers[i % 2 ? "quick-view-assets:click" : "quick-view-fitness:click"]();
+}
+assert.equal(byId("view-history-status").textContent,"View history: 10 of 10");
+assert.equal(byId("quick-next-view").disabled,true);
+handlers["clear-view-history:click"]();
 handlers["quick-view-all:click"]();
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
