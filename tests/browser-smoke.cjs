@@ -1468,7 +1468,10 @@ for (const [action,label] of viewButtons) {
     assert.equal(byId(other).attributes["aria-pressed"],other === action ? "true" : "false");
   }
 }
-byId("toggle-fitness").checked = true;
+const dynamicFitnessToggle = byId("panel-visibility").children
+  .map(label => label.children[0]).find(input => input.id === "toggle-fitness");
+assert.ok(dynamicFitnessToggle);
+dynamicFitnessToggle.checked = true;
 handlers["toggle-fitness:change"]();
 assert.match(byId("panel-preset-status").textContent,/Custom panel selection · 4 panels/);
 for (const [action] of viewButtons) {
