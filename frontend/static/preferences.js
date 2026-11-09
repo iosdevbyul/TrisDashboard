@@ -226,6 +226,31 @@
     }
     apply(); store();
   });
+  function applyVisibilityPreset(visibleNames, title) {
+    settings.hidden = [];
+    for (var i = 0; i < panelNames.length; i++) {
+      if (visibleNames.indexOf(panelNames[i]) === -1) {
+        settings.hidden.push(panelNames[i]);
+      }
+    }
+    apply(); store();
+    document.getElementById("panel-preset-status").textContent =
+      title + " · " + visibleNames.length + " panels";
+  }
+
+  document.getElementById("assets-only-panels").addEventListener("click", function () {
+    applyVisibilityPreset(["portfolio", "quotes", "dividends"], "Assets view");
+  });
+  document.getElementById("development-only-panels").addEventListener("click", function () {
+    applyVisibilityPreset(["github", "trello"], "Development view");
+  });
+  document.getElementById("fitness-only-panels").addEventListener("click", function () {
+    applyVisibilityPreset(["fitness", "weather"], "Fitness view");
+  });
+  document.getElementById("today-only-panels").addEventListener("click", function () {
+    applyVisibilityPreset(["agenda", "weather", "server"], "Today view");
+  });
+
   document.getElementById("show-all-panels").addEventListener("click", function () {
     settings.hidden = [];
     apply(); store();
