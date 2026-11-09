@@ -578,4 +578,29 @@ assert.ok(!byId("dividend-list").children.some((row) => row.className === "alloc
 assert.ok(!byId("fitness-list").children.some((row) => row.className === "allocation-row"));
 assert.ok(!byId("agenda-list").children.some((row) => /Review overlapping schedule/.test(row.textContent)));
 
+// Empty configured sources must explain their absence without inventing data.
+response.quotes = {available:true,quotes:[]};
+response.portfolio = {available:true,positions:[],totals:{},quality:{outdated:false}};
+response.fitness = {available:true,summary:{sessions:0,duration_minutes:0,distance_km:0},
+  period_start:"2026-11-03",period_end:"2026-11-09",daily:[],recent:[]};
+response.agenda = {available:true,upcoming_count:0,window_start:"2026-11-09",
+  window_end:"2026-11-23",events:[]};
+handlers["document:visibilitychange"]();
+assert.match(byId("quotes-list").children[0].textContent,/No provider quotes returned/);
+assert.match(byId("portfolio-list").children[0].textContent,/No holdings in the manual snapshot/);
+assert.ok(byId("fitness-list").children.some(row => /No workouts recorded in the last 7 days/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /No upcoming events in the 14-day calendar window/.test(row.textContent)));
+// Once actual records arrive, no obsolete empty-state rows may remain.
+response.quotes.quotes = [{symbol:"JEPQ",currency:"USD",price:"50",
+  reported_at_utc:"2026-11-09T01:00:00Z",age_hours:1,outdated:false}];
+response.portfolio.positions = [{symbol:"JEPQ",currency:"USD",quantity:"1",market_value:"50"}];
+response.fitness.summary.sessions = 1;
+response.agenda.upcoming_count = 1;
+response.agenda.events = [{date:"2026-11-09",time:"",title:"Work"}];
+handlers["document:visibilitychange"]();
+assert.ok(!byId("quotes-list").children.some(row => /No provider quotes returned/.test(row.textContent)));
+assert.ok(!byId("portfolio-list").children.some(row => /No holdings in the manual snapshot/.test(row.textContent)));
+assert.ok(!byId("fitness-list").children.some(row => /No workouts recorded in the last 7 days/.test(row.textContent)));
+assert.ok(!byId("agenda-list").children.some(row => /No upcoming events in the 14-day calendar window/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
