@@ -57,6 +57,8 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             raise ValueError("Invalid payment date")
         paid_on = date.fromisoformat(raw_paid)
         amount = nonnegative(entry.get("amount"), "amount")
+        if amount != 0 and amount.adjusted() > 20:
+            raise ValueError("Dividend amount exceeds supported range")
         if paid_on > reference:
             raise ValueError("Only recorded past or current payments allowed")
         paid_month = paid_on.strftime("%Y-%m")
