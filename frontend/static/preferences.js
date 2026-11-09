@@ -10,6 +10,19 @@
   var viewHistoryIndex = -1;
   var replayingViewHistory = false;
   var viewHistoryLimit = 10;
+  var panelSearchQuery = "";
+  // Match fixed display labels only: private card data is never searched or transmitted.
+  var panelSearchLabels = {
+    portfolio: "portfolio assets holdings investments",
+    quotes: "quotes market stocks prices",
+    dividends: "dividends income payments",
+    agenda: "agenda calendar schedule events today",
+    github: "github development code repositories",
+    weather: "weather forecast temperature",
+    trello: "trello workflow tasks projects",
+    server: "server macbook health diagnostics",
+    fitness: "fitness workout exercise training"
+  };
   function updateViewHistory() {
     document.getElementById("quick-previous-view").disabled = viewHistoryIndex <= 0;
     document.getElementById("quick-next-view").disabled =
@@ -168,6 +181,9 @@
     window.trisDashboardRefreshMinutes = settings.refreshMinutes;
     window.trisDashboardRefreshPaused = settings.pauseRefresh;
     document.getElementById("empty-panels").hidden = settings.hidden.length !== panelNames.length;
+    var searchField = document.getElementById("panel-search-input");
+    searchField.value = panelSearchQuery;
+    document.getElementById("panel-search-clear").disabled = panelSearchQuery === "";
     var container = document.getElementById("dashboard-modules");
     for (var o = 0; o < settings.order.length; o++) {
       var orderedCard = document.querySelector('[data-panel="' + settings.order[o] + '"]');
@@ -189,11 +205,13 @@
     var visibleShortcuts = 0;
     for (var i = 0; i < panelNames.length; i++) {
       var name = panelNames[i];
-      var visible = settings.hidden.indexOf(name) === -1;
+      var configuredVisible = settings.hidden.indexOf(name) === -1;
+      var visible = configuredVisible &&
+        (panelSearchQuery === "" || panelSearchLabels[name].indexOf(panelSearchQuery) !== -1);
       var card = document.querySelector('[data-panel="' + name + '"]');
       if (card) { card.hidden = !visible; }
       var toggle = document.getElementById("toggle-" + name);
-      if (toggle) { toggle.checked = visible; }
+      if (toggle) { toggle.checked = configuredVisible; }
       if (name === "portfolio" || name === "dividends" ||
           name === "github" || name === "fitness" ||
           name === "agenda" || name === "weather" ||
@@ -204,9 +222,16 @@
         if (visible) { visibleShortcuts++; }
       }
     }
-    document.getElementById("priority-jumps-empty").hidden = visibleShortcuts !== 0;
+    document.getElementById("priority-jumps-empty").hidden =
+      visibleShortcuts !== 0 || panelSearchQuery !== "";
     document.getElementById("priority-jumps-count").textContent =
       visibleShortcuts + " of " + panelNames.length + " shortcuts available";
+    var searchActive = panelSearchQuery !== "";
+    document.getElementById("panel-search-empty").hidden =
+      !searchActive || visibleShortcuts !== 0;
+    document.getElementById("panel-search-count").textContent = searchActive ?
+      visibleShortcuts + " matching visible panels" :
+      visibleShortcuts + " panels available";
     updateActiveView();
   }
 
@@ -255,6 +280,18 @@
       }(panelNames[i]));
     }
   }
+
+  document.getElementById("panel-search-input").addEventListener("input", function () {
+    panelSearchQuery = String(this.value || "").toLowerCase().replace(/^\s+|\s+$/g, "");
+    apply();
+  });
+  document.getElementById("panel-search-clear").addEventListener("click", function () {
+    panelSearchQuery = "";
+    apply();
+    if (typeof document.getElementById("panel-search-input").focus === "function") {
+      document.getElementById("panel-search-input").focus();
+    }
+  });
 
   document.getElementById("reset-panel-order").addEventListener("click", function () {
     settings.order = panelNames.slice(0);
