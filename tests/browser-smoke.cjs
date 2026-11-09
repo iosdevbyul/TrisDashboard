@@ -725,4 +725,36 @@ assert.ok(byId("github-list").children.some(row => /No GitHub repositories retur
 assert.ok(byId("trello-list").children.some(row => /No Trello lists returned/.test(row.textContent)));
 assert.ok(byId("agenda-list").children.some(row => /No upcoming events/.test(row.textContent)));
 
+// Damaged local file entries must be skipped, preserving valid sibling records.
+response.portfolio = {available:true,positions:[
+  null,{symbol:"JEPQ",currency:"USD",quantity:3,market_value:"150"}],
+  totals:{USD:"150"},quality:{outdated:false}};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},
+  history:[null,{month:"2026-11",totals:{USD:"20"}}],recent:[]};
+response.fitness = {available:true,summary:{sessions:1,duration_minutes:30,distance_km:1},
+  period_start:"2026-11-03",period_end:"2026-11-09",
+  daily:[null,{date:"2026-11-09",sessions:1,duration_minutes:30,distance_km:1}],
+  recent:[]};
+response.agenda = {available:true,upcoming_count:2,window_start:"2026-11-09",
+  window_end:"2026-11-23",events:[null,{date:"2026-11-09",time:"",title:"Meeting"}]};
+handlers["document:visibilitychange"]();
+assert.ok(byId("portfolio-list").children.some(row => /Skipped 1 invalid holding/.test(row.textContent)));
+assert.ok(byId("portfolio-list").children.some(row => /JEPQ · 3 shares/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some(row => /Skipped 1 invalid dividend history/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some(row => /2026-11 · USD 20/.test(row.textContent)));
+assert.ok(byId("fitness-list").children.some(row => /Skipped 1 invalid daily workout/.test(row.textContent)));
+assert.ok(byId("fitness-list").children.some(row => /2026-11-09 · 1 sessions/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /Skipped 1 invalid calendar events/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /Meeting/.test(row.textContent)));
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+response.portfolio.positions.shift();
+response.dividends.history.shift();
+response.fitness.daily.shift();
+response.agenda.events.shift();
+handlers["document:visibilitychange"]();
+assert.ok(!byId("portfolio-list").children.some(row => /Skipped 1 invalid holding/.test(row.textContent)));
+assert.ok(!byId("dividend-list").children.some(row => /Skipped 1 invalid dividend history/.test(row.textContent)));
+assert.ok(!byId("fitness-list").children.some(row => /Skipped 1 invalid daily workout/.test(row.textContent)));
+assert.ok(!byId("agenda-list").children.some(row => /Skipped 1 invalid calendar events/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
