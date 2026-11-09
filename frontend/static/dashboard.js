@@ -874,7 +874,7 @@
       "No successful update yet."));
     overviewRetryTimer = setTimeout(function () {
       overviewRetryTimer = null;
-      if (!document.hidden) { loadOverview(true); }
+      if (!document.hidden && !window.trisDashboardRefreshPaused) { loadOverview(true); }
     }, delay);
   }
 
