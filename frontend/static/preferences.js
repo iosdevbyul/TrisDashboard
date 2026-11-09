@@ -2,7 +2,7 @@
   "use strict";
   var key = "tris.dashboard.display.v1";
   var panelNames = ["portfolio", "quotes", "dividends", "agenda", "github", "weather", "trello", "server", "fitness"];
-  var settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, pauseRefresh: false, hidden: []};
+  var settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, pauseRefresh: false, hidden: [], order: panelNames.slice(0)};
 
   function store() {
     try { window.localStorage.setItem(key, JSON.stringify(settings)); } catch (error) {}
@@ -19,6 +19,18 @@
         settings.highContrast = saved.highContrast === true;
         settings.refreshMinutes = [3, 5, 10].indexOf(saved.refreshMinutes) !== -1 ? saved.refreshMinutes : 3;
         settings.pauseRefresh = saved.pauseRefresh === true;
+        if (Object.prototype.toString.call(saved.order) === "[object Array]") {
+          var ordered = [];
+          for (var j = 0; j < saved.order.length; j++) {
+            if (panelNames.indexOf(saved.order[j]) !== -1 && ordered.indexOf(saved.order[j]) === -1) {
+              ordered.push(saved.order[j]);
+            }
+          }
+          for (var k = 0; k < panelNames.length; k++) {
+            if (ordered.indexOf(panelNames[k]) === -1) { ordered.push(panelNames[k]); }
+          }
+          settings.order = ordered;
+        }
         if (Object.prototype.toString.call(saved.hidden) === "[object Array]") {
           settings.hidden = [];
           for (var i = 0; i < saved.hidden.length; i++) {
@@ -45,6 +57,11 @@
       "Data refreshes every " + settings.refreshMinutes + " minutes";
     window.trisDashboardRefreshMinutes = settings.refreshMinutes;
     window.trisDashboardRefreshPaused = settings.pauseRefresh;
+    var container = document.getElementById("dashboard-modules");
+    for (var o = 0; o < settings.order.length; o++) {
+      var orderedCard = document.querySelector('[data-panel="' + settings.order[o] + '"]');
+      if (orderedCard) { container.appendChild(orderedCard); }
+    }
     for (var i = 0; i < panelNames.length; i++) {
       var name = panelNames[i];
       var visible = settings.hidden.indexOf(name) === -1;
@@ -53,6 +70,16 @@
       var toggle = document.getElementById("toggle-" + name);
       if (toggle) { toggle.checked = visible; }
     }
+  }
+
+  function movePanel(name, direction) {
+    var index = settings.order.indexOf(name);
+    var next = index + direction;
+    if (index < 0 || next < 0 || next >= settings.order.length) { return; }
+    var swap = settings.order[next];
+    settings.order[next] = name;
+    settings.order[index] = swap;
+    apply(); store();
   }
 
   function buildControls() {
@@ -71,6 +98,16 @@
         });
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(" " + name));
+        var up = document.createElement("button");
+        up.type = "button";
+        up.textContent = "Move " + name + " up";
+        up.addEventListener("click", function () { movePanel(name, -1); });
+        var down = document.createElement("button");
+        down.type = "button";
+        down.textContent = "Move " + name + " down";
+        down.addEventListener("click", function () { movePanel(name, 1); });
+        label.appendChild(up);
+        label.appendChild(down);
         target.appendChild(label);
       }(panelNames[i]));
     }
@@ -157,7 +194,7 @@
   });
   document.getElementById("reset-settings").addEventListener("click", function () {
     var wasPaused = settings.pauseRefresh;
-    settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, pauseRefresh: false, hidden: []};
+    settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, pauseRefresh: false, hidden: [], order: panelNames.slice(0)};
     apply(); store();
     if (wasPaused && typeof window.trisDashboardResumeRefresh === "function") {
       window.trisDashboardResumeRefresh();
