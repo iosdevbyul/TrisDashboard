@@ -43,6 +43,36 @@
     } catch (error) {}
   }
 
+  // Active view is derived from visible panels, not from the last button clicked.
+  // That also restores the correct label after a saved layout is reopened.
+  var viewPresets = [
+    {id: "assets-only-panels", name: "Assets view", panels: ["portfolio", "quotes", "dividends"]},
+    {id: "development-only-panels", name: "Development view", panels: ["github", "trello"]},
+    {id: "fitness-only-panels", name: "Fitness view", panels: ["fitness", "weather"]},
+    {id: "today-only-panels", name: "Today view", panels: ["agenda", "weather", "server"]}
+  ];
+  function updateActiveView() {
+    var visible = [];
+    for (var i = 0; i < panelNames.length; i++) {
+      if (settings.hidden.indexOf(panelNames[i]) === -1) { visible.push(panelNames[i]); }
+    }
+    var selected = null;
+    for (var j = 0; j < viewPresets.length; j++) {
+      var preset = viewPresets[j];
+      var matches = visible.length === preset.panels.length;
+      for (var k = 0; matches && k < preset.panels.length; k++) {
+        if (visible.indexOf(preset.panels[k]) === -1) { matches = false; }
+      }
+      document.getElementById(preset.id).setAttribute("aria-pressed", matches ? "true" : "false");
+      if (matches) { selected = preset.name; }
+    }
+    document.getElementById("panel-preset-status").textContent = selected ?
+      selected + " · " + visible.length + " panels" :
+      (visible.length === panelNames.length ? "All panels · " + visible.length + " panels" :
+       visible.length === 0 ? "No panels visible" :
+       "Custom panel selection · " + visible.length + " panels");
+  }
+
   function apply() {
     document.body.className = (settings.compact ? "compact" : "") + (settings.dim ? " dimmed" : "") + (settings.glance ? " glance" : "") + (settings.largeText ? " large-text" : "") + (settings.highContrast ? " high-contrast" : "");
     document.getElementById("setting-compact").checked = settings.compact;
@@ -97,6 +127,7 @@
     document.getElementById("priority-jumps-empty").hidden = visibleShortcuts !== 0;
     document.getElementById("priority-jumps-count").textContent =
       visibleShortcuts + " of " + panelNames.length + " shortcuts available";
+    updateActiveView();
   }
 
   function movePanel(name, direction) {
@@ -234,8 +265,6 @@
       }
     }
     apply(); store();
-    document.getElementById("panel-preset-status").textContent =
-      title + " · " + visibleNames.length + " panels";
   }
 
   document.getElementById("assets-only-panels").addEventListener("click", function () {
