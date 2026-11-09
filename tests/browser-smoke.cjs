@@ -1791,8 +1791,9 @@ assert.equal(byId("panel-server").hidden,true); // server is not a source filter
 handlers["source-filter-issues:click"]();
 byId("panel-search-input").value="운동";
 handlers["panel-search-input:input"].call(byId("panel-search-input"));
-assert.equal(byId("source-filter-empty").hidden,false);
-assert.match(byId("source-filter-empty").textContent,/current search/);
+assert.equal(byId("source-filter-empty").hidden,true);
+assert.equal(byId("combined-filter-empty").hidden,false);
+assert.match(byId("combined-filter-empty").textContent,/Search and Source: issues/);
 handlers["panel-search-clear:click"]();
 response.weather.stale=false;
 response.github.available=true;
