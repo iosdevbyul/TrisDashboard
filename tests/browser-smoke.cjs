@@ -603,4 +603,33 @@ assert.ok(!byId("portfolio-list").children.some(row => /No holdings in the manua
 assert.ok(!byId("fitness-list").children.some(row => /No workouts recorded in the last 7 days/.test(row.textContent)));
 assert.ok(!byId("agenda-list").children.some(row => /No upcoming events in the 14-day calendar window/.test(row.textContent)));
 
+// Distinguish an available provider with no usable data from a provider outage.
+response.quotes = {available:true,quotes:[
+  {symbol:"JEPQ",currency:"USD",price:null,reported_at_utc:null}]};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},
+  record_count:0,history:[],recent:[]};
+response.github = {available:true,repositories:[]};
+response.trello = {available:true,lists:[]};
+handlers["document:visibilitychange"]();
+assert.ok(byId("quotes-list").children.some(row =>
+  /No usable price with a provider timestamp/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some(row =>
+  /No confirmed dividend payments recorded/.test(row.textContent)));
+assert.ok(byId("github-list").children.some(row =>
+  /No GitHub repositories returned/.test(row.textContent)));
+assert.ok(byId("trello-list").children.some(row =>
+  /No Trello lists returned/.test(row.textContent)));
+// Empty-state messages must disappear after usable records are delivered.
+response.quotes.quotes = [{symbol:"JEPQ",currency:"USD",price:"50",
+  reported_at_utc:"2026-11-09T00:00:00Z"}];
+response.dividends.record_count = 1;
+response.github.repositories = [{available:true,repository:"owner/repo",
+  open_pr_count:0,open_prs:[]}];
+response.trello.lists = [{name:"Next",count:1,cards:[]}];
+handlers["document:visibilitychange"]();
+assert.ok(!byId("quotes-list").children.some(row => /No usable price with a provider timestamp/.test(row.textContent)));
+assert.ok(!byId("dividend-list").children.some(row => /No confirmed dividend payments recorded/.test(row.textContent)));
+assert.ok(!byId("github-list").children.some(row => /No GitHub repositories returned/.test(row.textContent)));
+assert.ok(!byId("trello-list").children.some(row => /No Trello lists returned/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
