@@ -106,9 +106,9 @@ const context = vm.createContext({
     if (scheduled[id - 1]) scheduled[id - 1].cancelled = true;
   }
 });
-vm.runInContext(fs.readFileSync(path.join(root, "frontend/static/dashboard.js"), "utf8"),
-  context, {timeout: 1500});
 vm.runInContext(fs.readFileSync(path.join(root, "frontend/static/preferences.js"), "utf8"),
+  context, {timeout: 1500});
+vm.runInContext(fs.readFileSync(path.join(root, "frontend/static/dashboard.js"), "utf8"),
   context, {timeout: 1500});
 
 assert.ok(paths.some((url) => url.startsWith("/healthz")));
