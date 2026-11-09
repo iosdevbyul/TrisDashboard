@@ -90,9 +90,13 @@ def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
             valid_price = not isinstance(item.get("price"), bool) and value.is_finite() and value > 0
         except (ValueError, TypeError, InvalidOperation):
             valid_price = False
-        if not valid_price or not item.get("reported_at_utc"):
+        valid_identity = (isinstance(item.get("symbol"), str) and
+                          1 <= len(item["symbol"]) <= 20 and
+                          all(char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_" for char in item["symbol"]) and
+                          item.get("currency") in ("USD", "KRW"))
+        if not valid_price or not valid_identity or not item.get("reported_at_utc"):
             item["outdated"] = True
-        if valid_price and item.get("reported_at_utc"):
+        if valid_price and valid_identity and item.get("reported_at_utc"):
             try:
                 timestamp = datetime.fromisoformat(item["reported_at_utc"])
                 if timestamp.tzinfo is None or timestamp.utcoffset() is None:
