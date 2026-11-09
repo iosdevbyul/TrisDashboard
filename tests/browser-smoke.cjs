@@ -959,4 +959,35 @@ assert.ok(byId("dividend-list").children.some(row => /Confirmed last 6 months: U
 assert.ok(byId("agenda-list").children.some(row => /Review overlapping schedule/.test(row.textContent)));
 assert.match(byId("github-summary").textContent,/^3 open PRs$/);
 
+// Validate secondary numerical and list metadata without breaking the overview.
+response.portfolio = {available:true,positions:[],totals:{},quality:{outdated:false},
+  zero_quantity_symbols_by_currency:{USD:[null,"JEPQ",""]},
+  largest_holdings:{USD:null,KRW:{symbol:"BAD",market_value:"-10"},
+    EUR:{symbol:"GOOD",market_value:"120"}}};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},
+  monthly_payment_counts:{USD:-1,KRW:2.5,EUR:3},
+  history:[],recent:[]};
+response.agenda = {available:true,upcoming_count:0,window_start:"2026-11-09",
+  window_end:"2026-11-23",events:[],
+  next_seven_daily_counts:[null,{date:"2026-11-31",events:2},
+    {date:"2026-11-09",events:1.5},{date:"2026-11-10",events:2}]};
+handlers["document:visibilitychange"]();
+assert.ok(byId("portfolio-list").children.some(row => /Skipped 2 invalid zero-quantity symbols/.test(row.textContent)));
+assert.ok(byId("portfolio-list").children.some(row => /Review zero-quantity positions · USD: JEPQ/.test(row.textContent)));
+assert.ok(!byId("portfolio-list").children.some(row => /Largest manually valued holding · USD|Largest manually valued holding · KRW/.test(row.textContent)));
+assert.ok(byId("portfolio-list").children.some(row => /Largest manually valued holding · EUR GOOD \(120\)/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some(row => /EUR 3 entries/.test(row.textContent)));
+assert.ok(!byId("dividend-list").children.some(row => /USD -1 entries|KRW 2.5 entries/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /Next 7 calendar days · 11-10 2/.test(row.textContent)));
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+response.portfolio.zero_quantity_symbols_by_currency.USD = ["JEPQ"];
+response.portfolio.largest_holdings.USD = {symbol:"SCHD",market_value:"50"};
+response.dividends.monthly_payment_counts.USD = 4;
+response.agenda.next_seven_daily_counts = [{date:"2026-11-09",events:1}];
+handlers["document:visibilitychange"]();
+assert.ok(!byId("portfolio-list").children.some(row => /Skipped 2 invalid zero-quantity symbols/.test(row.textContent)));
+assert.ok(byId("portfolio-list").children.some(row => /Largest manually valued holding · USD SCHD \(50\)/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some(row => /USD 4 entries/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /Next 7 calendar days · 11-09 1/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
