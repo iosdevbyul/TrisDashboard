@@ -63,6 +63,7 @@
       var orderedCard = document.querySelector('[data-panel="' + settings.order[o] + '"]');
       if (orderedCard) { container.appendChild(orderedCard); }
     }
+    var visibleShortcuts = 0;
     for (var i = 0; i < panelNames.length; i++) {
       var name = panelNames[i];
       var visible = settings.hidden.indexOf(name) === -1;
@@ -70,7 +71,14 @@
       if (card) { card.hidden = !visible; }
       var toggle = document.getElementById("toggle-" + name);
       if (toggle) { toggle.checked = visible; }
+      if (name === "portfolio" || name === "dividends" ||
+          name === "github" || name === "fitness") {
+        var shortcut = document.getElementById("jump-link-" + name);
+        shortcut.hidden = !visible;
+        if (visible) { visibleShortcuts++; }
+      }
     }
+    document.getElementById("priority-jumps-empty").hidden = visibleShortcuts !== 0;
   }
 
   function movePanel(name, direction) {
