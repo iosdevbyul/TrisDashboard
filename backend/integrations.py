@@ -79,6 +79,7 @@ def cached(key: str, loader, *, ttl: int = TTL_SECONDS) -> dict:
         if previous and now - previous["time"] <= MAX_STALE_SECONDS:
             fallback = deepcopy(previous["data"])
             fallback["stale"] = True
+            fallback["cache_age_seconds"] = max(0, int(now - previous["time"]))
             return fallback
         return {"available": False, "stale": True, "error": "temporarily unavailable"}
     with _lock:
