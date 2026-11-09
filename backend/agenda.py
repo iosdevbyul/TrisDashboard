@@ -33,7 +33,8 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
     if today is not None and (not isinstance(today, date) or isinstance(today, datetime)):
         raise ValueError("Invalid agenda reference date")
     reference = date.today() if today is None else today
-    end = reference + timedelta(days=14)
+    remaining_days = (date.max - reference).days
+    end = reference + timedelta(days=min(14, remaining_days))
     upcoming = []
     for item in events:
         if not isinstance(item, dict):
@@ -54,11 +55,12 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
         if reference <= day <= end:
             upcoming.append({"date": day.isoformat(), "time": when, "title": title.strip()})
     upcoming.sort(key=lambda event: (event["date"], event["time"]))
-    seven_day_end = (reference + timedelta(days=6)).isoformat()
+    seven_day_end = (reference + timedelta(days=min(6, remaining_days))).isoformat()
     next_seven_days_count = sum(1 for event in upcoming if event["date"] <= seven_day_end)
     next_seven_busy_days = len({event["date"] for event in upcoming if event["date"] <= seven_day_end})
     today_event_count = sum(1 for event in upcoming if event["date"] == reference.isoformat())
-    tomorrow_event_count = sum(1 for event in upcoming if event["date"] == (reference + timedelta(days=1)).isoformat())
+    tomorrow = (reference + timedelta(days=1)).isoformat() if remaining_days else None
+    tomorrow_event_count = sum(1 for event in upcoming if event["date"] == tomorrow)
     next_event_days = ((date.fromisoformat(upcoming[0]["date"]) - reference).days
                        if upcoming else None)
     next_event = dict(upcoming[0]) if upcoming else None
