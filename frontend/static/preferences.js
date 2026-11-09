@@ -6,6 +6,8 @@
 
   var savedViewKey = "tris.dashboard.my-view.v1";
   var savedVisible = null;
+  var lastVisible = null;
+  var renderedVisible = null;
   function readSavedView() {
     try {
       var value = JSON.parse(window.localStorage.getItem(savedViewKey));
@@ -39,8 +41,10 @@
     document.getElementById("clear-my-view").disabled = savedVisible === null;
     document.getElementById("quick-view-mine").setAttribute("aria-pressed", active ? "true" : "false");
     document.getElementById("saved-view-status").textContent = savedVisible ?
-      "Saved view: " + savedVisible.length + " panels" + (active ? " · Active" : "") :
+      "Saved view: " + savedVisible.length + " panels" + (active ? " · Active" : " · Different from current") :
       "No saved view";
+    document.getElementById("saved-view-preview").textContent = savedVisible ?
+      "Saved panels: " + savedVisible.join(", ") : "Saved panels: none";
   }
 
   function store() {
@@ -117,6 +121,12 @@
   }
 
   function apply() {
+    var visibleNow = currentVisible();
+    if (renderedVisible !== null && !sameVisible(visibleNow, renderedVisible)) {
+      lastVisible = renderedVisible.slice(0);
+    }
+    renderedVisible = visibleNow.slice(0);
+    document.getElementById("quick-previous-view").disabled = lastVisible === null;
     document.body.className = (settings.compact ? "compact" : "") + (settings.dim ? " dimmed" : "") + (settings.glance ? " glance" : "") + (settings.largeText ? " large-text" : "") + (settings.highContrast ? " high-contrast" : "");
     document.getElementById("setting-compact").checked = settings.compact;
     document.getElementById("setting-dim").checked = settings.dim;
@@ -339,7 +349,7 @@
     if (!savedVisible) { return; }
     applyVisibilityPreset(savedVisible, "My view");
   });
-  document.getElementById("save-my-view").addEventListener("click", function () {
+  function saveCurrentView() {
     var visible = currentVisible();
     if (!visible.length) {
       document.getElementById("saved-view-status").textContent =
@@ -354,6 +364,12 @@
       document.getElementById("saved-view-status").textContent =
         "Could not save view in this browser";
     }
+  }
+  document.getElementById("save-my-view").addEventListener("click", saveCurrentView);
+  document.getElementById("quick-save-my-view").addEventListener("click", saveCurrentView);
+  document.getElementById("quick-previous-view").addEventListener("click", function () {
+    if (!lastVisible) { return; }
+    applyVisibilityPreset(lastVisible, "Previous view");
   });
   document.getElementById("clear-my-view").addEventListener("click", function () {
     if (!savedVisible) { return; }

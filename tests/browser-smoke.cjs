@@ -1555,4 +1555,28 @@ assert.equal(byId("saved-view-status").textContent,"No saved view");
 assert.equal(state["tris.dashboard.my-view.v1"],undefined);
 handlers["show-all-panels:click"]();
 
+// Quick-save, previous-view history, saved panel preview and change comparison.
+assert.equal(byId("quick-previous-view").disabled,false);
+handlers["assets-only-panels:click"]();
+assert.equal(byId("quick-previous-view").disabled,false);
+handlers["quick-save-my-view:click"]();
+assert.deepEqual(JSON.parse(state["tris.dashboard.my-view.v1"]),["portfolio","quotes","dividends"]);
+assert.equal(byId("saved-view-preview").textContent,"Saved panels: portfolio, quotes, dividends");
+assert.equal(byId("saved-view-status").textContent,"Saved view: 3 panels · Active");
+handlers["quick-view-today:click"]();
+assert.equal(byId("saved-view-status").textContent,"Saved view: 3 panels · Different from current");
+assert.equal(byId("saved-view-preview").textContent,"Saved panels: portfolio, quotes, dividends");
+assert.equal(byId("quick-previous-view").disabled,false);
+handlers["quick-previous-view:click"]();
+assert.equal(byId("saved-view-status").textContent,"Saved view: 3 panels · Active");
+assert.equal(byId("panel-portfolio").hidden,false);
+assert.equal(byId("panel-weather").hidden,true);
+// A second Previous view reverses the last switch; it does not lose history.
+handlers["quick-previous-view:click"]();
+assert.equal(byId("panel-weather").hidden,false);
+assert.equal(byId("panel-portfolio").hidden,true);
+handlers["clear-my-view:click"]();
+assert.equal(byId("saved-view-preview").textContent,"Saved panels: none");
+handlers["quick-view-all:click"]();
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
