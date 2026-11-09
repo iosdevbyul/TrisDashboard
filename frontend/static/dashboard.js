@@ -26,6 +26,18 @@
   var lastAgendaInfo = null;
 
   function pad(number) { return number < 10 ? "0" + number : String(number); }
+
+  function validCalendarDate(value) {
+    if (typeof value !== "string" ||
+        !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value)) { return false; }
+    var year = Number(value.slice(0, 4));
+    var month = Number(value.slice(5, 7));
+    var day = Number(value.slice(8, 10));
+    if (year < 1 || month < 1 || month > 12 || day < 1 || day > 31) { return false; }
+    var dateValue = new Date(Date.UTC(year, month - 1, day));
+    return dateValue.getUTCFullYear() === year &&
+      dateValue.getUTCMonth() + 1 === month && dateValue.getUTCDate() === day;
+  }
   function text(id, value) { document.getElementById(id).textContent = String(value); }
 
   function tick() {
@@ -169,7 +181,10 @@
       }
       var line = document.createElement("div");
       line.className = "repo-row";
-      if (rows[i] && rows[i].price &&
+      var numericPrice = Number(rows[i].price);
+      if (rows[i].price !== null && rows[i].price !== "" &&
+          typeof rows[i].price !== "boolean" && isFinite(numericPrice) &&
+          numericPrice > 0 &&
           typeof rows[i].reported_at_utc === "string" &&
           /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/.test(rows[i].reported_at_utc)) {
         successful++;
@@ -611,11 +626,15 @@
       title.textContent = "Recorded " + currency + " payments by month";
       chart.appendChild(title);
       for (var mm = 0; mm < history.length; mm++) {
-        var amount = Number((history[mm].totals || {})[currency] || 0);
+        var rawAmount = (history[mm].totals || {})[currency];
+        var amount = rawAmount === null || typeof rawAmount === "undefined" ? 0 : Number(rawAmount);
+        var validAmount = isFinite(amount) && amount >= 0;
+        if (!validAmount) { amount = 0; }
         var barRow = document.createElement("div");
         barRow.className = "dividend-bar-row";
         var caption = document.createElement("span");
-        caption.textContent = history[mm].month + " · " + amount;
+        caption.textContent = history[mm].month + " · " +
+          (validAmount ? amount : "Invalid amount (excluded)");
         var track = document.createElement("span");
         track.className = "dividend-bar-track";
         var fill = document.createElement("span");
@@ -741,7 +760,7 @@
     var events = originalEvents.filter(function (entry) {
       return entry && typeof entry === "object" &&
         typeof entry.date === "string" &&
-        /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(entry.date) &&
+        validCalendarDate(entry.date) &&
         typeof entry.title === "string";
     });
     if (events.length !== originalEvents.length) {
@@ -932,9 +951,13 @@
       list.appendChild(invalidDaily);
     }
     var daily = originalDaily.filter(function (entry) {
-      return entry && typeof entry === "object" && typeof entry.date === "string" &&
+      return entry && typeof entry === "object" && validCalendarDate(entry.date) &&
         typeof entry.duration_minutes === "number" && isFinite(entry.duration_minutes) &&
-        entry.duration_minutes >= 0;
+        entry.duration_minutes >= 0 &&
+        typeof entry.sessions === "number" && isFinite(entry.sessions) &&
+        entry.sessions >= 0 && Math.floor(entry.sessions) === entry.sessions &&
+        typeof entry.distance_km === "number" && isFinite(entry.distance_km) &&
+        entry.distance_km >= 0;
     });
     if (daily.length !== originalDaily.length) {
       var invalidDay = document.createElement("div");
