@@ -1214,4 +1214,40 @@ assert.match(byId("portfolio-quote-values").textContent,/2\/2 holdings\)/);
 assert.ok(byId("dividend-list").children.some(row => /USD 2 holdings/.test(row.textContent)));
 assert.ok(byId("agenda-list").children.some(row => /Next scheduled: Impossible/.test(row.textContent)));
 
+// Four long detail groups can be collapsed independently without hiding summaries.
+// The portfolio disclosure controls both manual holdings and quoted valuation.
+for (const panel of ["portfolio","dividends","github","fitness"]) {
+  assert.equal(byId(panel + "-detail-toggle").attributes["aria-expanded"],"true");
+  assert.equal(byId(panel + "-detail-toggle").textContent,"Hide details");
+}
+const portfolioSummaryBefore = byId("portfolio-summary").textContent;
+handlers["portfolio-detail-toggle:click"]();
+assert.equal(byId("portfolio-list").hidden,true);
+assert.equal(byId("portfolio-quote-values").hidden,true);
+assert.equal(byId("portfolio-detail-toggle").attributes["aria-expanded"],"false");
+assert.equal(byId("portfolio-detail-toggle").textContent,"Show details");
+assert.equal(state["tris.dashboard.details.portfolio"],"collapsed");
+assert.equal(byId("portfolio-summary").textContent,portfolioSummaryBefore);
+handlers["dividends-detail-toggle:click"]();
+handlers["github-detail-toggle:click"]();
+handlers["fitness-detail-toggle:click"]();
+assert.equal(byId("dividend-list").hidden,true);
+assert.equal(byId("github-list").hidden,true);
+assert.equal(byId("fitness-list").hidden,true);
+assert.equal(byId("dividend-detail-toggle").attributes["aria-expanded"],"false");
+assert.equal(state["tris.dashboard.details.github"],"collapsed");
+assert.equal(state["tris.dashboard.details.fitness"],"collapsed");
+handlers["refresh-button:click"]();
+assert.equal(byId("portfolio-list").hidden,true);
+assert.equal(byId("dividend-list").hidden,true);
+assert.equal(byId("github-list").hidden,true);
+assert.equal(byId("fitness-list").hidden,true);
+for (const panel of ["portfolio","dividends","github","fitness"]) {
+  handlers[panel + "-detail-toggle:click"]();
+  assert.equal(byId(panel + "-detail-toggle").attributes["aria-expanded"],"true");
+  assert.equal(state["tris.dashboard.details." + panel],"expanded");
+}
+assert.equal(byId("portfolio-quote-values").hidden,false);
+assert.equal(byId("fitness-list").hidden,false);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
