@@ -77,6 +77,14 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     for monthly in history.values():
         for currency, amount in monthly.items():
             history_totals[currency] = history_totals.get(currency, Decimal("0")) + amount
+    unique_paying_symbols = {}
+    for symbol, currency in by_symbol:
+        unique_paying_symbols[currency] = unique_paying_symbols.get(currency, 0) + 1
+    months_with_payments = {}
+    for monthly in history.values():
+        for currency, amount in monthly.items():
+            if amount > 0:
+                months_with_payments[currency] = months_with_payments.get(currency, 0) + 1
     complete_month_totals = {}
     for previous_month in months[:-1]:
         for currency, amount in history[previous_month].items():
@@ -110,6 +118,8 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     return {"available": True, "configured": True, "source": "manual_confirmed_payments",
             "month": month, "monthly_totals": {key: str(value) for key, value in sorted(totals.items())},
             "six_month_totals": {key: str(value) for key, value in sorted(history_totals.items())},
+            "six_month_paying_symbols": dict(sorted(unique_paying_symbols.items())),
+            "six_month_paid_months": dict(sorted(months_with_payments.items())),
             "observed_monthly_average": monthly_average,
             "completed_month_average": complete_month_average,
             "best_completed_months": best_completed_months,
