@@ -490,4 +490,30 @@ assert.ok(!byId("dividend-list").children.some((row) => /Distinct confirmed paye
 assert.ok(!byId("fitness-list").children.some((row) => /Longest consecutive rest period/.test(row.textContent)));
 assert.ok(!byId("agenda-list").children.some((row) => /Next timed event:/.test(row.textContent)));
 
+// Actionable local insights use the optional API fields without requiring a new browser.
+response.agenda = {available:true, upcoming_count:1, window_start:"2026-11-09",
+  window_end:"2026-11-23", events:[],
+  next_seven_daily_counts:[{date:"2026-11-09",events:1},{date:"2026-11-10",events:0}]};
+response.fitness = {available:true,summary:{sessions:1,duration_minutes:20,distance_km:0},
+  period_start:"2026-11-03",period_end:"2026-11-09",daily:[],recent:[],
+  days_since_last_workout_in_week:2};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},history:[],recent:[],
+  last_confirmed_payment:{paid_on:"2026-11-04",symbol:"JEPQ",amount:"5",currency:"USD"}};
+response.portfolio = {available:true,positions:[],totals:{},quality:{outdated:false},
+  zero_quantity_symbols_by_currency:{USD:["SCHD"]}};
+handlers["document:visibilitychange"]();
+assert.ok(byId("agenda-list").children.some((row) => /Next 7 calendar days · 11-09 1 · 11-10 0/.test(row.textContent)));
+assert.ok(byId("fitness-list").children.some((row) => /Last recorded workout \(7-day window\) · 2 days ago/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some((row) => /Latest confirmed payment · 2026-11-04 · JEPQ · 5 USD/.test(row.textContent)));
+assert.ok(byId("portfolio-list").children.some((row) => /Review zero-quantity positions · USD: SCHD/.test(row.textContent)));
+delete response.agenda.next_seven_daily_counts;
+delete response.fitness.days_since_last_workout_in_week;
+delete response.dividends.last_confirmed_payment;
+delete response.portfolio.zero_quantity_symbols_by_currency;
+handlers["document:visibilitychange"]();
+assert.ok(!byId("agenda-list").children.some((row) => /Next 7 calendar days/.test(row.textContent)));
+assert.ok(!byId("fitness-list").children.some((row) => /Last recorded workout \(7-day window\)/.test(row.textContent)));
+assert.ok(!byId("dividend-list").children.some((row) => /Latest confirmed payment/.test(row.textContent)));
+assert.ok(!byId("portfolio-list").children.some((row) => /Review zero-quantity positions/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");

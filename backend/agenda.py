@@ -73,6 +73,11 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
     conflicting_events = sum(count for count in timed_slots.values() if count > 1)
     seven_day_end = (reference + timedelta(days=min(6, remaining_days))).isoformat()
     next_seven_days_count = sum(1 for event in upcoming if event["date"] <= seven_day_end)
+    next_seven_daily_counts = [
+        {"date": (reference + timedelta(days=index)).isoformat(),
+         "events": counts_by_day.get((reference + timedelta(days=index)).isoformat(), 0)}
+        for index in range(min(7, remaining_days + 1))
+    ]
     busy_dates = {event["date"] for event in upcoming if event["date"] <= seven_day_end}
     next_seven_busy_days = len(busy_dates)
     first_free_day = next((candidate.isoformat()
@@ -94,6 +99,7 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
             "conflicting_event_count": conflicting_events,
             "tomorrow_event_count": tomorrow_event_count,
             "next_seven_days_count": next_seven_days_count,
+            "next_seven_daily_counts": next_seven_daily_counts,
             "next_seven_busy_days": next_seven_busy_days,
             "first_free_day_in_next_seven": first_free_day,
             "next_event_in_days": next_event_days,

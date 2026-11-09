@@ -80,6 +80,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             monthly[currency] = monthly.get(currency, Decimal("0")) + amount
         recent.append({"symbol": ticker, "currency": currency, "paid_on": paid_on.isoformat(), "amount": str(amount)})
     recent.sort(key=lambda item: item["paid_on"], reverse=True)
+    last_confirmed_payment = dict(recent[0]) if recent else None
     monthly_top_payers = {}
     for (symbol, currency), amount in sorted(monthly_by_symbol.items()):
         previous = monthly_top_payers.get(currency)
@@ -155,7 +156,8 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             ],
             "history": [{"month": key, "totals": {currency: str(amount) for currency, amount in sorted(history[key].items())}}
                         for key in months],
-            "record_count": len(entries), "recent": recent[:5], "stale": False}
+            "record_count": len(entries), "recent": recent[:5],
+            "last_confirmed_payment": last_confirmed_payment, "stale": False}
 
 def dividends() -> dict:
     file_path = os.environ.get("TRIS_DIVIDENDS_FILE", "").strip()

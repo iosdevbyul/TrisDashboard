@@ -137,6 +137,8 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
         if day["sessions"] == 0:
             break
         ongoing_streak += 1
+    days_since_last_workout = ((reference - date.fromisoformat(weekly[0]["date"])).days
+                               if weekly else None)
     modified = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
     age_seconds = (datetime.now(timezone.utc) - modified).total_seconds()
     file_mtime_in_future = age_seconds < -600
@@ -157,6 +159,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "average_active_day_km": average_active_day_km,
             "longest_streak_days": longest_streak,
             "longest_rest_streak_days": longest_rest_streak,
+            "days_since_last_workout_in_week": days_since_last_workout,
             "ongoing_streak_days": ongoing_streak,
             "activity_breakdown": activity_breakdown,
             "dominant_activity": dominant_activity,
