@@ -30,7 +30,7 @@ function element(id = "") {
       const index = children.indexOf(child);
       if (index >= 0) children.splice(index, 1);
     },
-    addEventListener(name, callback) { handlers[id + ":" + name] = callback; },
+    addEventListener(name, callback) { handlers[this.id + ":" + name] = callback; },
     setAttribute(name, value) { this.attributes[name] = value; },
     focus() { this.focused = true; }
   };
