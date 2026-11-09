@@ -985,7 +985,8 @@
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) {
       tick(); checkServer();
-      if (!window.trisDashboardRefreshPaused) { loadOverview(true); }
+      if (!window.trisDashboardRefreshPaused &&
+          (!overviewRequest || overviewRequest.readyState === 4)) { loadOverview(true); }
     } else { clearOverviewRetry(); }
   });
 }());
