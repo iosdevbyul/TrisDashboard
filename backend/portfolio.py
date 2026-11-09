@@ -95,6 +95,12 @@ def load_portfolio(path: Path) -> dict:
                     (Decimal(p["market_value"]) * 100 / total).quantize(Decimal("0.1")))}
                 for p in positions if p["currency"] == currency
             ]
+    concentration = {}
+    for currency, total in totals.items():
+        if currency in allocations and total > 0:
+            values = sorted((Decimal(p["market_value"]) for p in positions
+                             if p["currency"] == currency), reverse=True)
+            concentration[currency] = str((sum(values[:3], Decimal("0")) * 100 / total).quantize(Decimal("0.1")))
     largest_holdings = {}
     for currency in sorted(allocations):
         options = [p for p in positions if p["currency"] == currency]
@@ -105,6 +111,7 @@ def load_portfolio(path: Path) -> dict:
     return {"available": True, "source": "manual_snapshot", "as_of": parsed.isoformat(),
             "positions": positions, "totals": {k: str(v) for k, v in sorted(totals.items())},
             "currency_allocations": allocations,
+            "top_three_concentration_percent": concentration,
             "largest_holdings": largest_holdings,
             "valuation_complete": all(p["market_value"] is not None for p in positions),
             "quality": quality,
