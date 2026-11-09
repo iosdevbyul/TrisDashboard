@@ -971,7 +971,11 @@
 
   tick();
   checkServer();
-  if (!window.trisDashboardRefreshPaused) { loadOverview(true); }
+  if (!window.trisDashboardRefreshPaused) {
+    loadOverview(true);
+  } else {
+    text("data-refresh-state", "Automatic refresh paused · Press Refresh now to load data.");
+  }
   setInterval(tick, 1000);
   setInterval(function () { if (!document.hidden) { checkServer(); } }, 15000);
   setInterval(function () {
