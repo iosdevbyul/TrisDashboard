@@ -757,4 +757,37 @@ assert.ok(!byId("dividend-list").children.some(row => /Skipped 1 invalid dividen
 assert.ok(!byId("fitness-list").children.some(row => /Skipped 1 invalid daily workout/.test(row.textContent)));
 assert.ok(!byId("agenda-list").children.some(row => /Skipped 1 invalid calendar events/.test(row.textContent)));
 
+// Invalid local collection shapes are distinct from legitimately empty exports.
+response.portfolio = {available:true,positions:{broken:true},totals:{},
+  quality:{outdated:false}};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},
+  history:{broken:true},recent:[]};
+response.fitness = {available:true,summary:{sessions:0,duration_minutes:0,distance_km:0},
+  period_start:"2026-11-03",period_end:"2026-11-09",daily:"invalid",recent:[]};
+response.agenda = {available:true,upcoming_count:2,window_start:"2026-11-09",
+  window_end:"2026-11-23",events:[
+    {date:"invalid date",time:"",title:"Bad"},
+    {date:"2026-11-09",time:"",title:"Valid"}]};
+handlers["document:visibilitychange"]();
+assert.ok(byId("portfolio-list").children.some(row => /Portfolio holdings list invalid/.test(row.textContent)));
+assert.ok(!byId("portfolio-list").children.some(row => /No holdings in the manual snapshot/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some(row => /Dividend history list invalid/.test(row.textContent)));
+assert.ok(byId("fitness-list").children.some(row => /Daily workout list invalid/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /Skipped 1 invalid calendar events/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /Valid/.test(row.textContent)));
+assert.ok(!byId("agenda-list").children.some(row => /Bad/.test(row.textContent)));
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+// A later valid response must remove every corruption warning.
+response.portfolio.positions = [];
+response.dividends.history = [];
+response.fitness.daily = [];
+response.agenda.events = [{date:"2026-11-09",time:"",title:"Valid"}];
+response.agenda.upcoming_count = 1;
+handlers["document:visibilitychange"]();
+assert.ok(!byId("portfolio-list").children.some(row => /Portfolio holdings list invalid/.test(row.textContent)));
+assert.ok(byId("portfolio-list").children.some(row => /No holdings in the manual snapshot/.test(row.textContent)));
+assert.ok(!byId("dividend-list").children.some(row => /Dividend history list invalid/.test(row.textContent)));
+assert.ok(!byId("fitness-list").children.some(row => /Daily workout list invalid/.test(row.textContent)));
+assert.ok(!byId("agenda-list").children.some(row => /Skipped 1 invalid calendar events/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
