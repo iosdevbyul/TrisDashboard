@@ -99,7 +99,8 @@
     return info.stale ? "Last known data (stale)" +
       (typeof info.cache_age_seconds === "number" && isFinite(info.cache_age_seconds) &&
        info.cache_age_seconds >= 0 ? " · " + Math.floor(info.cache_age_seconds / 60) + " min old" : "") :
-      "Updated " + (info.updated_at ? info.updated_at.replace("T", " ").slice(0, 16) + " UTC" : "recently");
+      "Updated " + (typeof info.updated_at === "string" ?
+        info.updated_at.replace("T", " ").slice(0, 16) + " UTC" : "recently");
   }
 
   function showSummary(payload) {
@@ -152,6 +153,13 @@
     var outdated = 0;
     var oldestHours = null;
     for (var i = 0; i < rows.length; i++) {
+      if (!rows[i] || typeof rows[i] !== "object") {
+        var invalidQuoteRow = document.createElement("div");
+        invalidQuoteRow.className = "repo-row";
+        invalidQuoteRow.textContent = "Quote entry unavailable";
+        list.appendChild(invalidQuoteRow);
+        continue;
+      }
       var line = document.createElement("div");
       line.className = "repo-row";
       if (rows[i] && rows[i].price &&
@@ -978,6 +986,13 @@
     var total = 0;
     var truncated = false;
     for (var i = 0; i < repos.length; i++) {
+      if (!repos[i] || typeof repos[i] !== "object") {
+        var invalidRepository = document.createElement("div");
+        invalidRepository.className = "repo-row";
+        invalidRepository.textContent = "Repository entry unavailable";
+        list.appendChild(invalidRepository);
+        continue;
+      }
       if (!repos[i].available) {
         var failed = document.createElement("div");
         failed.className = "repo-row";
@@ -1058,6 +1073,13 @@
     var nextCount = 0;
     var progressCount = 0;
     for (var i = 0; i < columns.length; i++) {
+      if (!columns[i] || typeof columns[i] !== "object") {
+        var invalidList = document.createElement("div");
+        invalidList.className = "repo-row";
+        invalidList.textContent = "Trello list entry unavailable";
+        list.appendChild(invalidList);
+        continue;
+      }
       var cardCount = columns[i].count;
       if (typeof cardCount !== "number" || !isFinite(cardCount) ||
           cardCount < 0 || Math.floor(cardCount) !== cardCount) {
@@ -1087,7 +1109,7 @@
     }
     var anyTruncated = false;
     for (var t = 0; t < columns.length; t++) {
-      if (columns[t].count_truncated) { anyTruncated = true; }
+      if (columns[t] && columns[t].count_truncated) { anyTruncated = true; }
     }
     text("trello-summary", total + (anyTruncated ? "+ known cards" : " cards") +
       " · " + nextCount + " Next · " + progressCount + " In Progress");
