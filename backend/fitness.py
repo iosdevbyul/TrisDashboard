@@ -132,6 +132,11 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
     for day in daily.values():
         rest_streak = rest_streak + 1 if day["sessions"] == 0 else 0
         longest_rest_streak = max(longest_rest_streak, rest_streak)
+    ongoing_rest_streak = 0
+    for day in reversed(list(daily.values())):
+        if day["sessions"] > 0:
+            break
+        ongoing_rest_streak += 1
     ongoing_streak = 0
     for day in reversed(list(daily.values())):
         if day["sessions"] == 0:
@@ -159,6 +164,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "average_active_day_km": average_active_day_km,
             "longest_streak_days": longest_streak,
             "longest_rest_streak_days": longest_rest_streak,
+            "ongoing_rest_streak_days": ongoing_rest_streak,
             "days_since_last_workout_in_week": days_since_last_workout,
             "ongoing_streak_days": ongoing_streak,
             "activity_breakdown": activity_breakdown,

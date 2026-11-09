@@ -516,4 +516,29 @@ assert.ok(!byId("fitness-list").children.some((row) => /Last recorded workout \(
 assert.ok(!byId("dividend-list").children.some((row) => /Latest confirmed payment/.test(row.textContent)));
 assert.ok(!byId("portfolio-list").children.some((row) => /Review zero-quantity positions/.test(row.textContent)));
 
+// Optional contextual statistics are additive and validated before display.
+response.agenda = {available:true,upcoming_count:0,window_start:"2026-11-09",
+  window_end:"2026-11-23",events:[],next_seven_free_days:7};
+response.fitness = {available:true,summary:{sessions:0,duration_minutes:0,distance_km:0},
+  period_start:"2026-11-03",period_end:"2026-11-09",daily:[],recent:[],
+  ongoing_rest_streak_days:7};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},
+  history:[],recent:[],days_since_last_confirmed_payment:5};
+response.portfolio = {available:true,positions:[],totals:{},quality:{outdated:false},
+  price_coverage_percent_by_currency:{USD:50}};
+handlers["document:visibilitychange"]();
+assert.ok(byId("agenda-list").children.some((row) => /Days without scheduled events \(next 7\) · 7/.test(row.textContent)));
+assert.ok(byId("fitness-list").children.some((row) => /Consecutive rest days through today \(7-day window\) · 7 days/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some((row) => /Days since most recent confirmed payment · 5 days/.test(row.textContent)));
+assert.ok(byId("portfolio-list").children.some((row) => /Manual price completeness · USD 50%/.test(row.textContent)));
+delete response.agenda.next_seven_free_days;
+delete response.fitness.ongoing_rest_streak_days;
+delete response.dividends.days_since_last_confirmed_payment;
+delete response.portfolio.price_coverage_percent_by_currency;
+handlers["document:visibilitychange"]();
+assert.ok(!byId("agenda-list").children.some((row) => /Days without scheduled events/.test(row.textContent)));
+assert.ok(!byId("fitness-list").children.some((row) => /Consecutive rest days through today/.test(row.textContent)));
+assert.ok(!byId("dividend-list").children.some((row) => /Days since most recent confirmed payment/.test(row.textContent)));
+assert.ok(!byId("portfolio-list").children.some((row) => /Manual price completeness/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
