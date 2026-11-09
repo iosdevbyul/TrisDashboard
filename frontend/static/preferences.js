@@ -6,6 +6,7 @@
 
   var savedViewKey = "tris.dashboard.my-view.v1";
   var savedVisible = null;
+  var lastResetSettings = null;
   var viewHistory = [];
   var viewHistoryIndex = -1;
   var replayingViewHistory = false;
@@ -743,14 +744,34 @@
   });
   document.getElementById("reset-settings").addEventListener("click", function () {
     var wasPaused = settings.pauseRefresh;
+    // Save an in-memory undo snapshot; keep independently managed favorites.
+    lastResetSettings = JSON.parse(JSON.stringify(settings));
     sourceFilter = "all";
     pinnedOnly = false;
-    pinned = [];
-    storePins();
     settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, pauseRefresh: false, hidden: [], order: panelNames.slice(0)};
     apply(); store();
+    document.getElementById("undo-display-reset").disabled = false;
+    document.getElementById("display-reset-status").textContent =
+      "Display reset. Pinned favorites and My view were kept. Undo is available.";
     if (wasPaused && typeof window.trisDashboardResumeRefresh === "function") {
       window.trisDashboardResumeRefresh();
+    }
+  });
+  document.getElementById("undo-display-reset").addEventListener("click", function () {
+    if (!lastResetSettings) { return; }
+    var wasPaused = settings.pauseRefresh;
+    settings = lastResetSettings;
+    lastResetSettings = null;
+    apply(); store();
+    document.getElementById("undo-display-reset").disabled = true;
+    document.getElementById("display-reset-status").textContent =
+      "Previous display preferences restored. Pinned favorites and My view are unchanged.";
+    if (wasPaused && !settings.pauseRefresh &&
+        typeof window.trisDashboardResumeRefresh === "function") {
+      window.trisDashboardResumeRefresh();
+    } else if (settings.pauseRefresh &&
+               typeof window.trisDashboardCancelPendingRetry === "function") {
+      window.trisDashboardCancelPendingRetry();
     }
   });
 

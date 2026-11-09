@@ -217,3 +217,8 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 #clear-temporary-filters{margin:3px 0 3px 10px;padding:6px 10px;background:#26374c;color:#e8f1fc;border:1px solid #455b75;border-radius:6px;font-size:13px}
 #clear-temporary-filters:disabled{opacity:.45;cursor:default}
 #clear-temporary-filters:focus{outline:2px solid #93c5fd;outline-offset:2px}
+
+/* Safe display reset feedback, keeping independent pinned favorites. */
+#undo-display-reset:disabled{opacity:.45;cursor:default}
+#undo-display-reset:focus{outline:2px solid #93c5fd;outline-offset:2px}
+#display-reset-status{overflow-wrap:break-word;word-wrap:break-word}
