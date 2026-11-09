@@ -204,7 +204,11 @@ def trello() -> dict:
             raise ValueError("Invalid Trello data")
         result = []
         for entry in lists:
+            if not isinstance(entry, dict):
+                raise ValueError("Invalid Trello list")
             name = entry.get("name", "")
+            if not isinstance(name, str):
+                raise ValueError("Invalid Trello list name")
             if name.lower().strip() not in ("next", "in progress", "done"):
                 continue
             cards = entry.get("cards", [])
@@ -214,7 +218,8 @@ def trello() -> dict:
                 raise ValueError("Unexpected Trello card limit")
             result.append({"name": name, "count": len(cards),
                            "count_truncated": len(cards) == 100,
-                           "cards": [str(card.get("name", ""))[:90] for card in cards[:3]]})
+                           "cards": [card["name"][:90] for card in cards[:3]
+                                     if isinstance(card, dict) and isinstance(card.get("name"), str)]})
         return {"available": True, "configured": True, "lists": result}
 
     # Credential rotation must invalidate the old result without storing raw secrets.
