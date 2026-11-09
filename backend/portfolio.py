@@ -88,10 +88,12 @@ def load_portfolio(path: Path) -> dict:
                           "price": str(price_amount) if price_amount is not None else None,
                           "market_value": str(value) if value is not None else None})
     missing_prices = {}
+    unpriced_symbols = {}
     for position in positions:
         if position["price"] is None:
             currency = position["currency"]
             missing_prices[currency] = missing_prices.get(currency, 0) + 1
+            unpriced_symbols.setdefault(currency, []).append(position["symbol"])
     allocations = {}
     for currency, total in totals.items():
         if total > 0 and all(p["market_value"] is not None for p in positions if p["currency"] == currency):
@@ -117,6 +119,8 @@ def load_portfolio(path: Path) -> dict:
             "positions": positions, "totals": {k: str(v) for k, v in sorted(totals.items())},
             "currency_allocations": allocations,
             "unpriced_positions_by_currency": dict(sorted(missing_prices.items())),
+            "unpriced_symbols_by_currency": {currency: sorted(symbols)
+                                            for currency, symbols in sorted(unpriced_symbols.items())},
             "top_three_concentration_percent": concentration,
             "largest_holdings": largest_holdings,
             "valuation_complete": all(p["market_value"] is not None for p in positions),
