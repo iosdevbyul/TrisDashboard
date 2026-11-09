@@ -124,6 +124,7 @@
         info.updated_at.replace("T", " ").slice(0, 16) + " UTC" : "recently");
   }
 
+  var sourceMarkers = {};
   function showSummary(payload) {
     var names = ["weather", "github", "trello", "portfolio", "fitness", "dividends", "agenda", "quotes"];
     var active = 0;
@@ -159,11 +160,12 @@
         unavailable++;
       }
       var card = document.getElementById("panel-" + name);
-      var marker = document.getElementById("source-state-" + name);
+      var marker = sourceMarkers[name];
       if (!marker) {
         marker = document.createElement("small");
         marker.id = "source-state-" + name;
         card.appendChild(marker);
+        sourceMarkers[name] = marker;
       }
       marker.className = "source-state source-state-" + state;
       marker.textContent = "Source: " + label;
