@@ -156,3 +156,12 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 /* Explicit view history, with disabled navigation outside available history. */
 #view-history-status{overflow-wrap:break-word}
 #quick-previous-view:disabled,#quick-next-view:disabled{opacity:.45;cursor:default}
+
+/* Client-side title search for the nine dashboard panels. No modern layout APIs. */
+.panel-search{margin:0 0 12px;padding:10px 12px;background:#1b2737;border:1px solid #35475f;border-radius:9px;line-height:2}
+.panel-search label{display:inline-block;color:#9db1cc;font-size:11px;letter-spacing:1px;margin-right:9px}
+.panel-search input{max-width:100%;width:190px;padding:7px;border:1px solid #455b75;border-radius:6px;background:#111822;color:#f2f5fa;font-size:14px}
+.panel-search button{margin:3px 8px;padding:6px 10px;border:1px solid #455b75;border-radius:6px;background:#26374c;color:#e8f1fc;font-size:13px}
+.panel-search button:disabled{opacity:.45}
+.panel-search input:focus,.panel-search button:focus{outline:2px solid #93c5fd;outline-offset:2px}
+#panel-search-count{display:inline-block;color:#9db1cc;font-size:12px}
