@@ -1729,6 +1729,7 @@ handlers["panel-search-clear:click"]();
 handlers["quick-view-all:click"]();
 response.weather.stale = true;
 response.weather.cache_age_seconds = 121;
+response.portfolio = {available:false,configured:false};
 response.github.available = false;
 response.github.configured = true;
 handlers["document:visibilitychange"]();
