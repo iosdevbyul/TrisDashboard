@@ -170,6 +170,14 @@ handlers["show-all-panels:click"]();
 assert.equal(byId("panel-weather").hidden, false);
 assert.equal(byId("panel-portfolio").hidden, false);
 
+// Resetting saved paused state also restarts the dashboard immediately.
+byId("setting-pause-refresh").checked = true;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
+const beforeResetRefresh = paths.filter((url) => url.startsWith("/api/overview")).length;
+handlers["reset-settings:click"]();
+assert.equal(window.trisDashboardRefreshPaused, false);
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforeResetRefresh + 1);
+
 byId("setting-pause-refresh").checked = true;
 handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
 assert.equal(window.trisDashboardRefreshPaused, true);
