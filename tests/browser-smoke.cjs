@@ -1182,4 +1182,36 @@ assert.equal(byId("connection").textContent,"Server online");
 assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeReusedOverview + 1);
 healthBody = null;
 
+// Aggregate totals and next-event previews must disclose invalid source records.
+response.portfolio = {available:true,positions:[],totals:{USD:"-10",KRW:"2000"},
+  valuation_complete:true,quality:{outdated:false}};
+response.valuation = {available:true,matched_count:10,position_count:2,
+  partial:false,stale:false,totals:{USD:"NaN",KRW:"5000"}};
+response.dividends = {available:true,month:"2026-11",monthly_totals:{},
+  monthly_unique_paying_symbols:{USD:2.5,KRW:3},history:[],recent:[]};
+response.agenda = {available:true,upcoming_count:1,window_start:"2026-11-09",
+  window_end:"2026-11-23",events:[{date:"2026-11-09",title:"Valid",time:""}],
+  next_event:{date:"2026-11-31",title:"Impossible"},
+  next_timed_event:{date:"2026-11-31",title:"Impossible timed",time:"10:00"}};
+handlers["document:visibilitychange"]();
+assert.ok(byId("portfolio-list").children.some(row => /Values: KRW 2000 \(partial\)/.test(row.textContent)));
+assert.ok(byId("portfolio-list").children.some(row => /Excluded 1 invalid manual valuation totals/.test(row.textContent)));
+assert.match(byId("portfolio-quote-values").textContent,/coverage unknown holdings\) · PARTIAL/);
+assert.match(byId("portfolio-quote-values").textContent,/KRW 5000/);
+assert.doesNotMatch(byId("portfolio-quote-values").textContent,/USD NaN/);
+assert.ok(byId("dividend-list").children.some(row => /KRW 3 holdings/.test(row.textContent)));
+assert.ok(!byId("dividend-list").children.some(row => /USD 2.5 holdings/.test(row.textContent)));
+assert.ok(!byId("agenda-list").children.some(row => /Next scheduled: Impossible|Next timed event: Impossible/.test(row.textContent)));
+response.portfolio.totals.USD = "100";
+response.valuation.matched_count = 2;
+response.valuation.totals.USD = "100";
+response.dividends.monthly_unique_paying_symbols.USD = 2;
+response.agenda.next_event.date = "2026-11-09";
+response.agenda.next_timed_event.date = "2026-11-09";
+handlers["document:visibilitychange"]();
+assert.ok(byId("portfolio-list").children.some(row => /Values: USD 100 \/ KRW 2000$/.test(row.textContent)));
+assert.match(byId("portfolio-quote-values").textContent,/2\/2 holdings\)/);
+assert.ok(byId("dividend-list").children.some(row => /USD 2 holdings/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some(row => /Next scheduled: Impossible/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
