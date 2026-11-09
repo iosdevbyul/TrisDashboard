@@ -373,7 +373,7 @@ response.github = { available: true, repositories: [{
   open_pr_count_truncated: true, open_prs: [], latest_ci: null
 }] };
 handlers["document:visibilitychange"]();
-assert.equal(byId("github-summary").textContent,"2+ known open PRs");
+assert.match(byId("github-summary").textContent,/20\+ known open PRs/);
 assert.match(byId("github-list").children[0].textContent, /20\+ open PRs/);
 assert.equal(byId("github-list").children[1].href, "https://github.com/owner/busy");
 response.github.repositories[0].open_prs = [{number:42,title:"Safe PR",url:"https://github.com/malicious.example/bad"}];
@@ -647,7 +647,7 @@ response.quotes = {available:true,quotes:[
 ]};
 response.server.server_time_utc = {invalid:true};
 handlers["document:visibilitychange"]();
-assert.match(byId("github-summary").textContent,/^2\\+ known open PRs$/);
+assert.equal(byId("github-summary").textContent,"2+ known open PRs");
 assert.ok(byId("github-list").children.some(row => /PR count unavailable/.test(row.textContent)));
 assert.match(byId("trello-summary").textContent,/^1 cards · 0 Next · 1 In Progress$/);
 assert.ok(byId("trello-list").children.some(row => /Card count unavailable/.test(row.textContent)));
