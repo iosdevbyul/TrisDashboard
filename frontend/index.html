@@ -42,6 +42,10 @@
     <a id="jump-link-dividends" href="#panel-dividends">Dividends</a>
     <a id="jump-link-github" href="#panel-github">Development</a>
     <a id="jump-link-fitness" href="#panel-fitness">Fitness</a>
+    <a id="jump-link-agenda" href="#panel-agenda">Agenda</a>
+    <a id="jump-link-weather" href="#panel-weather">Weather</a>
+    <a id="jump-link-trello" href="#panel-trello">Trello</a>
+    <a id="jump-link-server" href="#panel-server">Server</a>
     <span id="priority-jumps-empty" hidden>Show a priority panel in Display settings to enable quick jump.</span>
   </nav>
   <div class="display-settings" id="display-settings" hidden>
@@ -97,7 +101,7 @@
       <div id="dividend-list" class="details">Confirmed income only</div>
       <small id="dividend-updated">Manual data · Not a forecast</small>
     </article>
-    <article class="card" data-panel="agenda">
+    <article class="card" id="panel-agenda" data-panel="agenda" tabindex="-1">
       <h2>Agenda · Next 14 days</h2>
       <p id="agenda-summary">Not configured</p>
       <button type="button" class="detail-toggle" id="agenda-detail-toggle" aria-expanded="true" aria-controls="agenda-list agenda-toggle">Hide details</button>
@@ -112,7 +116,7 @@
       <div id="github-list" class="details">Connecting to GitHub</div>
       <small id="github-updated">Live data via MacBook</small>
     </article>
-    <article class="card" data-panel="weather">
+    <article class="card" id="panel-weather" data-panel="weather" tabindex="-1">
       <h2>Weather</h2>
       <p id="weather-temp">Loading</p>
       <button type="button" class="detail-toggle" id="weather-detail-toggle" aria-expanded="true" aria-controls="weather-details">Hide details</button>
@@ -120,14 +124,14 @@
       <div id="weather-details" class="details">Current weather</div>
       <small id="weather-updated">Live data via MacBook</small>
     </article>
-    <article class="card" data-panel="trello">
+    <article class="card" id="panel-trello" data-panel="trello" tabindex="-1">
       <h2>Trello workflow</h2>
       <p id="trello-summary">Not configured</p>
       <button type="button" class="detail-toggle" id="trello-detail-toggle" aria-expanded="true" aria-controls="trello-list">Hide details</button>
       <div id="trello-list" class="details">Next · In Progress · Done</div>
       <small id="trello-updated">Optional private board connection</small>
     </article>
-    <article class="card" data-panel="server">
+    <article class="card" id="panel-server" data-panel="server" tabindex="-1">
       <h2>MacBook server</h2>
       <p id="server-uptime">Loading</p>
       <button type="button" class="detail-toggle" id="server-detail-toggle" aria-expanded="true" aria-controls="server-info">Hide details</button>
