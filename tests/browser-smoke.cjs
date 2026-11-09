@@ -1382,4 +1382,26 @@ for (const panel of secondaryShortcuts) {
 assert.equal(byId("priority-jumps-empty").hidden,true);
 handlers["reset-settings:click"]();
 
+// Final Quotes jump, keyboard shortcut to nav, native top return and count.
+assert.ok(html.includes('id="panel-quotes"'));
+assert.ok(html.includes('id="jump-link-quotes" href="#panel-quotes"'));
+assert.ok(html.includes('href="#priority-jumps" class="skip-link skip-navigation"'));
+assert.ok(html.includes('id="priority-jumps" tabindex="-1"'));
+assert.ok(html.includes('id="back-to-top" href="#page-top"'));
+assert.ok(html.includes('id="page-top"'));
+assert.equal(byId("jump-link-quotes").hidden,false);
+assert.equal(byId("priority-jumps-count").textContent,"9 of 9 shortcuts available");
+handlers["minimal-panels:click"]();
+assert.equal(byId("jump-link-quotes").hidden,true);
+assert.equal(byId("priority-jumps-count").textContent,"3 of 9 shortcuts available");
+handlers["focus-panels:click"]();
+assert.equal(byId("jump-link-quotes").hidden,false);
+assert.equal(byId("priority-jumps-count").textContent,"5 of 9 shortcuts available");
+handlers["hide-all-panels:click"]();
+assert.equal(byId("priority-jumps-count").textContent,"0 of 9 shortcuts available");
+assert.equal(byId("priority-jumps-empty").hidden,false);
+handlers["show-all-panels:click"]();
+assert.equal(byId("priority-jumps-count").textContent,"9 of 9 shortcuts available");
+assert.equal(byId("priority-jumps-empty").hidden,true);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
