@@ -108,13 +108,30 @@ def weather() -> dict:
     def load():
         payload = get_json(url)
         current = payload["current"]
+        if not isinstance(current, dict):
+            raise ValueError("Invalid current weather")
+        temperature = current.get("temperature_2m")
+        humidity = current.get("relative_humidity_2m")
+        code = current.get("weather_code")
+        if (type(temperature) not in (int, float) or not math.isfinite(temperature)
+                or not -100 <= temperature <= 70
+                or type(humidity) not in (int, float) or not math.isfinite(humidity)
+                or not 0 <= humidity <= 100
+                or type(code) is not int or not 0 <= code <= 99):
+            raise ValueError("Invalid current weather")
+        apparent = current.get("apparent_temperature")
+        if type(apparent) not in (int, float) or not math.isfinite(apparent) or not -100 <= apparent <= 70:
+            apparent = None
+        wind = current.get("wind_speed_10m")
+        if type(wind) not in (int, float) or not math.isfinite(wind) or not 0 <= wind <= 500:
+            wind = None
         return {
             "available": True, "location": label,
-            "temperature_c": current["temperature_2m"],
-            "humidity_percent": current["relative_humidity_2m"],
-            "weather_code": current["weather_code"],
-            "feels_like_c": current.get("apparent_temperature"),
-            "wind_kmh": current.get("wind_speed_10m"),
+            "temperature_c": temperature,
+            "humidity_percent": humidity,
+            "weather_code": code,
+            "feels_like_c": apparent,
+            "wind_kmh": wind,
             "today_high_c": _forecast_first(payload, "temperature_2m_max"),
             "today_low_c": _forecast_first(payload, "temperature_2m_min"),
             "rain_chance_percent": _forecast_first(payload, "precipitation_probability_max"),
