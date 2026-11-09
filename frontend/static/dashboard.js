@@ -949,7 +949,7 @@
 
   tick();
   checkServer();
-  loadOverview(true);
+  if (!window.trisDashboardRefreshPaused) { loadOverview(true); }
   setInterval(tick, 1000);
   setInterval(function () { if (!document.hidden) { checkServer(); } }, 15000);
   setInterval(function () {
