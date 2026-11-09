@@ -73,13 +73,13 @@ def load_portfolio(path: Path) -> dict:
             raise ValueError("Duplicate portfolio holding")
         seen_positions.add(key)
         quantity = nonnegative(item.get("quantity"), "quantity")
-        if quantity != 0 and quantity.adjusted() > 20:
+        if quantity != 0 and (quantity.adjusted() > 20 or quantity.adjusted() < -20):
             raise ValueError("quantity exceeds supported precision")
         price = item.get("price")
         value = None
         price_amount = nonnegative(price, "price") if price is not None else None
         if price_amount is not None:
-            if price_amount != 0 and price_amount.adjusted() > 20:
+            if price_amount != 0 and (price_amount.adjusted() > 20 or price_amount.adjusted() < -20):
                 raise ValueError("price exceeds supported precision")
             value = quantity * price_amount
             totals[currency] = totals.get(currency, Decimal("0")) + value
