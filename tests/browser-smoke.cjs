@@ -231,6 +231,13 @@ assert.match(byId("data-refresh-state").textContent, /Last successful update at 
 const retry = scheduled.find((item) => item.delay === 30000 && !item.cancelled);
 assert.ok(retry, "First failed overview should retry after 30 seconds");
 assert.match(byId("data-refresh-state").textContent, /retry in 30s/);
+// Pausing an already scheduled retry immediately cancels its timer.
+byId("setting-pause-refresh").checked = true;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
+assert.equal(retry.cancelled, true);
+assert.match(byId("data-refresh-state").textContent, /Automatic refresh paused/);
+byId("setting-pause-refresh").checked = false;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
 // A queued retry must respect pause changes even when its callback fires later.
 byId("setting-pause-refresh").checked = true;
 handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));

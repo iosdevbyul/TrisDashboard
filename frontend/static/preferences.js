@@ -119,6 +119,9 @@
   document.getElementById("setting-pause-refresh").addEventListener("change", function () {
     settings.pauseRefresh = this.checked;
     apply(); store();
+    if (settings.pauseRefresh && typeof window.trisDashboardCancelPendingRetry === "function") {
+      window.trisDashboardCancelPendingRetry();
+    }
   });
   document.getElementById("setting-refresh-minutes").addEventListener("change", function () {
     var minutes = Number(this.value);
