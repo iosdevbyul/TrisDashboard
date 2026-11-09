@@ -95,6 +95,10 @@ def _forecast_first(payload, name):
     value = values[0]
     if type(value) not in (int, float) or not math.isfinite(value):
         return None
+    if name == "precipitation_probability_max" and not 0 <= value <= 100:
+        return None
+    if name in ("temperature_2m_max", "temperature_2m_min") and not -100 <= value <= 70:
+        return None
     return value
 
 
