@@ -80,10 +80,14 @@
     var panel = document.getElementById("display-settings");
     panel.hidden = !panel.hidden;
     this.setAttribute("aria-expanded", panel.hidden ? "false" : "true");
+    if (panel.hidden && typeof this.focus === "function") { this.focus(); }
   });
   document.getElementById("close-display-settings").addEventListener("click", function () {
     document.getElementById("display-settings").hidden = true;
     document.getElementById("settings-button").setAttribute("aria-expanded", "false");
+    if (typeof document.getElementById("settings-button").focus === "function") {
+      document.getElementById("settings-button").focus();
+    }
   });
   document.addEventListener("keydown", function (event) {
     if (event.keyCode === 27 || event.key === "Escape") {
@@ -91,6 +95,9 @@
       if (!panel.hidden) {
         panel.hidden = true;
         document.getElementById("settings-button").setAttribute("aria-expanded", "false");
+        if (typeof document.getElementById("settings-button").focus === "function") {
+          document.getElementById("settings-button").focus();
+        }
       }
     }
   });
