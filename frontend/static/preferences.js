@@ -4,6 +4,45 @@
   var panelNames = ["portfolio", "quotes", "dividends", "agenda", "github", "weather", "trello", "server", "fitness"];
   var settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, pauseRefresh: false, hidden: [], order: panelNames.slice(0)};
 
+  var savedViewKey = "tris.dashboard.my-view.v1";
+  var savedVisible = null;
+  function readSavedView() {
+    try {
+      var value = JSON.parse(window.localStorage.getItem(savedViewKey));
+      if (Object.prototype.toString.call(value) !== "[object Array]") { return null; }
+      var unique = [];
+      for (var i = 0; i < value.length; i++) {
+        if (typeof value[i] !== "string" || panelNames.indexOf(value[i]) === -1 ||
+            unique.indexOf(value[i]) !== -1) { return null; }
+        unique.push(value[i]);
+      }
+      return unique.length ? unique : null;
+    } catch (error) { return null; }
+  }
+  function sameVisible(a, b) {
+    if (!a || !b || a.length !== b.length) { return false; }
+    for (var i = 0; i < a.length; i++) {
+      if (b.indexOf(a[i]) === -1) { return false; }
+    }
+    return true;
+  }
+  function currentVisible() {
+    var result = [];
+    for (var i = 0; i < panelNames.length; i++) {
+      if (settings.hidden.indexOf(panelNames[i]) === -1) { result.push(panelNames[i]); }
+    }
+    return result;
+  }
+  function updateSavedView() {
+    var active = sameVisible(currentVisible(), savedVisible);
+    document.getElementById("quick-view-mine").disabled = savedVisible === null;
+    document.getElementById("clear-my-view").disabled = savedVisible === null;
+    document.getElementById("quick-view-mine").setAttribute("aria-pressed", active ? "true" : "false");
+    document.getElementById("saved-view-status").textContent = savedVisible ?
+      "Saved view: " + savedVisible.length + " panels" + (active ? " · Active" : "") :
+      "No saved view";
+  }
+
   function store() {
     try { window.localStorage.setItem(key, JSON.stringify(settings)); } catch (error) {}
   }
@@ -67,6 +106,9 @@
       document.getElementById(preset.quickId).setAttribute("aria-pressed", matches ? "true" : "false");
       if (matches) { selected = preset.name; }
     }
+    document.getElementById("quick-view-all").setAttribute("aria-pressed",
+      visible.length === panelNames.length ? "true" : "false");
+    updateSavedView();
     document.getElementById("panel-preset-status").textContent = selected ?
       selected + " · " + visible.length + " panels" :
       (visible.length === panelNames.length ? "All panels · " + visible.length + " panels" :
@@ -289,6 +331,42 @@
     }(viewPresets[q]));
   }
 
+  document.getElementById("quick-view-all").addEventListener("click", function () {
+    settings.hidden = [];
+    apply(); store();
+  });
+  document.getElementById("quick-view-mine").addEventListener("click", function () {
+    if (!savedVisible) { return; }
+    applyVisibilityPreset(savedVisible, "My view");
+  });
+  document.getElementById("save-my-view").addEventListener("click", function () {
+    var visible = currentVisible();
+    if (!visible.length) {
+      document.getElementById("saved-view-status").textContent =
+        "Show at least one panel before saving a view";
+      return;
+    }
+    try {
+      window.localStorage.setItem(savedViewKey, JSON.stringify(visible));
+      savedVisible = visible;
+      updateSavedView();
+    } catch (error) {
+      document.getElementById("saved-view-status").textContent =
+        "Could not save view in this browser";
+    }
+  });
+  document.getElementById("clear-my-view").addEventListener("click", function () {
+    if (!savedVisible) { return; }
+    try {
+      window.localStorage.removeItem(savedViewKey);
+      savedVisible = null;
+      updateSavedView();
+    } catch (error) {
+      document.getElementById("saved-view-status").textContent =
+        "Could not delete saved view";
+    }
+  });
+
   document.getElementById("show-all-panels").addEventListener("click", function () {
     settings.hidden = [];
     apply(); store();
@@ -306,5 +384,5 @@
     }
   });
 
-  buildControls(); restore(); apply();
+  buildControls(); restore(); savedVisible = readSavedView(); apply();
 }());
