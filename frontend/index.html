@@ -12,7 +12,8 @@
 </head>
 <body>
 <a href="#dashboard-modules" class="skip-link">Skip to dashboard modules</a>
-<main class="dashboard">
+<a href="#priority-jumps" class="skip-link skip-navigation">Skip to quick navigation</a>
+<main class="dashboard" id="page-top">
   <header class="header">
     <div class="header-time">
       <p class="eyebrow">TRIS DASHBOARD</p>
@@ -36,7 +37,7 @@
     <button type="button" id="refresh-button">Refresh now</button>
     <button type="button" id="settings-button" aria-expanded="false" aria-controls="display-settings">Display settings</button>
   </div>
-  <nav class="priority-jumps" aria-label="Jump to priority panels">
+  <nav class="priority-jumps" id="priority-jumps" tabindex="-1" aria-label="Jump to priority panels">
     <span class="priority-jumps-label">QUICK JUMP</span>
     <a id="jump-link-portfolio" href="#panel-portfolio">Portfolio</a>
     <a id="jump-link-dividends" href="#panel-dividends">Dividends</a>
@@ -46,6 +47,8 @@
     <a id="jump-link-weather" href="#panel-weather">Weather</a>
     <a id="jump-link-trello" href="#panel-trello">Trello</a>
     <a id="jump-link-server" href="#panel-server">Server</a>
+    <a id="jump-link-quotes" href="#panel-quotes">Quotes</a>
+    <span id="priority-jumps-count" role="status" aria-live="polite">9 shortcuts</span>
     <span id="priority-jumps-empty" hidden>Show a priority panel in Display settings to enable quick jump.</span>
   </nav>
   <div class="display-settings" id="display-settings" hidden>
@@ -87,7 +90,7 @@
       <div id="portfolio-quote-values" class="details">Quote-based valuation not configured</div>
       <small id="portfolio-updated">Not live market prices</small>
     </article>
-    <article class="card" data-panel="quotes">
+    <article class="card" id="panel-quotes" data-panel="quotes" tabindex="-1">
       <h2>Market quotes · Provider reported</h2>
       <p id="quotes-summary">Not configured</p>
       <button type="button" class="detail-toggle" id="quotes-detail-toggle" aria-expanded="true" aria-controls="quotes-list">Hide details</button>
@@ -146,7 +149,7 @@
       <small id="fitness-updated">Not a live HealthKit connection</small>
     </article>
   </section>
-  <footer>Local network &middot; TrisDashboard &middot; <span id="refresh-cadence">Data refreshes every 3 minutes</span></footer>
+  <footer>Local network &middot; TrisDashboard &middot; <span id="refresh-cadence">Data refreshes every 3 minutes</span> &middot; <a id="back-to-top" href="#page-top">Back to top</a></footer>
 </main>
 <script src="/static/preferences.js"></script>
 <script src="/static/dashboard.js"></script>
