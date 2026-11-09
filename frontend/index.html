@@ -33,6 +33,15 @@
   </div>
   <p id="source-health-details" class="refresh-status" aria-live="polite">Source health details appear after data loads.</p>
   <nav id="source-health-links" class="source-health-links" aria-label="Sources needing attention" hidden></nav>
+  <nav class="source-filters" aria-label="Filter dashboard by data source status">
+    <span class="source-filters-label">SOURCE VIEW</span>
+    <button type="button" id="source-filter-all" aria-pressed="true">All</button>
+    <button type="button" id="source-filter-issues" aria-pressed="false">Issues</button>
+    <button type="button" id="source-filter-unconfigured" aria-pressed="false">Not configured</button>
+    <button type="button" id="source-filter-ready" aria-pressed="false">Ready</button>
+    <span id="source-filter-count" role="status" aria-live="polite">Waiting for source data</span>
+  </nav>
+  <p id="source-filter-empty" class="empty-panels" role="status" hidden>No sources match this view. Choose All to restore the dashboard.</p>
   <p id="data-refresh-state" class="refresh-status" role="status">Waiting for the first data refresh.</p>
   <div class="toolbar">
     <button type="button" id="refresh-button">Refresh now</button>

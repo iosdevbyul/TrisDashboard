@@ -11,6 +11,25 @@
   var replayingViewHistory = false;
   var viewHistoryLimit = 10;
   var panelSearchQuery = "";
+  var sourceFilter = "all";
+  var sourceStates = null;
+  function matchesSourceFilter(name) {
+    if (sourceFilter === "all") { return true; }
+    if (!sourceStates) { return false; }
+    var state = sourceStates[name];
+    return sourceFilter === "issues" ? (state === "stale" || state === "unavailable") :
+      state === sourceFilter;
+  }
+  function selectSourceFilter(filter) {
+    if (["all", "issues", "unconfigured", "ready"].indexOf(filter) === -1) { return; }
+    sourceFilter = filter;
+    apply();
+  }
+  // The source filter is temporary and never changes stored visibility or view history.
+  window.trisDashboardSetSourceStates = function (states) {
+    sourceStates = states;
+    apply();
+  };
   // Match fixed display labels only: private card data is never searched or transmitted.
   var panelSearchLabels = {
     portfolio: "portfolio assets holdings investments 포트폴리오 자산 보유 종목 투자",
@@ -50,6 +69,7 @@
   // Source health links must reach a panel even when a preset or search hides it.
   window.trisDashboardRevealPanel = function (name) {
     if (panelNames.indexOf(name) === -1) { return; }
+    sourceFilter = "all";
     panelSearchQuery = "";
     var hiddenIndex = settings.hidden.indexOf(name);
     if (hiddenIndex !== -1) { settings.hidden.splice(hiddenIndex, 1); store(); }
@@ -252,7 +272,8 @@
       var matchesSearch = matchesPanelSearch(name);
       if (matchesSearch) { anyMatchingPanel = true; }
       if (matchesSearch && !configuredVisible) { hiddenMatchingPanels++; }
-      var visible = configuredVisible && matchesSearch;
+      var visible = (sourceFilter === "all" ? configuredVisible : true) &&
+        matchesSearch && matchesSourceFilter(name);
       var card = document.querySelector('[data-panel="' + name + '"]');
       if (card) { card.hidden = !visible; }
       var toggle = document.getElementById("toggle-" + name);
@@ -272,13 +293,30 @@
     document.getElementById("panel-search-reveal").textContent =
       "Show " + hiddenMatchingPanels + " matching hidden " +
       (hiddenMatchingPanels === 1 ? "panel" : "panels");
+    var sourceMatching = 0;
+    for (var s = 0; s < panelNames.length; s++) {
+      if (matchesSourceFilter(panelNames[s])) { sourceMatching++; }
+    }
+    var filters = ["all", "issues", "unconfigured", "ready"];
+    for (var sf = 0; sf < filters.length; sf++) {
+      document.getElementById("source-filter-" + filters[sf]).setAttribute(
+        "aria-pressed", sourceFilter === filters[sf] ? "true" : "false");
+    }
+    document.getElementById("source-filter-count").textContent = sourceFilter === "all" ?
+      "Showing all configured panels" : sourceMatching + " " + sourceFilter + " sources" +
+      (panelSearchQuery ? " · search also applied" : "");
+    document.getElementById("source-filter-empty").hidden =
+      sourceFilter === "all" || visibleShortcuts !== 0;
+    document.getElementById("source-filter-empty").textContent = sourceMatching ?
+      "No " + sourceFilter + " sources match the current search. Clear the search or choose All." :
+      "No " + sourceFilter + " sources. Choose All to restore the dashboard.";
     document.getElementById("priority-jumps-empty").hidden =
       visibleShortcuts !== 0 || panelSearchQuery !== "";
     document.getElementById("priority-jumps-count").textContent =
       visibleShortcuts + " of " + panelNames.length + " shortcuts available";
     var searchActive = panelSearchQuery !== "";
     document.getElementById("panel-search-empty").hidden =
-      !searchActive || visibleShortcuts !== 0;
+      !searchActive || visibleShortcuts !== 0 || sourceFilter !== "all";
     document.getElementById("panel-search-empty").textContent = anyMatchingPanel ?
       "Matching panels are hidden in Display settings. Show a matching panel or clear search." :
       "No panel matches your search. Try another keyword or clear search.";
@@ -333,6 +371,12 @@
       }(panelNames[i]));
     }
   }
+
+  ["all", "issues", "unconfigured", "ready"].forEach(function (name) {
+    document.getElementById("source-filter-" + name).addEventListener("click", function () {
+      selectSourceFilter(name);
+    });
+  });
 
   document.getElementById("panel-search-input").addEventListener("input", function () {
     panelSearchQuery = String(this.value || "").toLowerCase().replace(/^\s+|\s+$/g, "");
@@ -539,6 +583,7 @@
   });
   document.getElementById("reset-settings").addEventListener("click", function () {
     var wasPaused = settings.pauseRefresh;
+    sourceFilter = "all";
     settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, pauseRefresh: false, hidden: [], order: panelNames.slice(0)};
     apply(); store();
     if (wasPaused && typeof window.trisDashboardResumeRefresh === "function") {
