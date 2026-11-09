@@ -65,6 +65,11 @@
   </nav>
   <nav id="pinned-panel-actions" class="pinned-panel-actions" aria-label="Manage pinned panels" hidden></nav>
   <p id="pinned-panel-message" class="refresh-status" role="status" aria-live="polite"></p>
+  <div class="filter-summary" aria-label="Active dashboard filters">
+    <span id="filter-summary-status" role="status" aria-live="polite">No temporary filters</span>
+    <button type="button" id="clear-temporary-filters" disabled>Clear all filters</button>
+  </div>
+  <p id="combined-filter-empty" class="empty-panels" role="status" hidden>Filters hide every panel. Clear all filters to restore your configured view.</p>
   <div class="panel-search" role="search" aria-label="Find dashboard panels">
     <label for="panel-search-input">FIND PANEL</label>
     <input type="search" id="panel-search-input" placeholder="Search panels / 패널 검색" autocomplete="off">
