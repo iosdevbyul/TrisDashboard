@@ -152,5 +152,5 @@ def fitness() -> dict:
         return {"available": False, "configured": False, "stale": False}
     try:
         return load_fitness(Path(location).expanduser())
-    except (OSError, ValueError, TypeError):
+    except (OSError, ValueError, TypeError, OverflowError):
         return {"available": False, "configured": True, "stale": True}
