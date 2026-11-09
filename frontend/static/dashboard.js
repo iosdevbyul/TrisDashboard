@@ -421,7 +421,10 @@
     var quality = info.quality || {};
     text("portfolio-updated", "Manual prices · Snapshot " +
       (typeof info.as_of === "string" ? info.as_of.replace("T", " ").slice(0, 16) : "time unavailable") +
-      (quality.outdated ? " · OUTDATED (older than " + quality.threshold_hours + "h)" : ""));
+      (quality.outdated ? " · OUTDATED" +
+        (typeof quality.threshold_hours === "number" &&
+         isFinite(quality.threshold_hours) && quality.threshold_hours > 0 ?
+         " (older than " + quality.threshold_hours + "h)" : " (threshold unavailable)") : ""));
   }
 
   function showDividends(info) {
@@ -859,6 +862,21 @@
       return;
     }
     var summary = info.summary;
+    if (!summary || typeof summary !== "object" ||
+        typeof summary.sessions !== "number" || !isFinite(summary.sessions) ||
+        summary.sessions < 0 || Math.floor(summary.sessions) !== summary.sessions ||
+        typeof summary.duration_minutes !== "number" ||
+        !isFinite(summary.duration_minutes) || summary.duration_minutes < 0 ||
+        typeof summary.distance_km !== "number" ||
+        !isFinite(summary.distance_km) || summary.distance_km < 0) {
+      text("fitness-summary", "Workout summary unavailable");
+      text("fitness-updated", "Invalid workout summary · Check local export");
+      var invalidSummary = document.createElement("div");
+      invalidSummary.className = "repo-row";
+      invalidSummary.textContent = "Workout totals cannot be displayed from this export.";
+      list.appendChild(invalidSummary);
+      return;
+    }
     text("fitness-summary", summary.sessions + " sessions · " + summary.duration_minutes + " min");
     if (summary.sessions === 0) {
       var noWorkouts = document.createElement("div");
@@ -1059,7 +1077,8 @@
       list.appendChild(row);
     }
     var updated = "Local export · Refreshes on page data update";
-    if (info.file_updated_utc) {
+    if (typeof info.file_updated_utc === "string" &&
+        /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/.test(info.file_updated_utc)) {
       updated = "Local file updated " + info.file_updated_utc.replace("T", " ").slice(0, 16) +
         " UTC" + (info.file_older_than_week ? " · FILE OVER 7 DAYS OLD" : "");
     }
@@ -1277,12 +1296,21 @@
       row.textContent = columns[i].name + " · " + cardCount +
         (columns[i].count_truncated ? "+ cards (limit reached)" : " cards");
       list.appendChild(row);
-      var names = columns[i].cards || [];
-      if (names.length) {
-        var preview = document.createElement("div");
-        preview.className = "trello-preview";
-        preview.textContent = names.join(" / ");
-        list.appendChild(preview);
+      var rawNames = columns[i].cards;
+      if (rawNames && Object.prototype.toString.call(rawNames) !== "[object Array]") {
+        var invalidCardPreview = document.createElement("div");
+        invalidCardPreview.className = "repo-row";
+        invalidCardPreview.textContent = "Card preview unavailable · " + columns[i].name;
+        list.appendChild(invalidCardPreview);
+      } else {
+        var names = Object.prototype.toString.call(rawNames) === "[object Array]" ?
+          rawNames.filter(function (name) { return typeof name === "string"; }) : [];
+        if (names.length) {
+          var preview = document.createElement("div");
+          preview.className = "trello-preview";
+          preview.textContent = names.join(" / ");
+          list.appendChild(preview);
+        }
       }
     }
     var anyTruncated = false;
