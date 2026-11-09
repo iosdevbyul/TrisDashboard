@@ -171,6 +171,14 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 #panel-search-reveal{border-color:#93c5fd;color:#e8f1fc}
 #panel-search-reveal[hidden]{display:none}
 
+/* Favorite management supports hidden favorites without resetting saved layouts. */
+.pinned-panel-actions{margin:0 0 10px;padding:8px 10px;background:#1b2737;border:1px solid #35475f;border-radius:8px;line-height:2}
+.pinned-panel-actions button,#clear-all-pins{display:inline-block;margin:3px 6px 3px 0;padding:5px 9px;border:1px solid #52677f;border-radius:6px;background:#26374c;color:#e8f1fc;font-size:12px;cursor:pointer}
+.pinned-panel-actions button:focus,#clear-all-pins:focus{outline:2px solid #93c5fd;outline-offset:2px}
+.pinned-panel-actions .pinned-remove{color:#f2c57c}
+#clear-all-pins:disabled{opacity:.45;cursor:default}
+.pinned-panel-actions[hidden]{display:none}
+
 /* Favorite panels are reordered client-side with ES5-safe DOM moves. */
 .pin-panel-button{display:inline-block;margin:8px 0 0;padding:5px 10px;border:1px solid #52677f;border-radius:6px;background:#26374c;color:#e8f1fc;font-size:12px;cursor:pointer}
 .pin-panel-button[aria-pressed="true"]{border-color:#f2c57c;color:#f2c57c}

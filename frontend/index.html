@@ -57,11 +57,14 @@
     <button type="button" id="quick-view-all" aria-pressed="false">All</button>
     <button type="button" id="quick-view-pinned" aria-pressed="false">Pinned only</button>
     <span id="pinned-panel-count" role="status" aria-live="polite">0 pinned</span>
+    <button type="button" id="clear-all-pins" disabled>Clear pins</button>
     <button type="button" id="quick-view-mine" aria-pressed="false" disabled>My view</button>
     <button type="button" id="quick-save-my-view">Save view</button>
     <button type="button" id="quick-previous-view" disabled>Previous view</button>
     <button type="button" id="quick-next-view" disabled>Next view</button>
   </nav>
+  <nav id="pinned-panel-actions" class="pinned-panel-actions" aria-label="Manage pinned panels" hidden></nav>
+  <p id="pinned-panel-message" class="refresh-status" role="status" aria-live="polite"></p>
   <div class="panel-search" role="search" aria-label="Find dashboard panels">
     <label for="panel-search-input">FIND PANEL</label>
     <input type="search" id="panel-search-input" placeholder="Search panels / 패널 검색" autocomplete="off">
