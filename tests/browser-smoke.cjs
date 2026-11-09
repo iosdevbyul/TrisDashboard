@@ -1617,4 +1617,41 @@ assert.equal(byId("quick-next-view").disabled,true);
 handlers["clear-view-history:click"]();
 handlers["quick-view-all:click"]();
 
+// Panel title search is transient, respects selected views, and synchronizes quick links.
+assert.equal(byId("panel-search-count").textContent,"9 panels available");
+const settingsBeforeSearch = state["tris.dashboard.display.v1"];
+byId("panel-search-input").value = " GitHub ";
+handlers["panel-search-input:input"].call(byId("panel-search-input"));
+assert.equal(byId("panel-search-input").value,"github");
+assert.equal(byId("panel-search-count").textContent,"1 matching visible panels");
+assert.equal(byId("panel-github").hidden,false);
+assert.equal(byId("jump-link-github").hidden,false);
+assert.equal(byId("panel-fitness").hidden,true);
+assert.equal(byId("jump-link-fitness").hidden,true);
+assert.equal(byId("toggle-fitness").checked,true);
+assert.equal(byId("panel-search-clear").disabled,false);
+assert.equal(byId("panel-search-empty").hidden,true);
+assert.equal(state["tris.dashboard.display.v1"],settingsBeforeSearch);
+// Search never overrides the selected preset; filter is intersected with it.
+handlers["quick-view-fitness:click"]();
+assert.equal(byId("panel-search-count").textContent,"0 matching visible panels");
+assert.equal(byId("panel-search-empty").hidden,false);
+assert.equal(byId("priority-jumps-count").textContent,"0 of 9 shortcuts available");
+assert.equal(byId("toggle-fitness").checked,true);
+assert.equal(byId("priority-jumps-empty").hidden,true);
+byId("panel-search-input").value = "workout";
+handlers["panel-search-input:input"].call(byId("panel-search-input"));
+assert.equal(byId("panel-search-count").textContent,"1 matching visible panels");
+assert.equal(byId("panel-fitness").hidden,false);
+assert.equal(byId("panel-weather").hidden,true);
+handlers["panel-search-clear:click"]();
+assert.equal(byId("panel-search-clear").disabled,true);
+assert.equal(byId("panel-search-input").value,"");
+assert.equal(byId("panel-search-input").focused,true);
+assert.equal(byId("panel-search-count").textContent,"2 panels available");
+assert.equal(byId("panel-search-empty").hidden,true);
+assert.equal(byId("panel-weather").hidden,false);
+handlers["quick-view-all:click"]();
+assert.equal(byId("panel-search-count").textContent,"9 panels available");
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
