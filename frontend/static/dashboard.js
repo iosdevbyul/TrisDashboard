@@ -978,6 +978,7 @@
     updateLastSuccessAge();
     var interval = window.trisDashboardRefreshMinutes || 3;
     if (!document.hidden && !window.trisDashboardRefreshPaused &&
+        overviewRetryTimer === null &&
         new Date().getTime() - lastDataStarted >= interval * 60000) {
       loadOverview(false);
     }
