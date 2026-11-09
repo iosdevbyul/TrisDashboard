@@ -12,6 +12,7 @@
   var lastRequestStarted = 0;
   var lastDataStarted = 0;
   var requestSequence = 0;
+  var suppressNextReconnectRefresh = false;
   var overviewSequence = 0;
   var overviewRetryTimer = null;
   var overviewRetryGeneration = 0;
@@ -75,7 +76,8 @@
       lastCheck.textContent = "Checked " + pad(new Date().getHours()) + ":" + pad(new Date().getMinutes());
       if (wasOffline) {
         wasOffline = false;
-        if (!document.hidden && !window.trisDashboardRefreshPaused &&
+        if (!suppressNextReconnectRefresh && !document.hidden &&
+            !window.trisDashboardRefreshPaused &&
             (!overviewRequest || overviewRequest.readyState === 4)) { loadOverview(true); }
       }
     } else {
@@ -91,7 +93,7 @@
     }
   }
 
-  function checkServer(suppressReconnectRefresh) {
+  function checkServer() {
     if (document.hidden) { return; }
     if (request && request.readyState !== 4) { return; }
     var now = new Date().getTime();
@@ -105,13 +107,8 @@
         try { online = JSON.parse(xhr.responseText).status === "ok"; }
         catch (error) { online = false; }
       }
-      if (sequence === requestSequence) {
-        if (suppressReconnectRefresh && online && wasOffline) {
-          // Foreground resume will request the overview once itself.
-          wasOffline = false;
-          setConnection(online);
-        } else { setConnection(online); }
-      }
+      if (sequence === requestSequence) { setConnection(online); }
+      suppressNextReconnectRefresh = false;
     });
   }
 
@@ -1614,7 +1611,7 @@
   }, 60000);
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) {
-      tick(); checkServer(true);
+      tick(); suppressNextReconnectRefresh = true; checkServer();
       if (!window.trisDashboardRefreshPaused &&
           (!overviewRequest || overviewRequest.readyState === 4)) { loadOverview(true); }
     } else {
