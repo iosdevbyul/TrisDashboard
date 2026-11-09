@@ -62,6 +62,9 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             raise ValueError("Future workout dates are not allowed")
         if any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ -_" for c in kind):
             raise ValueError("Invalid workout type")
+        kind = kind.strip()
+        if not kind:
+            raise ValueError("Invalid workout type")
         if isinstance(minutes, bool) or not isinstance(minutes, (int, float)) or not 0 <= minutes <= 1440:
             raise ValueError("Invalid duration")
         if isinstance(distance, bool) or not isinstance(distance, (int, float)) or not 0 <= distance <= 1000:
