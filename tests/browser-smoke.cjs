@@ -31,7 +31,8 @@ function element(id = "") {
       if (index >= 0) children.splice(index, 1);
     },
     addEventListener(name, callback) { handlers[id + ":" + name] = callback; },
-    setAttribute(name, value) { this.attributes[name] = value; }
+    setAttribute(name, value) { this.attributes[name] = value; },
+    focus() { this.focused = true; }
   };
   return result;
 }
@@ -149,6 +150,11 @@ assert.equal(byId("display-settings").hidden, false);
 handlers["document:keydown"]({keyCode: 27});
 assert.equal(byId("display-settings").hidden, true);
 assert.equal(byId("settings-button").attributes["aria-expanded"], "false");
+assert.equal(byId("settings-button").focused, true);
+byId("settings-button").focused = false;
+handlers["settings-button:click"].call(byId("settings-button"));
+handlers["close-display-settings:click"]();
+assert.equal(byId("settings-button").focused, true);
 
 handlers["focus-panels:click"]();
 assert.equal(byId("panel-weather").hidden, true);
