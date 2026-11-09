@@ -1639,6 +1639,10 @@
   bindDetailToggle("dividends", ["dividend-list"]);
   bindDetailToggle("github", ["github-list"]);
   bindDetailToggle("fitness", ["fitness-list"]);
+  bindDetailToggle("quotes", ["quotes-list"]);
+  bindDetailToggle("trello", ["trello-list"]);
+  bindDetailToggle("weather", ["weather-details"]);
+  bindDetailToggle("server", ["server-info"]);
 
   document.getElementById("agenda-toggle").addEventListener("click", function () {
     agendaExpanded = !agendaExpanded;
