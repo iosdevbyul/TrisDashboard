@@ -6,7 +6,7 @@ import math
 def snapshot_quality(as_of: datetime, now: datetime | None = None, limit_hours: int = 72) -> dict:
     if not isinstance(as_of, datetime) or as_of.tzinfo is None or as_of.utcoffset() is None:
         raise ValueError("Snapshot must have timezone")
-    if isinstance(limit_hours, bool) or not isinstance(limit_hours, (int, float)) or not math.isfinite(limit_hours) or limit_hours <= 0:
+    if isinstance(limit_hours, bool) or not isinstance(limit_hours, (int, float)) or not math.isfinite(limit_hours) or limit_hours <= 0 or limit_hours > 87600:
         raise ValueError("Invalid freshness threshold")
     reference = datetime.now(timezone.utc) if now is None else now
     if not isinstance(reference, datetime) or reference.tzinfo is None or reference.utcoffset() is None:
