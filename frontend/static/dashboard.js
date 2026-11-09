@@ -156,7 +156,7 @@
       line.className = "repo-row";
       if (rows[i] && rows[i].price &&
           typeof rows[i].reported_at_utc === "string" &&
-          /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}/.test(rows[i].reported_at_utc)) {
+          /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/.test(rows[i].reported_at_utc)) {
         successful++;
         if (typeof rows[i].age_hours === "number" && isFinite(rows[i].age_hours) && rows[i].age_hours >= 0) {
           oldestHours = oldestHours === null ? rows[i].age_hours : Math.max(oldestHours, rows[i].age_hours);
@@ -1116,7 +1116,7 @@
     text("server-info", "MacBook local API reachable");
     var serverClock = info.server_time_utc;
     text("server-updated", typeof serverClock === "string" &&
-      /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}/.test(serverClock) ?
+      /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}/.test(serverClock) ?
       "Server clock: " + serverClock.replace("T", " ").slice(0, 16) + " UTC" :
       "Server clock unavailable");
   }
