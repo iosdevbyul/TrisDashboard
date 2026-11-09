@@ -25,7 +25,7 @@ function element(id = "") {
     id, checked: false, hidden: false, textContent: "", className: "", style: {},
     children, attributes: {}, href: "",
     get firstChild() { return children.length ? children[0] : null; },
-    appendChild(child) { children.push(child); return child; },
+    appendChild(child) { const old = children.indexOf(child); if (old >= 0) children.splice(old, 1); children.push(child); return child; },
     removeChild(child) {
       const index = children.indexOf(child);
       if (index >= 0) children.splice(index, 1);
@@ -144,6 +144,15 @@ handlers["document:visibilitychange"]();
 assert.equal(byId("server-uptime").textContent, "Uptime unavailable");
 response.server.uptime_seconds = 1800;
 assert.ok(byId("panel-visibility").children.length >= 8);
+const moduleContainer = byId("dashboard-modules");
+const initialOrder = moduleContainer.children.map((card) => card.id);
+assert.equal(new Set(initialOrder).size, 9);
+handlers["panel-up-fitness:click"]();
+assert.equal(moduleContainer.children[moduleContainer.children.length - 2].id, "panel-fitness");
+assert.match(state["tris.dashboard.display.v1"], /"order":\[/);
+handlers["panel-down-fitness:click"]();
+assert.equal(moduleContainer.children[moduleContainer.children.length - 1].id, "panel-fitness");
+assert.equal(new Set(moduleContainer.children).size, 9);
 
 byId("display-settings").hidden = true;
 handlers["settings-button:click"].call(byId("settings-button"));
