@@ -108,6 +108,7 @@ def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
                 item["age_hours"] = round(max(0, seconds) / 3600, 1)
             except (ValueError, TypeError):
                 item["outdated"] = True
+                item.pop("age_hours", None)
         readings.append(item)
     result["quotes"] = readings
     return result
