@@ -141,6 +141,11 @@ def weather() -> dict:
         wind = current.get("wind_speed_10m")
         if type(wind) not in (int, float) or not math.isfinite(wind) or not 0 <= wind <= 500:
             wind = None
+        today_high = _forecast_first(payload, "temperature_2m_max")
+        today_low = _forecast_first(payload, "temperature_2m_min")
+        if today_high is not None and today_low is not None and today_high < today_low:
+            today_high = None
+            today_low = None
         return {
             "available": True, "location": label,
             "temperature_c": temperature,
@@ -148,8 +153,8 @@ def weather() -> dict:
             "weather_code": code,
             "feels_like_c": apparent,
             "wind_kmh": wind,
-            "today_high_c": _forecast_first(payload, "temperature_2m_max"),
-            "today_low_c": _forecast_first(payload, "temperature_2m_min"),
+            "today_high_c": today_high,
+            "today_low_c": today_low,
             "rain_chance_percent": _forecast_first(payload, "precipitation_probability_max"),
         }
     return cached("weather:" + query + ":" + label, load, ttl=600)
