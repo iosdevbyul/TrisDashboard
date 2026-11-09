@@ -94,11 +94,11 @@
   }
 
   function checkServer() {
-    if (document.hidden) { return; }
-    if (request && request.readyState !== 4) { return; }
+    if (document.hidden) { return false; }
+    if (request && request.readyState !== 4) { return true; }
     var now = new Date().getTime();
     if (now < lastRequestStarted) { lastRequestStarted = 0; }
-    if (now - lastRequestStarted < 2000) { return; }
+    if (now - lastRequestStarted < 2000) { return false; }
     lastRequestStarted = now;
     var sequence = ++requestSequence;
     if (request && request.readyState !== 4) { request.abort(); }
@@ -107,9 +107,12 @@
         try { online = JSON.parse(xhr.responseText).status === "ok"; }
         catch (error) { online = false; }
       }
-      if (sequence === requestSequence) { setConnection(online); }
-      suppressNextReconnectRefresh = false;
+      if (sequence === requestSequence) {
+        setConnection(online);
+        suppressNextReconnectRefresh = false;
+      }
     });
+    return true;
   }
 
   function statusText(info) {
@@ -1443,7 +1446,7 @@
   }
 
   function updateLastSuccessAge() {
-    if (document.hidden || window.trisDashboardRefreshPaused ||
+    if (document.hidden || wasOffline || window.trisDashboardRefreshPaused ||
         !lastSuccessfulOverviewAt || consecutiveOverviewFailures ||
         (overviewRequest && overviewRequest.readyState !== 4)) { return; }
     var elapsedMs = new Date().getTime() - lastSuccessfulOverviewAt;
@@ -1611,7 +1614,9 @@
   }, 60000);
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) {
-      tick(); suppressNextReconnectRefresh = true; checkServer();
+      tick();
+      suppressNextReconnectRefresh = true;
+      if (!checkServer()) { suppressNextReconnectRefresh = false; }
       if (!window.trisDashboardRefreshPaused &&
           (!overviewRequest || overviewRequest.readyState === 4)) { loadOverview(true); }
     } else {
