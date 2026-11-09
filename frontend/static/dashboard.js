@@ -223,6 +223,15 @@
         list.appendChild(barRow);
       }
     }
+    var concentration = info.top_three_concentration_percent || {};
+    var concentrationCurrencies = Object.keys(concentration);
+    for (var cc = 0; cc < concentrationCurrencies.length; cc++) {
+      var concentrationRow = document.createElement("div");
+      concentrationRow.className = "repo-row";
+      concentrationRow.textContent = "Top 3 manual holdings · " + concentrationCurrencies[cc] +
+        " " + concentration[concentrationCurrencies[cc]] + "% of priced holdings";
+      list.appendChild(concentrationRow);
+    }
     var largestHoldings = info.largest_holdings || {};
     var largestCurrencies = Object.keys(largestHoldings);
     for (var lh = 0; lh < largestCurrencies.length; lh++) {
@@ -278,6 +287,18 @@
       }
       sixMonth.textContent = "Confirmed last 6 months: " + sixMonthParts.join(" / ");
       list.appendChild(sixMonth);
+    }
+    var dividendSymbols = info.six_month_paying_symbols || {};
+    var dividendMonths = info.six_month_paid_months || {};
+    var coverageCurrencies = Object.keys(dividendSymbols);
+    for (var cv = 0; cv < coverageCurrencies.length; cv++) {
+      var coverageCurrency = coverageCurrencies[cv];
+      var coverageRow = document.createElement("div");
+      coverageRow.className = "repo-row";
+      coverageRow.textContent = "Confirmed 6-month coverage · " + coverageCurrency +
+        " " + dividendSymbols[coverageCurrency] + " paying holdings · " +
+        (dividendMonths[coverageCurrency] || 0) + " months with payments";
+      list.appendChild(coverageRow);
     }
     var observed = info.observed_monthly_average || {};
     var observedCurrencies = Object.keys(observed);
@@ -434,7 +455,9 @@
       " · " + info.next_seven_busy_days + " busy days" : "";
     var weekCount = typeof info.next_seven_days_count === "number" ?
       " · " + info.next_seven_days_count + " in next 7 days" : "";
-    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + nextLabel);
+    var conflicts = typeof info.conflicting_time_slots === "number" && info.conflicting_time_slots > 0 ?
+      " · " + info.conflicting_time_slots + " overlapping time slots" : "";
+    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + conflicts + nextLabel);
     if (info.next_event && typeof info.next_event.title === "string") {
       var nextRow = document.createElement("div");
       nextRow.className = "repo-row";
@@ -490,6 +513,7 @@
     var total = document.createElement("div");
     total.textContent = "Distance " + summary.distance_km + " km · " +
       (typeof info.active_days === "number" ? "Active " + info.active_days + "/7 days · " : "") +
+      (typeof info.rest_days === "number" ? info.rest_days + " rest days · " : "") +
       info.period_start + " to " + info.period_end;
     list.appendChild(total);
     if (info.peak_active_day && typeof info.peak_active_day.duration_minutes === "number") {
