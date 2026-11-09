@@ -1083,6 +1083,7 @@ delayedHealth.responseText = '{"status":"ok"}';
 delayedHealth.onreadystatechange();
 assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeHiddenOverview);
 document.hidden = false;
+clockOffset += 3000;
 handlers["document:visibilitychange"]();
 assert.ok(paths.filter(url => url.startsWith("/healthz")).length > beforeHiddenHealth);
 // A cancelled timeout callback firing late must not trigger a redundant refresh.
