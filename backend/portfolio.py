@@ -66,6 +66,7 @@ def load_portfolio(path: Path) -> dict:
             raise ValueError("Invalid ticker")
         if currency not in CURRENCIES:
             raise ValueError("Unsupported currency")
+        symbol = symbol.upper()
         key = (symbol, currency)
         if key in seen_positions:
             raise ValueError("Duplicate portfolio holding")
