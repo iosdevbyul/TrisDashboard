@@ -45,6 +45,7 @@
       "Data refreshes every " + settings.refreshMinutes + " minutes";
     window.trisDashboardRefreshMinutes = settings.refreshMinutes;
     window.trisDashboardRefreshPaused = settings.pauseRefresh;
+    document.getElementById("empty-panels").hidden = settings.hidden.length !== panelNames.length;
     for (var i = 0; i < panelNames.length; i++) {
       var name = panelNames[i];
       var visible = settings.hidden.indexOf(name) === -1;
