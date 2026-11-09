@@ -61,7 +61,7 @@
       lastCheck.textContent = "Checked " + pad(new Date().getHours()) + ":" + pad(new Date().getMinutes());
       if (wasOffline) {
         wasOffline = false;
-        loadOverview(true);
+        if (!window.trisDashboardRefreshPaused) { loadOverview(true); }
       }
     } else {
       wasOffline = true;
@@ -860,6 +860,10 @@
       (lastSuccessfulOverview ? "Last successful update at " + lastSuccessfulOverview + "." :
        "No successful update yet."));
     clearOverviewRetry();
+    if (window.trisDashboardRefreshPaused) {
+      text("data-refresh-state", "Data refresh failed. Automatic retry paused; use Refresh now.");
+      return;
+    }
     // A bounded backoff prevents hammering an unavailable MacBook.
     var delays = [30000, 60000, 120000, 180000];
     var delay = delays[Math.min(consecutiveOverviewFailures - 1, delays.length - 1)];
@@ -942,6 +946,9 @@
     }
   }, 60000);
   document.addEventListener("visibilitychange", function () {
-    if (!document.hidden) { tick(); checkServer(); loadOverview(true); } else { clearOverviewRetry(); }
+    if (!document.hidden) {
+      tick(); checkServer();
+      if (!window.trisDashboardRefreshPaused) { loadOverview(true); }
+    } else { clearOverviewRetry(); }
   });
 }());
