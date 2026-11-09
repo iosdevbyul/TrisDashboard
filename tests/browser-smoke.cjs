@@ -49,6 +49,7 @@ function byId(id) {
 const response = {
   weather: { available: true, temperature_c: 22, location: "Test City", humidity_percent: 40 },
   github: { available: true, repositories: [] },
+  quotes: { available: false, configured: false },
   trello: { available: false, configured: false },
   portfolio: { available: false, configured: false },
   dividends: { available: false, configured: false },
@@ -400,6 +401,14 @@ handlers["document:visibilitychange"]();
 assert.match(byId("data-refresh-state").textContent, /failed/i);
 assert.match(byId("quotes-summary").textContent, /^1\/1 quotes reported · Oldest reading 3\.5h ago$/);
 assert.match(byId("portfolio-quote-values").textContent, /USD 150.75/);
+
+// Missing a required source cannot count as a successful overview refresh.
+overviewBody = null;
+const savedQuotes = response.quotes;
+delete response.quotes;
+handlers["document:visibilitychange"]();
+assert.match(byId("data-refresh-state").textContent, /failed/i);
+response.quotes = savedQuotes;
 
 // An incomplete manual snapshot should not block rendering other dashboard cards.
 overviewBody = null;

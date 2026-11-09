@@ -923,7 +923,10 @@
       if (!ok) { retryOverview(); return; }
       try {
         var payload = JSON.parse(xhr.responseText);
-        if (!payload || typeof payload !== "object" || !payload.server || !payload.weather || !payload.github) {
+        if (!payload || typeof payload !== "object" ||
+            !payload.server || !payload.weather || !payload.github ||
+            !payload.trello || !payload.portfolio || !payload.fitness ||
+            !payload.dividends || !payload.agenda || !payload.quotes) {
           throw new Error("Unexpected overview response");
         }
         showGithub(payload.github);
