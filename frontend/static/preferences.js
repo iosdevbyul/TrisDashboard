@@ -156,7 +156,12 @@
     apply(); store();
   });
   document.getElementById("reset-settings").addEventListener("click", function () {
-    settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, pauseRefresh: false, hidden: []}; apply(); store();
+    var wasPaused = settings.pauseRefresh;
+    settings = {compact: false, dim: false, glance: false, largeText: false, highContrast: false, refreshMinutes: 3, pauseRefresh: false, hidden: []};
+    apply(); store();
+    if (wasPaused && typeof window.trisDashboardResumeRefresh === "function") {
+      window.trisDashboardResumeRefresh();
+    }
   });
 
   buildControls(); restore(); apply();
