@@ -456,4 +456,38 @@ handlers["setting-large-text:change"].call(byId("setting-large-text"));
 assert.match(document.body.className, /large-text/);
 assert.match(state["tris.dashboard.display.v1"], /"largeText":true/);
 
+// Newly exposed local summary metrics render without changing legacy layouts.
+response.portfolio = {available: true, positions: [],
+  price_coverage_by_currency: {USD: {priced: 1, total: 2}, KRW: {priced: 1, total: 1}},
+  totals: {}, quality: {outdated: false}};
+response.dividends = {available: true, month: "2026-11", monthly_totals: {},
+  monthly_unique_paying_symbols: {USD: 2}, history: [], recent: []};
+response.fitness = {available: true, summary: {sessions: 0, duration_minutes: 0, distance_km: 0},
+  period_start: "2026-11-03", period_end: "2026-11-09", longest_rest_streak_days: 7,
+  daily: [], recent: []};
+response.agenda = {available: true, upcoming_count: 2,
+  window_start: "2026-11-09", window_end: "2026-11-23",
+  next_timed_event: {date: "2026-11-10", time: "09:30", title: "Standup"},
+  events: []};
+handlers["document:visibilitychange"]();
+assert.ok(byId("portfolio-list").children.some((row) =>
+  /Manual price coverage · USD 1\/2 holdings priced/.test(row.textContent)));
+assert.ok(byId("dividend-list").children.some((row) =>
+  /Distinct confirmed payers this month · USD 2 holdings/.test(row.textContent)));
+assert.ok(byId("fitness-list").children.some((row) =>
+  /Longest consecutive rest period \(last 7 days\) · 7 days/.test(row.textContent)));
+assert.ok(byId("agenda-list").children.some((row) =>
+  /Next timed event: Standup · 2026-11-10 09:30/.test(row.textContent)));
+
+// Missing optional fields from an older API response never produce phantom rows.
+delete response.portfolio.price_coverage_by_currency;
+delete response.dividends.monthly_unique_paying_symbols;
+delete response.fitness.longest_rest_streak_days;
+delete response.agenda.next_timed_event;
+handlers["document:visibilitychange"]();
+assert.ok(!byId("portfolio-list").children.some((row) => /Manual price coverage/.test(row.textContent)));
+assert.ok(!byId("dividend-list").children.some((row) => /Distinct confirmed payers/.test(row.textContent)));
+assert.ok(!byId("fitness-list").children.some((row) => /Longest consecutive rest period/.test(row.textContent)));
+assert.ok(!byId("agenda-list").children.some((row) => /Next timed event:/.test(row.textContent)));
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
