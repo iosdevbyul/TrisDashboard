@@ -15,6 +15,8 @@ let overviewStatus = 200;
 let overviewBody = null;
 let healthBody = null;
 let clockOffset = 0;
+let deferNextOverview = false;
+const pendingOverviews = [];
 class TestDate extends Date {
   constructor(...args) { super(...(args.length ? args : [Date.now() + clockOffset])); }
 }
@@ -77,6 +79,12 @@ class XMLHttpRequest {
   send() {
     paths.push(this.url);
     const isOverview = this.url.startsWith("/api/overview");
+    if (isOverview && deferNextOverview) {
+      deferNextOverview = false;
+      this.readyState = 1;
+      pendingOverviews.push(this);
+      return;
+    }
     this.status = isOverview ? overviewStatus : 200;
     this.readyState = 4;
     this.responseText = isOverview && overviewBody !== null
@@ -84,7 +92,7 @@ class XMLHttpRequest {
       : (isOverview ? JSON.stringify(response) : (healthBody === null ? '{"status":"ok"}' : healthBody));
     if (this.onreadystatechange) this.onreadystatechange();
   }
-  abort() { this.readyState = 4; }
+  abort() { this.aborted = true; this.readyState = 4; }
 }
 
 const state = {};
@@ -989,5 +997,55 @@ assert.ok(!byId("portfolio-list").children.some(row => /Skipped 2 invalid zero-q
 assert.ok(byId("portfolio-list").children.some(row => /Largest manually valued holding · USD SCHD \(50\)/.test(row.textContent)));
 assert.ok(byId("dividend-list").children.some(row => /USD 4 entries/.test(row.textContent)));
 assert.ok(byId("agenda-list").children.some(row => /Next 7 calendar days · 11-09 1/.test(row.textContent)));
+
+// In-flight data is cancelled when backgrounded and when auto-refresh is paused.
+deferNextOverview = true;
+handlers["refresh-button:click"]();
+const hiddenRequest = pendingOverviews.pop();
+assert.ok(hiddenRequest && !hiddenRequest.aborted);
+assert.equal(byId("refresh-button").disabled,true);
+document.hidden = true;
+handlers["document:visibilitychange"]();
+assert.equal(hiddenRequest.aborted,true);
+assert.equal(byId("refresh-button").disabled,false);
+assert.match(byId("data-refresh-state").textContent,/Tab hidden/);
+// Stale completion after cancellation cannot replace the last rendered data.
+const savedHealth = byId("glance-sources").textContent;
+hiddenRequest.status = 200;
+hiddenRequest.responseText = "{invalid";
+hiddenRequest.onreadystatechange();
+assert.equal(byId("glance-sources").textContent,savedHealth);
+document.hidden = false;
+handlers["document:visibilitychange"]();
+deferNextOverview = true;
+handlers["refresh-button:click"]();
+const pausedRequest = pendingOverviews.pop();
+byId("setting-pause-refresh").checked = true;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
+assert.equal(pausedRequest.aborted,true);
+assert.equal(byId("refresh-button").disabled,false);
+assert.match(byId("data-refresh-state").textContent,/Automatic refresh paused/);
+byId("setting-pause-refresh").checked = false;
+handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
+// Manual refresh restarts backoff at the first retry after a repeated outage.
+overviewStatus = 503;
+handlers["document:visibilitychange"]();
+const followupRetry = scheduled.filter(item => item.delay === 30000 && !item.cancelled).pop();
+assert.ok(followupRetry,"manual failure must schedule first retry");
+handlers["refresh-button:click"]();
+const restartedRetry = scheduled.filter(item => item.delay === 30000 && !item.cancelled).pop();
+assert.ok(restartedRetry && restartedRetry !== followupRetry);
+overviewStatus = 200;
+handlers["refresh-button:click"]();
+// Wall clock going backwards should not block health checks or periodic overview.
+clockOffset += 61 * 60000;
+periodic.find(item => item.delay === 60000).callback();
+clockOffset -= 120 * 60000;
+const beforeClockRollback = paths.filter(url => url.startsWith("/api/overview")).length;
+periodic.find(item => item.delay === 60000).callback();
+assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeClockRollback + 1);
+const healthBefore = paths.filter(url => url.startsWith("/healthz")).length;
+handlers["document:visibilitychange"]();
+assert.ok(paths.filter(url => url.startsWith("/healthz")).length > healthBefore);
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
