@@ -114,7 +114,10 @@
         active++;
         if (info.stale || (info.quality && info.quality.outdated)) {
           stale++;
-          sourceIssues.push(names[i] + " stale");
+          var age = info.cache_age_seconds;
+          sourceIssues.push(names[i] + " stale" +
+            (typeof age === "number" && isFinite(age) && age >= 0 ?
+              " (" + Math.floor(age / 60) + " min old)" : ""));
         }
       } else if (info && info.configured !== false) {
         unavailable++;
