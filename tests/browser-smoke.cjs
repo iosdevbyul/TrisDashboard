@@ -1104,6 +1104,7 @@ healthBody = '{"status":"error"}';
 periodic.find(item => item.delay === 15000).callback();
 assert.equal(byId("connection").textContent,"Server offline");
 healthBody = '{"status":"ok"}';
+clockOffset += 3000; // The health poll is throttled for two seconds.
 const beforeForegroundOverview = paths.filter(url => url.startsWith("/api/overview")).length;
 handlers["document:visibilitychange"]();
 assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeForegroundOverview + 1);
