@@ -237,7 +237,9 @@
     }
     var positions = originalPositions.filter(function (position) {
       return position && typeof position === "object" &&
-        typeof position.symbol === "string";
+        typeof position.symbol === "string" && position.symbol.length > 0 &&
+        position.quantity !== null && position.quantity !== "" &&
+        isFinite(Number(position.quantity)) && Number(position.quantity) >= 0;
     });
     if (positions.length !== originalPositions.length) {
       var invalidHolding = document.createElement("div");
@@ -438,10 +440,26 @@
     var totals = info.monthly_totals || {};
     var currencies = Object.keys(totals);
     var label = [];
+    var invalidTotals = 0;
     for (var i = 0; i < currencies.length; i++) {
-      label.push(currencies[i] + " " + totals[currencies[i]]);
+      var totalValue = totals[currencies[i]];
+      if (totalValue === null || totalValue === "" ||
+          typeof totalValue === "boolean" ||
+          !isFinite(Number(totalValue)) || Number(totalValue) < 0) {
+        invalidTotals++;
+        continue;
+      }
+      label.push(currencies[i] + " " + totalValue);
     }
-    text("dividend-summary", label.length ? label.join(" / ") : "No recorded payments this month");
+    text("dividend-summary", label.length ? label.join(" / ") :
+      (invalidTotals ? "Payment totals unavailable" : "No recorded payments this month"));
+    if (invalidTotals) {
+      var invalidTotalRow = document.createElement("div");
+      invalidTotalRow.className = "repo-row";
+      invalidTotalRow.textContent = "Excluded " + invalidTotals +
+        " invalid monthly dividend totals.";
+      list.appendChild(invalidTotalRow);
+    }
     if (info.record_count === 0) {
       var noPayments = document.createElement("div");
       noPayments.className = "repo-row";
@@ -720,7 +738,8 @@
       return;
     }
     var nextIn = info.next_event_in_days;
-    var nextLabel = typeof nextIn === "number" && nextIn >= 0 ?
+    var nextLabel = typeof nextIn === "number" && isFinite(nextIn) &&
+      nextIn >= 0 && Math.floor(nextIn) === nextIn ?
       " · Next " + (nextIn === 0 ? "today" : nextIn === 1 ? "tomorrow" : "in " + nextIn + " days") : "";
     var busiest = info.busiest_upcoming_day;
     var busiestLabel = busiest && typeof busiest.date === "string" ?
@@ -728,17 +747,23 @@
     var freeLabel = typeof info.first_free_day_in_next_seven === "string" ?
       " · First free " + info.first_free_day_in_next_seven :
       (typeof info.first_free_day_in_next_seven !== "undefined" ? " · No free day in next 7" : "");
-    var todayCount = typeof info.today_event_count === "number" ?
+    function validCount(value) {
+      return typeof value === "number" && isFinite(value) &&
+        value >= 0 && Math.floor(value) === value;
+    }
+    var todayCount = validCount(info.today_event_count) ?
       " · " + info.today_event_count + " today" : "";
-    var tomorrowCount = typeof info.tomorrow_event_count === "number" ?
+    var tomorrowCount = validCount(info.tomorrow_event_count) ?
       " · " + info.tomorrow_event_count + " tomorrow" : "";
-    var busyDays = typeof info.next_seven_busy_days === "number" ?
+    var busyDays = validCount(info.next_seven_busy_days) &&
+      info.next_seven_busy_days <= 7 ?
       " · " + info.next_seven_busy_days + " busy days" : "";
-    var weekCount = typeof info.next_seven_days_count === "number" ?
+    var weekCount = validCount(info.next_seven_days_count) ?
       " · " + info.next_seven_days_count + " in next 7 days" : "";
     var conflicts = typeof info.conflicting_time_slots === "number" && info.conflicting_time_slots > 0 ?
       " · " + info.conflicting_time_slots + " overlapping time slots" : "";
-    text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + conflicts + busiestLabel + freeLabel + nextLabel);
+    text("agenda-summary", (validCount(info.upcoming_count) ?
+      info.upcoming_count : "Unknown") + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + conflicts + busiestLabel + freeLabel + nextLabel);
     if (typeof info.conflicting_time_slots === "number" &&
         isFinite(info.conflicting_time_slots) && info.conflicting_time_slots > 0 &&
         typeof info.conflicting_event_count === "number" &&
@@ -1197,9 +1222,18 @@
       row.className = "repo-row";
       var ci = repos[i].latest_ci;
       var ciText = "CI unknown";
-      if (ci) {
-        ciText = ci.status === "completed" ? "CI " + (ci.conclusion || "unknown") : "CI " + ci.status;
-      } else {
+      if (ci && typeof ci === "object") {
+        if (ci.status === "completed") {
+          var conclusions = ["success", "failure", "cancelled", "skipped", "timed_out",
+            "action_required", "neutral", "stale", "startup_failure"];
+          ciText = "CI " + (conclusions.indexOf(ci.conclusion) !== -1 ?
+            ci.conclusion : "unknown");
+        } else if (ci.status === "queued" || ci.status === "in_progress" ||
+                   ci.status === "waiting" || ci.status === "pending" ||
+                   ci.status === "requested") {
+          ciText = "CI " + ci.status;
+        }
+      } else if (!ci) {
         ciText = "No workflow runs";
       }
       row.textContent = repos[i].repository + " · " + repos[i].open_pr_count +
