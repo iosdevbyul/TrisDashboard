@@ -1140,4 +1140,46 @@ document.hidden = false;
 handlers["document:visibilitychange"]();
 healthBody = null;
 
+// Foreground recovery: a throttled health check cannot leave reconnect suppression stuck.
+clockOffset += 3000;
+healthBody = '{"status":"ok"}';
+periodic.find(item => item.delay === 15000).callback();
+handlers["document:visibilitychange"](); // health check is throttled; overview still refreshes
+clockOffset += 3000;
+healthBody = '{"status":"error"}';
+periodic.find(item => item.delay === 15000).callback();
+assert.equal(byId("connection").textContent,"Server offline");
+healthBody = '{"status":"ok"}';
+clockOffset += 3000;
+const recoveredOverviewCount = paths.filter(url => url.startsWith("/api/overview")).length;
+periodic.find(item => item.delay === 15000).callback();
+assert.equal(byId("connection").textContent,"Server online");
+assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,recoveredOverviewCount + 1);
+// While disconnected, the age ticker must not hide the offline state.
+clockOffset += 3000;
+healthBody = '{"status":"error"}';
+periodic.find(item => item.delay === 15000).callback();
+const offlineRefreshMessage = byId("data-refresh-state").textContent;
+periodic.find(item => item.delay === 60000).callback();
+assert.equal(byId("data-refresh-state").textContent,offlineRefreshMessage);
+// Existing in-flight health checks should be reused on foreground, not duplicated.
+healthBody = '{"status":"ok"}';
+clockOffset += 3000;
+deferNextHealth = true;
+periodic.find(item => item.delay === 15000).callback();
+const reusedHealth = pendingHealthChecks.pop();
+assert.ok(reusedHealth && !reusedHealth.aborted);
+const beforeReusedHealth = paths.filter(url => url.startsWith("/healthz")).length;
+const beforeReusedOverview = paths.filter(url => url.startsWith("/api/overview")).length;
+handlers["document:visibilitychange"]();
+assert.equal(paths.filter(url => url.startsWith("/healthz")).length,beforeReusedHealth);
+assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeReusedOverview + 1);
+reusedHealth.readyState = 4;
+reusedHealth.status = 200;
+reusedHealth.responseText = '{"status":"ok"}';
+reusedHealth.onreadystatechange();
+assert.equal(byId("connection").textContent,"Server online");
+assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeReusedOverview + 1);
+healthBody = null;
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
