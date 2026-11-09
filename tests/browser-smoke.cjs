@@ -373,7 +373,7 @@ response.github = { available: true, repositories: [{
   open_pr_count_truncated: true, open_prs: [], latest_ci: null
 }] };
 handlers["document:visibilitychange"]();
-assert.match(byId("github-summary").textContent, /20\+ known open PRs/);
+assert.equal(byId("github-summary").textContent,"2+ known open PRs");
 assert.match(byId("github-list").children[0].textContent, /20\+ open PRs/);
 assert.equal(byId("github-list").children[1].href, "https://github.com/owner/busy");
 response.github.repositories[0].open_prs = [{number:42,title:"Safe PR",url:"https://github.com/malicious.example/bad"}];
