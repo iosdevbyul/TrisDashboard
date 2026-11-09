@@ -77,6 +77,59 @@
       }
     } catch (error) {}
   }
+  function focusPinnedPanel(name) {
+    if (pinned.indexOf(name) === -1) { return; }
+    sourceFilter = "all";
+    pinnedOnly = false;
+    panelSearchQuery = "";
+    // Navigation does not change saved user visibility or view history.
+    apply();
+    var card = document.getElementById("panel-" + name);
+    if (settings.hidden.indexOf(name) !== -1) {
+      // Hidden favorites stay hidden unless the user explicitly opts to reveal them.
+      document.getElementById("pinned-panel-message").textContent =
+        name + " is hidden in Display settings. Use Show pinned to reveal it.";
+      return;
+    }
+    if (card && typeof card.focus === "function") { card.focus(); }
+  }
+  function revealPinnedPanels() {
+    if (!pinned.length) { return; }
+    settings.hidden = settings.hidden.filter(function (name) { return pinned.indexOf(name) === -1; });
+    apply(); store();
+  }
+  function updatePinManager() {
+    var manager = document.getElementById("pinned-panel-actions");
+    while (manager.firstChild) { manager.removeChild(manager.firstChild); }
+    manager.hidden = pinned.length === 0;
+    document.getElementById("clear-all-pins").disabled = pinned.length === 0;
+    var ordered = displayOrder();
+    for (var i = 0; i < ordered.length; i++) {
+      if (pinned.indexOf(ordered[i]) === -1) { continue; }
+      (function (name) {
+        var view = document.createElement("button");
+        view.type = "button";
+        view.className = "pinned-jump";
+        view.id = "pinned-jump-" + name;
+        view.textContent = "Go to " + name;
+        view.addEventListener("click", function () { focusPinnedPanel(name); });
+        manager.appendChild(view);
+        var remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "pinned-remove";
+        remove.id = "pinned-remove-" + name;
+        remove.textContent = "Unpin " + name;
+        remove.addEventListener("click", function () { togglePin(name); });
+        manager.appendChild(remove);
+      }(ordered[i]));
+    }
+    var reveal = document.createElement("button");
+    reveal.type = "button";
+    reveal.id = "show-pinned-panels";
+    reveal.textContent = "Show pinned";
+    reveal.addEventListener("click", revealPinnedPanels);
+    manager.appendChild(reveal);
+  }
   function togglePin(name) {
     var idx = pinned.indexOf(name);
     if (idx === -1) { pinned.push(name); } else { pinned.splice(idx, 1); }
@@ -182,7 +235,7 @@
     var active = sameVisible(currentVisible(), savedVisible);
     document.getElementById("quick-view-mine").disabled = savedVisible === null;
     document.getElementById("clear-my-view").disabled = savedVisible === null;
-    document.getElementById("quick-view-mine").setAttribute("aria-pressed", active ? "true" : "false");
+    document.getElementById("quick-view-mine").setAttribute("aria-pressed", !pinnedOnly && active ? "true" : "false");
     document.getElementById("saved-view-status").textContent = savedVisible ?
       "Saved view: " + savedVisible.length + " panels" + (active ? " · Active" : " · Different from current") :
       "No saved view";
@@ -250,11 +303,11 @@
         if (visible.indexOf(preset.panels[k]) === -1) { matches = false; }
       }
       document.getElementById(preset.id).setAttribute("aria-pressed", matches ? "true" : "false");
-      document.getElementById(preset.quickId).setAttribute("aria-pressed", matches ? "true" : "false");
+      document.getElementById(preset.quickId).setAttribute("aria-pressed", !pinnedOnly && matches ? "true" : "false");
       if (matches) { selected = preset.name; }
     }
     document.getElementById("quick-view-all").setAttribute("aria-pressed",
-      visible.length === panelNames.length ? "true" : "false");
+      !pinnedOnly && visible.length === panelNames.length ? "true" : "false");
     updateSavedView();
     document.getElementById("panel-preset-status").textContent = selected ?
       selected + " · " + visible.length + " panels" :
@@ -322,6 +375,7 @@
       pinButton.setAttribute("aria-pressed", pinned.indexOf(pinName) === -1 ? "false" : "true");
     }
     document.getElementById("quick-view-pinned").setAttribute("aria-pressed", pinnedOnly ? "true" : "false");
+    updatePinManager();
     document.getElementById("quick-view-pinned").disabled = pinned.length === 0;
     document.getElementById("pinned-panel-count").textContent = pinned.length + " pinned";
     var visibleShortcuts = 0;
@@ -591,6 +645,13 @@
     }(viewPresets[q]));
   }
 
+  document.getElementById("clear-all-pins").addEventListener("click", function () {
+    if (!pinned.length) { return; }
+    pinned = [];
+    pinnedOnly = false;
+    storePins(); apply();
+    document.getElementById("pinned-panel-message").textContent = "All pins cleared. Display settings preserved.";
+  });
   document.getElementById("quick-view-pinned").addEventListener("click", function () {
     if (!pinned.length) { return; }
     pinnedOnly = !pinnedOnly;
