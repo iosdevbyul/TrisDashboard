@@ -212,8 +212,14 @@
       text("portfolio-updated", info && info.configured ? "Check MacBook snapshot" : "Configure on MacBook");
       return;
     }
-    var originalPositions = Object.prototype.toString.call(info.positions) === "[object Array]" ?
-      info.positions : [];
+    var validPositions = Object.prototype.toString.call(info.positions) === "[object Array]";
+    var originalPositions = validPositions ? info.positions : [];
+    if (!validPositions) {
+      var invalidPositions = document.createElement("div");
+      invalidPositions.className = "repo-row";
+      invalidPositions.textContent = "Portfolio holdings list invalid. Check the manual snapshot file.";
+      list.appendChild(invalidPositions);
+    }
     var positions = originalPositions.filter(function (position) {
       return position && typeof position === "object" &&
         typeof position.symbol === "string";
@@ -226,7 +232,7 @@
       list.appendChild(invalidHolding);
     }
     text("portfolio-summary", positions.length + " holdings");
-    if (!positions.length) {
+    if (validPositions && !positions.length) {
       var noPositions = document.createElement("div");
       noPositions.className = "repo-row";
       noPositions.textContent = "No holdings in the manual snapshot.";
@@ -564,8 +570,14 @@
         list.appendChild(symbolRow);
       }
     }
-    var originalHistory = Object.prototype.toString.call(info.history) === "[object Array]" ?
-      info.history : [];
+    var validHistory = Object.prototype.toString.call(info.history) === "[object Array]";
+    var originalHistory = validHistory ? info.history : [];
+    if (!validHistory) {
+      var invalidHistory = document.createElement("div");
+      invalidHistory.className = "repo-row";
+      invalidHistory.textContent = "Dividend history list invalid. Check the confirmed payment file.";
+      list.appendChild(invalidHistory);
+    }
     var history = originalHistory.filter(function (month) {
       return month && typeof month === "object" &&
         typeof month.month === "string" && month.totals &&
@@ -728,7 +740,9 @@
     var originalEvents = validEvents ? info.events : [];
     var events = originalEvents.filter(function (entry) {
       return entry && typeof entry === "object" &&
-        typeof entry.date === "string" && typeof entry.title === "string";
+        typeof entry.date === "string" &&
+        /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(entry.date) &&
+        typeof entry.title === "string";
     });
     if (events.length !== originalEvents.length) {
       var invalidEvent = document.createElement("div");
@@ -909,8 +923,14 @@
           " · " + activities[a].time_share_percent + "% of workout time" : "");
       list.appendChild(activityLine);
     }
-    var originalDaily = Object.prototype.toString.call(info.daily) === "[object Array]" ?
-      info.daily : [];
+    var validDaily = Object.prototype.toString.call(info.daily) === "[object Array]";
+    var originalDaily = validDaily ? info.daily : [];
+    if (!validDaily) {
+      var invalidDaily = document.createElement("div");
+      invalidDaily.className = "repo-row";
+      invalidDaily.textContent = "Daily workout list invalid. Check the local workout export.";
+      list.appendChild(invalidDaily);
+    }
     var daily = originalDaily.filter(function (entry) {
       return entry && typeof entry === "object" && typeof entry.date === "string" &&
         typeof entry.duration_minutes === "number" && isFinite(entry.duration_minutes) &&
