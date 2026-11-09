@@ -36,6 +36,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     totals = {}
     monthly_payment_counts = {}
     monthly_by_symbol = {}
+    monthly_unique_payers = {}
     month = reference.isoformat()[:7]
     months = []
     for offset in range(5, -1, -1):
@@ -70,6 +71,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             monthly_payment_counts[currency] = monthly_payment_counts.get(currency, 0) + 1
             symbol_key = (ticker, currency)
             monthly_by_symbol[symbol_key] = monthly_by_symbol.get(symbol_key, Decimal("0")) + amount
+            monthly_unique_payers.setdefault(currency, set()).add(ticker)
         if paid_month in history:
             symbol_key = (ticker, currency)
             by_symbol[symbol_key] = by_symbol.get(symbol_key, Decimal("0")) + amount
@@ -130,6 +132,8 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     return {"available": True, "configured": True, "source": "manual_confirmed_payments",
             "month": month, "monthly_totals": {key: str(value) for key, value in sorted(totals.items())},
             "monthly_payment_counts": dict(sorted(monthly_payment_counts.items())),
+            "monthly_unique_paying_symbols": {currency: len(symbols)
+                                             for currency, symbols in sorted(monthly_unique_payers.items())},
             "monthly_top_payers": monthly_top_payers,
             "six_month_totals": {key: str(value) for key, value in sorted(history_totals.items())},
             "six_month_paying_symbols": dict(sorted(unique_paying_symbols.items())),
