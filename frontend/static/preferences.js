@@ -117,10 +117,13 @@
     settings.highContrast = this.checked; apply(); store();
   });
   document.getElementById("setting-pause-refresh").addEventListener("change", function () {
+    var wasPaused = settings.pauseRefresh;
     settings.pauseRefresh = this.checked;
     apply(); store();
     if (settings.pauseRefresh && typeof window.trisDashboardCancelPendingRetry === "function") {
       window.trisDashboardCancelPendingRetry();
+    } else if (wasPaused && !settings.pauseRefresh && typeof window.trisDashboardResumeRefresh === "function") {
+      window.trisDashboardResumeRefresh();
     }
   });
   document.getElementById("setting-refresh-minutes").addEventListener("change", function () {
