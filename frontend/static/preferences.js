@@ -23,6 +23,19 @@
     return sourceFilter === "issues" ? (state === "stale" || state === "unavailable") :
       state === sourceFilter;
   }
+  function clearTemporaryFilters() {
+    sourceFilter = "all";
+    panelSearchQuery = "";
+    pinnedOnly = false;
+    apply();
+  }
+  function activeTemporaryFilters() {
+    var names = [];
+    if (panelSearchQuery !== "") { names.push("Search"); }
+    if (sourceFilter !== "all") { names.push("Source: " + sourceFilter); }
+    if (pinnedOnly) { names.push("Pinned only"); }
+    return names;
+  }
   function selectSourceFilter(filter) {
     if (["all", "issues", "unconfigured", "ready"].indexOf(filter) === -1) { return; }
     sourceFilter = filter;
@@ -422,7 +435,8 @@
       "Showing all configured panels" : sourceMatching + " " + sourceFilter + " sources" +
       (panelSearchQuery ? " · search also applied" : "");
     document.getElementById("source-filter-empty").hidden =
-      sourceFilter === "all" || visibleShortcuts !== 0 || pinnedOnly;
+      sourceFilter === "all" || visibleShortcuts !== 0 || pinnedOnly ||
+      activeTemporaryFilters().length >= 2;
     document.getElementById("source-filter-empty").textContent = sourceMatching ?
       "No " + sourceFilter + " sources match the current search. Clear the search or choose All." :
       "No " + sourceFilter + " sources. Choose All to restore the dashboard.";
@@ -432,15 +446,26 @@
       visibleShortcuts + " of " + panelNames.length + " shortcuts available";
     var searchActive = panelSearchQuery !== "";
     document.getElementById("panel-search-empty").hidden =
-      !searchActive || visibleShortcuts !== 0 || sourceFilter !== "all";
+      !searchActive || visibleShortcuts !== 0 || sourceFilter !== "all" ||
+      pinnedOnly;
     document.getElementById("panel-search-empty").textContent = anyMatchingPanel ?
       "Matching panels are hidden in Display settings. Show a matching panel or clear search." :
       "No panel matches your search. Try another keyword or clear search.";
     document.getElementById("panel-search-count").textContent = searchActive ?
       visibleShortcuts + " matching visible panels" :
       visibleShortcuts + " panels available";
+    var activeFilters = activeTemporaryFilters();
+    document.getElementById("filter-summary-status").textContent = activeFilters.length ?
+      activeFilters.length + " active filters: " + activeFilters.join(" · ") :
+      "No temporary filters";
+    document.getElementById("clear-temporary-filters").disabled = activeFilters.length === 0;
+    document.getElementById("combined-filter-empty").hidden =
+      activeFilters.length < 2 || visibleShortcuts !== 0;
+    document.getElementById("combined-filter-empty").textContent =
+      "No panels match " + activeFilters.join(" and ") +
+      ". Clear all filters to return to your saved panel selection.";
     document.getElementById("pinned-panel-empty").hidden =
-      !pinnedOnly || visibleShortcuts !== 0;
+      !pinnedOnly || visibleShortcuts !== 0 || activeFilters.length >= 2;
     document.getElementById("pinned-panel-empty").textContent =
       pinned.length ? "Pinned panels are hidden by the current search or source status. Clear the filters or show all panels." :
       "No pinned panels. Pin a panel to create your favorites.";
@@ -499,6 +524,7 @@
     });
   });
 
+  document.getElementById("clear-temporary-filters").addEventListener("click", clearTemporaryFilters);
   document.getElementById("panel-search-input").addEventListener("input", function () {
     panelSearchQuery = String(this.value || "").toLowerCase().replace(/^\s+|\s+$/g, "");
     apply();
