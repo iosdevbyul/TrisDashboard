@@ -217,6 +217,18 @@
         coverage.priced + "/" + coverage.total + " holdings priced";
       list.appendChild(coverageLine);
     }
+    var pricePercent = info.price_coverage_percent_by_currency || {};
+    var percentCurrencies = Object.keys(pricePercent);
+    for (var pp = 0; pp < percentCurrencies.length; pp++) {
+      var percentValue = pricePercent[percentCurrencies[pp]];
+      if (typeof percentValue !== "number" || !isFinite(percentValue) ||
+          percentValue < 0 || percentValue > 100) { continue; }
+      var percentLine = document.createElement("div");
+      percentLine.className = "repo-row";
+      percentLine.textContent = "Manual price completeness · " +
+        percentCurrencies[pp] + " " + percentValue + "% (not live quotes)";
+      list.appendChild(percentLine);
+    }
     var zeroQuantity = info.zero_quantity_symbols_by_currency || {};
     var zeroCurrencies = Object.keys(zeroQuantity);
     for (var z = 0; z < zeroCurrencies.length; z++) {
@@ -343,6 +355,15 @@
       uniquePayerLine.textContent = "Distinct confirmed payers this month · " +
         payerCurrencies[up] + " " + payerCount + " holdings";
       list.appendChild(uniquePayerLine);
+    }
+    if (typeof info.days_since_last_confirmed_payment === "number" &&
+        isFinite(info.days_since_last_confirmed_payment) &&
+        info.days_since_last_confirmed_payment >= 0) {
+      var daysSincePayment = document.createElement("div");
+      daysSincePayment.className = "repo-row";
+      daysSincePayment.textContent = "Days since most recent confirmed payment · " +
+        info.days_since_last_confirmed_payment + " days (not a payout forecast)";
+      list.appendChild(daysSincePayment);
     }
     if (info.last_confirmed_payment && typeof info.last_confirmed_payment.paid_on === "string" &&
         typeof info.last_confirmed_payment.symbol === "string" &&
@@ -568,6 +589,15 @@
         " · " + info.next_timed_event.date + " " + info.next_timed_event.time;
       list.appendChild(nextTimedRow);
     }
+    if (typeof info.next_seven_free_days === "number" &&
+        isFinite(info.next_seven_free_days) &&
+        info.next_seven_free_days >= 0 && info.next_seven_free_days <= 7) {
+      var openDays = document.createElement("div");
+      openDays.className = "repo-row";
+      openDays.textContent = "Days without scheduled events (next 7) · " +
+        info.next_seven_free_days;
+      list.appendChild(openDays);
+    }
     var dailyCounts = info.next_seven_daily_counts || [];
     if (dailyCounts.length) {
       var dailyCountLine = document.createElement("div");
@@ -683,6 +713,15 @@
       restStreak.textContent = "Longest consecutive rest period (last 7 days) · " +
         info.longest_rest_streak_days + " days";
       list.appendChild(restStreak);
+    }
+    if (typeof info.ongoing_rest_streak_days === "number" &&
+        isFinite(info.ongoing_rest_streak_days) &&
+        info.ongoing_rest_streak_days >= 0 && info.ongoing_rest_streak_days <= 7) {
+      var restingNow = document.createElement("div");
+      restingNow.className = "repo-row";
+      restingNow.textContent = "Consecutive rest days through today (7-day window) · " +
+        info.ongoing_rest_streak_days + " days";
+      list.appendChild(restingNow);
     }
     if (typeof info.days_since_last_workout_in_week === "number" &&
         isFinite(info.days_since_last_workout_in_week) &&

@@ -80,6 +80,7 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
     ]
     busy_dates = {event["date"] for event in upcoming if event["date"] <= seven_day_end}
     next_seven_busy_days = len(busy_dates)
+    next_seven_free_days = len(next_seven_daily_counts) - next_seven_busy_days
     first_free_day = next((candidate.isoformat()
                            for index in range(min(7, remaining_days + 1))
                            for candidate in [reference + timedelta(days=index)]
@@ -101,6 +102,7 @@ def load_agenda(path: Path, today: date | None = None) -> dict:
             "next_seven_days_count": next_seven_days_count,
             "next_seven_daily_counts": next_seven_daily_counts,
             "next_seven_busy_days": next_seven_busy_days,
+            "next_seven_free_days": next_seven_free_days,
             "first_free_day_in_next_seven": first_free_day,
             "next_event_in_days": next_event_days,
             "next_event": next_event,

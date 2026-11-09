@@ -105,6 +105,10 @@ def load_portfolio(path: Path) -> dict:
     for position in positions:
         if Decimal(position["quantity"]) == 0:
             zero_quantity_symbols_by_currency.setdefault(position["currency"], []).append(position["symbol"])
+    price_coverage_percent_by_currency = {
+        currency: round(100 * entry["priced"] / entry["total"], 1)
+        for currency, entry in price_coverage.items() if entry["total"] > 0
+    }
     allocations = {}
     for currency, total in totals.items():
         if total > 0 and all(p["market_value"] is not None for p in positions if p["currency"] == currency):
@@ -130,6 +134,7 @@ def load_portfolio(path: Path) -> dict:
             "positions": positions, "totals": {k: str(v) for k, v in sorted(totals.items())},
             "currency_allocations": allocations,
             "price_coverage_by_currency": dict(sorted(price_coverage.items())),
+            "price_coverage_percent_by_currency": dict(sorted(price_coverage_percent_by_currency.items())),
             "zero_quantity_symbols_by_currency": {
                 currency: sorted(symbols) for currency, symbols in sorted(zero_quantity_symbols_by_currency.items())
             },
