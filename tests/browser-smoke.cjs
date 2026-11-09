@@ -16,6 +16,8 @@ let overviewBody = null;
 let healthBody = null;
 let clockOffset = 0;
 let deferNextOverview = false;
+let deferNextHealth = false;
+const pendingHealthChecks = [];
 const pendingOverviews = [];
 class TestDate extends Date {
   constructor(...args) { super(...(args.length ? args : [Date.now() + clockOffset])); }
@@ -79,6 +81,12 @@ class XMLHttpRequest {
   send() {
     paths.push(this.url);
     const isOverview = this.url.startsWith("/api/overview");
+    if (!isOverview && deferNextHealth) {
+      deferNextHealth = false;
+      this.readyState = 1;
+      pendingHealthChecks.push(this);
+      return;
+    }
     if (isOverview && deferNextOverview) {
       deferNextOverview = false;
       this.readyState = 1;
@@ -1047,5 +1055,44 @@ assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeC
 const healthBefore = paths.filter(url => url.startsWith("/healthz")).length;
 handlers["document:visibilitychange"]();
 assert.ok(paths.filter(url => url.startsWith("/healthz")).length > healthBefore);
+
+// Health polling cannot survive a background transition or alter hidden state.
+clockOffset += 3000;
+deferNextHealth = true;
+periodic.find(item => item.delay === 15000).callback();
+const delayedHealth = pendingHealthChecks.pop();
+assert.ok(delayedHealth && !delayedHealth.aborted);
+document.hidden = true;
+handlers["document:visibilitychange"]();
+assert.equal(delayedHealth.aborted,true);
+const hiddenConnection = byId("connection").textContent;
+delayedHealth.readyState = 4;
+delayedHealth.status = 503;
+delayedHealth.responseText = '{"status":"error"}';
+delayedHealth.onreadystatechange();
+assert.equal(byId("connection").textContent,hiddenConnection);
+const beforeHiddenHealth = paths.filter(url => url.startsWith("/healthz")).length;
+periodic.find(item => item.delay === 15000).callback();
+assert.equal(paths.filter(url => url.startsWith("/healthz")).length,beforeHiddenHealth);
+// A reconnect notification while backgrounded must not fetch overview data.
+const beforeHiddenOverview = paths.filter(url => url.startsWith("/api/overview")).length;
+delayedHealth.status = 200;
+delayedHealth.responseText = '{"status":"ok"}';
+delayedHealth.onreadystatechange();
+assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeHiddenOverview);
+document.hidden = false;
+handlers["document:visibilitychange"]();
+assert.ok(paths.filter(url => url.startsWith("/healthz")).length > beforeHiddenHealth);
+// A cancelled timeout callback firing late must not trigger a redundant refresh.
+overviewStatus = 503;
+handlers["refresh-button:click"]();
+const obsoleteRetry = scheduled.filter(item => item.delay === 30000 && !item.cancelled).pop();
+assert.ok(obsoleteRetry);
+overviewStatus = 200;
+handlers["refresh-button:click"]();
+assert.equal(obsoleteRetry.cancelled,true);
+const beforeObsoleteCallback = paths.filter(url => url.startsWith("/api/overview")).length;
+obsoleteRetry.callback();
+assert.equal(paths.filter(url => url.startsWith("/api/overview")).length,beforeObsoleteCallback);
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
