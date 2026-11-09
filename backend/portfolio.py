@@ -30,8 +30,8 @@ def nonnegative(value, field: str) -> Decimal:
         number = Decimal(str(value))
     except InvalidOperation as error:
         raise ValueError(field + " must be numeric") from error
-    if not number.is_finite() or number < 0:
-        raise ValueError(field + " must be non-negative and finite")
+    if not number.is_finite() or number < 0 or number.adjusted() > 1000:
+        raise ValueError(field + " must be non-negative, finite and within supported precision")
     return number
 
 
