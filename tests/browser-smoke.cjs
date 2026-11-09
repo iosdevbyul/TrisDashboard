@@ -220,7 +220,7 @@ clockOffset += 11 * 60000;
 const beforePaused = paths.filter((url) => url.startsWith("/api/overview")).length;
 periodic.find((entry) => entry.delay === 60000).callback();
 assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforePaused);
-assert.match(byId("data-refresh-state").textContent, /11 min ago/);
+assert.match(byId("data-refresh-state").textContent, /Automatic refresh paused/);
 handlers["refresh-button:click"]();
 assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforePaused + 1);
 byId("setting-pause-refresh").checked = false;
