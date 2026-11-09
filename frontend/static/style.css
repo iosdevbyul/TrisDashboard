@@ -105,3 +105,8 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .large-text .allocation-row{font-size:15px}
 
 #source-health-details{margin-top:0;margin-bottom:7px;overflow-wrap:break-word}
+
+/* Keyboard-only shortcut stays off-screen until focused; Safari 9-safe. */
+.skip-link{position:absolute;left:12px;top:-100px;z-index:100;padding:12px;background:#e7f1ff;color:#111822;border-radius:6px}
+.skip-link:focus{top:12px;outline:3px solid #79aaff;outline-offset:2px}
+#dashboard-modules:focus{outline:none}
