@@ -1,5 +1,5 @@
 """Clearly labeled *partial* portfolio valuation using optional source-stamped quotes."""
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, Overflow
 
 def quote_valuation(portfolio: dict, quotes: dict) -> dict:
     if not isinstance(portfolio, dict) or not portfolio.get("available"):
