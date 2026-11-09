@@ -29,10 +29,11 @@ function element(id = "") {
     id, checked: false, hidden: false, textContent: "", className: "", style: {},
     children, attributes: {}, href: "",
     get firstChild() { return children.length ? children[0] : null; },
-    appendChild(child) { const old = children.indexOf(child); if (old >= 0) children.splice(old, 1); children.push(child); return child; },
+    appendChild(child) { const old = children.indexOf(child); if (old >= 0) children.splice(old, 1); children.push(child); child.parentNode = this; if (child.id) elements.set(child.id, child); return child; },
     removeChild(child) {
       const index = children.indexOf(child);
       if (index >= 0) children.splice(index, 1);
+      if (child.parentNode === this) { child.parentNode = null; }
     },
     addEventListener(name, callback) { handlers[this.id + ":" + name] = callback; },
     setAttribute(name, value) { this.attributes[name] = value; },
@@ -1723,5 +1724,40 @@ enterPrevented=false;
 handlers["panel-search-input:keydown"]({keyCode:13,preventDefault(){enterPrevented=true;}});
 assert.equal(enterPrevented,false);
 handlers["panel-search-clear:click"]();
+
+// Actionable source health: ready, stale, unavailable, unconfigured, and recovery.
+handlers["quick-view-all:click"]();
+response.weather.stale = true;
+response.weather.cache_age_seconds = 121;
+response.github.available = false;
+response.github.configured = true;
+handlers["document:visibilitychange"]();
+assert.match(byId("source-state-weather").textContent,/Stale · 2 min old/);
+assert.match(byId("source-state-github").textContent,/Unavailable/);
+assert.match(byId("source-state-portfolio").textContent,/Not configured/);
+assert.equal(byId("source-health-links").hidden,false);
+assert.equal(byId("source-health-links").children.length,2);
+assert.match(byId("source-health-details").textContent,/2 sources/);
+assert.match(byId("glance-sources").textContent,/not configured/);
+handlers["quick-view-fitness:click"]();
+assert.equal(byId("panel-github").hidden,true);
+byId("panel-search-input").value = "운동";
+handlers["panel-search-input:input"].call(byId("panel-search-input"));
+assert.equal(byId("panel-github").hidden,true);
+const issueGithubLink = byId("source-health-links").children.find(link=>link.href==="#panel-github");
+handlers[issueGithubLink.id + ":click"]();
+assert.equal(byId("panel-github").hidden,false);
+assert.equal(byId("panel-github").focused,true);
+assert.equal(byId("panel-search-input").value,"");
+assert.equal(JSON.parse(state["tris.dashboard.display.v1"]).hidden.includes("github"),false);
+response.weather.stale = false;
+response.github.available = true;
+handlers["document:visibilitychange"]();
+assert.equal(byId("source-health-links").hidden,true);
+assert.equal(byId("source-health-links").children.length,0);
+assert.match(byId("source-state-weather").textContent,/Ready/);
+assert.match(byId("source-state-github").textContent,/Ready/);
+assert.equal(byId("source-health-details").textContent,"No stale or unavailable configured sources.");
+handlers["quick-view-all:click"]();
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
