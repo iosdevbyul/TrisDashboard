@@ -35,6 +35,8 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
     if today is not None and (not isinstance(today, date) or isinstance(today, datetime)):
         raise ValueError("Invalid workout reference date")
     reference = date.today() if today is None else today
+    if (reference - date.min).days < 6:
+        raise ValueError("Workout reference date cannot cover seven days")
     start = reference - timedelta(days=6)
     weekly = []
     daily = {(start + timedelta(days=index)).isoformat():
