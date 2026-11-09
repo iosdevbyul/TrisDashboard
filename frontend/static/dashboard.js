@@ -16,6 +16,7 @@
   var overviewRetryTimer = null;
   var consecutiveOverviewFailures = 0;
   var lastSuccessfulOverview = null;
+  var lastSuccessfulOverviewAt = 0;
   var refreshButton = document.getElementById("refresh-button");
   var weatherFahrenheit = false;
   var lastWeatherInfo = null;
@@ -852,6 +853,13 @@
     text("server-updated", "Server clock: " + String(info.server_time_utc || "").replace("T", " ").slice(0, 16) + " UTC");
   }
 
+  function updateLastSuccessAge() {
+    if (!lastSuccessfulOverviewAt || consecutiveOverviewFailures) { return; }
+    var elapsed = Math.max(0, Math.floor((new Date().getTime() - lastSuccessfulOverviewAt) / 60000));
+    text("data-refresh-state", "Last overview refresh succeeded at " + lastSuccessfulOverview +
+      " · " + elapsed + " min ago.");
+  }
+
   function clearOverviewRetry() {
     if (overviewRetryTimer !== null) {
       clearTimeout(overviewRetryTimer);
@@ -920,6 +928,7 @@
         showSummary(payload);
         consecutiveOverviewFailures = 0;
         var refreshedAt = new Date();
+        lastSuccessfulOverviewAt = refreshedAt.getTime();
         lastSuccessfulOverview = pad(refreshedAt.getHours()) + ":" + pad(refreshedAt.getMinutes()) +
           " on " + refreshedAt.getFullYear() + "-" + pad(refreshedAt.getMonth() + 1) + "-" + pad(refreshedAt.getDate());
         text("data-refresh-state", "Last overview refresh succeeded at " + lastSuccessfulOverview + ".");
@@ -953,6 +962,7 @@
   setInterval(tick, 1000);
   setInterval(function () { if (!document.hidden) { checkServer(); } }, 15000);
   setInterval(function () {
+    updateLastSuccessAge();
     var interval = window.trisDashboardRefreshMinutes || 3;
     if (!document.hidden && !window.trisDashboardRefreshPaused &&
         new Date().getTime() - lastDataStarted >= interval * 60000) {
