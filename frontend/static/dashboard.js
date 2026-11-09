@@ -284,9 +284,29 @@
       var total = document.createElement("div");
       total.className = "portfolio-total";
       var parts = [];
-      for (var j = 0; j < keys.length; j++) { parts.push(keys[j] + " " + totals[keys[j]]); }
-      total.textContent = "Values: " + parts.join(" / ") + (info.valuation_complete ? "" : " (partial)");
-      list.appendChild(total);
+      var invalidValueCount = 0;
+      for (var j = 0; j < keys.length; j++) {
+        var manualTotal = totals[keys[j]];
+        if (manualTotal === null || manualTotal === "" ||
+            typeof manualTotal === "boolean" ||
+            !isFinite(Number(manualTotal)) || Number(manualTotal) < 0) {
+          invalidValueCount++;
+          continue;
+        }
+        parts.push(keys[j] + " " + manualTotal);
+      }
+      if (parts.length) {
+        total.textContent = "Values: " + parts.join(" / ") +
+          (info.valuation_complete && !invalidValueCount ? "" : " (partial)");
+        list.appendChild(total);
+      }
+      if (invalidValueCount) {
+        var invalidValues = document.createElement("div");
+        invalidValues.className = "repo-row";
+        invalidValues.textContent = "Excluded " + invalidValueCount +
+          " invalid manual valuation totals.";
+        list.appendChild(invalidValues);
+      }
     }
     var priceCoverage = info.price_coverage_by_currency || {};
     var coverageKeys = Object.keys(priceCoverage);
@@ -447,14 +467,29 @@
     if (valuation && valuation.available) {
       var totalsLabel = [];
       var quoteKeys = Object.keys(valuation.totals || {});
+      var invalidQuoteTotals = 0;
       for (var v = 0; v < quoteKeys.length; v++) {
-        totalsLabel.push(quoteKeys[v] + " " + valuation.totals[quoteKeys[v]]);
+        var quoteTotal = valuation.totals[quoteKeys[v]];
+        if (quoteTotal === null || quoteTotal === "" ||
+            typeof quoteTotal === "boolean" ||
+            !isFinite(Number(quoteTotal)) || Number(quoteTotal) < 0) {
+          invalidQuoteTotals++;
+          continue;
+        }
+        totalsLabel.push(quoteKeys[v] + " " + quoteTotal);
       }
+      var matched = valuation.matched_count;
+      var positionCount = valuation.position_count;
+      var validCoverage = typeof matched === "number" && isFinite(matched) &&
+        matched >= 0 && Math.floor(matched) === matched &&
+        typeof positionCount === "number" && isFinite(positionCount) &&
+        positionCount >= matched && Math.floor(positionCount) === positionCount;
       quotePanel.textContent = "Source-stamped quote value (" +
-        valuation.matched_count + "/" + valuation.position_count + " holdings)" +
-        (valuation.partial ? " · PARTIAL" : "") +
+        (validCoverage ? matched + "/" + positionCount : "coverage unknown") + " holdings)" +
+        (valuation.partial || invalidQuoteTotals || !validCoverage ? " · PARTIAL" : "") +
         (valuation.stale ? " · Cached stale" : "") +
-        ": " + totalsLabel.join(" / ") + " · Not guaranteed live";
+        ": " + (totalsLabel.length ? totalsLabel.join(" / ") : "no valid totals") +
+        " · Not guaranteed live";
     } else {
       quotePanel.textContent = "Quote-based valuation unavailable (manual snapshot unchanged)";
     }
@@ -520,7 +555,8 @@
     var payerCurrencies = Object.keys(monthlyPayers);
     for (var up = 0; up < payerCurrencies.length; up++) {
       var payerCount = monthlyPayers[payerCurrencies[up]];
-      if (typeof payerCount !== "number" || !isFinite(payerCount) || payerCount < 0) { continue; }
+      if (typeof payerCount !== "number" || !isFinite(payerCount) ||
+          payerCount < 0 || Math.floor(payerCount) !== payerCount) { continue; }
       var uniquePayerLine = document.createElement("div");
       uniquePayerLine.className = "repo-row";
       uniquePayerLine.textContent = "Distinct confirmed payers this month · " +
@@ -832,7 +868,8 @@
         info.conflicting_event_count + " events";
       list.appendChild(conflictRow);
     }
-    if (info.next_event && typeof info.next_event.title === "string") {
+    if (info.next_event && typeof info.next_event.title === "string" &&
+        validCalendarDate(info.next_event.date)) {
       var nextRow = document.createElement("div");
       nextRow.className = "repo-row";
       nextRow.textContent = "Next scheduled: " + info.next_event.title + " · " +
@@ -840,7 +877,7 @@
       list.appendChild(nextRow);
     }
     if (info.next_timed_event && typeof info.next_timed_event.title === "string" &&
-        typeof info.next_timed_event.date === "string" &&
+        validCalendarDate(info.next_timed_event.date) &&
         typeof info.next_timed_event.time === "string" && info.next_timed_event.time) {
       var nextTimedRow = document.createElement("div");
       nextTimedRow.className = "repo-row";
