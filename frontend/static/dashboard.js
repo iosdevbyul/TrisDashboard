@@ -91,7 +91,7 @@
     }
   }
 
-  function checkServer() {
+  function checkServer(suppressReconnectRefresh) {
     if (document.hidden) { return; }
     if (request && request.readyState !== 4) { return; }
     var now = new Date().getTime();
@@ -105,7 +105,13 @@
         try { online = JSON.parse(xhr.responseText).status === "ok"; }
         catch (error) { online = false; }
       }
-      if (sequence === requestSequence) { setConnection(online); }
+      if (sequence === requestSequence) {
+        if (suppressReconnectRefresh && online && wasOffline) {
+          // Foreground resume will request the overview once itself.
+          wasOffline = false;
+          setConnection(online);
+        } else { setConnection(online); }
+      }
     });
   }
 
@@ -1440,9 +1446,16 @@
   }
 
   function updateLastSuccessAge() {
-    if (!lastSuccessfulOverviewAt || consecutiveOverviewFailures ||
+    if (document.hidden || window.trisDashboardRefreshPaused ||
+        !lastSuccessfulOverviewAt || consecutiveOverviewFailures ||
         (overviewRequest && overviewRequest.readyState !== 4)) { return; }
-    var elapsed = Math.max(0, Math.floor((new Date().getTime() - lastSuccessfulOverviewAt) / 60000));
+    var elapsedMs = new Date().getTime() - lastSuccessfulOverviewAt;
+    if (elapsedMs < 0) {
+      text("data-refresh-state", "Last overview refresh succeeded at " +
+        lastSuccessfulOverview + " · Device clock changed; elapsed time unavailable.");
+      return;
+    }
+    var elapsed = Math.floor(elapsedMs / 60000);
     text("data-refresh-state", "Last overview refresh succeeded at " + lastSuccessfulOverview +
       " · " + elapsed + " min ago.");
   }
@@ -1601,7 +1614,7 @@
   }, 60000);
   document.addEventListener("visibilitychange", function () {
     if (!document.hidden) {
-      tick(); checkServer();
+      tick(); checkServer(true);
       if (!window.trisDashboardRefreshPaused &&
           (!overviewRequest || overviewRequest.readyState === 4)) { loadOverview(true); }
     } else {
