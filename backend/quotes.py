@@ -24,7 +24,9 @@ def parse_quote(data: dict, expected_symbol: str, now: datetime | None = None) -
         raise ValueError("Market data unavailable")
     symbol = data.get("symbol")
     currency = data.get("currency")
-    if not isinstance(symbol, str) or symbol.upper() != expected_symbol:
+    if (not isinstance(symbol, str) or not 1 <= len(symbol) <= 20
+            or any(c not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-_" for c in symbol)
+            or symbol.upper() != expected_symbol):
         raise ValueError("Unexpected symbol")
     if currency not in ("USD", "KRW"):
         raise ValueError("Unexpected quote currency")
