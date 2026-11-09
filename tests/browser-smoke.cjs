@@ -1323,12 +1323,16 @@ handlers["focus-panels:click"]();
 for (const panel of priorityShortcuts) {
   assert.equal(byId("jump-link-" + panel).hidden,false);
 }
-// Minimal preset hides all shortcuts rather than pointing into invisible cards.
+// Minimal preset retains links to its visible weather, agenda and server panels.
 handlers["minimal-panels:click"]();
 for (const panel of priorityShortcuts) {
   assert.equal(byId("jump-link-" + panel).hidden,true);
 }
-assert.equal(byId("priority-jumps-empty").hidden,false);
+for (const panel of ["agenda","weather","server"]) {
+  assert.equal(byId("jump-link-" + panel).hidden,false);
+}
+assert.equal(byId("jump-link-trello").hidden,true);
+assert.equal(byId("priority-jumps-empty").hidden,true);
 // Hiding and restoring every card synchronizes native shortcut visibility.
 handlers["show-all-panels:click"]();
 assert.equal(byId("priority-jumps-empty").hidden,true);
@@ -1345,5 +1349,37 @@ for (const panel of priorityShortcuts) {
   assert.equal(byId("jump-link-" + panel).hidden,false);
 }
 assert.equal(byId("priority-jumps-empty").hidden,true);
+
+// Four additional quick jumps target visible panels and follow display presets.
+const secondaryShortcuts = ["agenda","weather","trello","server"];
+for (const panel of secondaryShortcuts) {
+  assert.ok(html.includes('id="panel-' + panel + '"'));
+  assert.ok(html.includes('href="#panel-' + panel + '"'));
+  assert.equal(byId("jump-link-" + panel).hidden,false);
+}
+handlers["focus-panels:click"]();
+for (const panel of secondaryShortcuts) {
+  assert.equal(byId("jump-link-" + panel).hidden,true);
+}
+for (const panel of priorityShortcuts) {
+  assert.equal(byId("jump-link-" + panel).hidden,false);
+}
+handlers["minimal-panels:click"]();
+for (const panel of ["agenda","weather","server"]) {
+  assert.equal(byId("jump-link-" + panel).hidden,false);
+}
+assert.equal(byId("jump-link-trello").hidden,true);
+assert.equal(byId("priority-jumps-empty").hidden,true);
+handlers["hide-all-panels:click"]();
+for (const panel of secondaryShortcuts) {
+  assert.equal(byId("jump-link-" + panel).hidden,true);
+}
+assert.equal(byId("priority-jumps-empty").hidden,false);
+handlers["show-all-panels:click"]();
+for (const panel of secondaryShortcuts) {
+  assert.equal(byId("jump-link-" + panel).hidden,false);
+}
+assert.equal(byId("priority-jumps-empty").hidden,true);
+handlers["reset-settings:click"]();
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
