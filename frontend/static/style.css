@@ -152,3 +152,7 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 /* Personal-view feedback and quick actions remain legible on narrow Safari displays. */
 #saved-view-preview{overflow-wrap:break-word;word-wrap:break-word;line-height:1.5}
 .view-switcher button:disabled{opacity:.45;cursor:default}
+
+/* Explicit view history, with disabled navigation outside available history. */
+#view-history-status{overflow-wrap:break-word}
+#quick-previous-view:disabled,#quick-next-view:disabled{opacity:.45;cursor:default}
