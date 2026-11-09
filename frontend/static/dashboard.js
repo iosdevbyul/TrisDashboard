@@ -228,6 +228,19 @@
       percentLine.textContent = "Manual price completeness · " +
         percentCurrencies[pp] + " " + percentValue + "% (not live quotes)";
       list.appendChild(percentLine);
+      var coverageBar = document.createElement("div");
+      coverageBar.className = "allocation-row";
+      var coverageCaption = document.createElement("span");
+      coverageCaption.textContent = "Price coverage " + percentCurrencies[pp];
+      var coverageTrack = document.createElement("span");
+      coverageTrack.className = "allocation-track";
+      var coverageFill = document.createElement("span");
+      coverageFill.className = "allocation-fill";
+      coverageFill.style.width = percentValue + "%";
+      coverageTrack.appendChild(coverageFill);
+      coverageBar.appendChild(coverageCaption);
+      coverageBar.appendChild(coverageTrack);
+      list.appendChild(coverageBar);
     }
     var zeroQuantity = info.zero_quantity_symbols_by_currency || {};
     var zeroCurrencies = Object.keys(zeroQuantity);
@@ -408,6 +421,23 @@
         " " + dividendSymbols[coverageCurrency] + " paying holdings · " +
         (dividendMonths[coverageCurrency] || 0) + " months with payments";
       list.appendChild(coverageRow);
+      var monthsPaid = dividendMonths[coverageCurrency];
+      if (typeof monthsPaid === "number" && isFinite(monthsPaid) &&
+          monthsPaid >= 0 && monthsPaid <= 6) {
+        var paidMonthsBar = document.createElement("div");
+        paidMonthsBar.className = "allocation-row";
+        var paidMonthsCaption = document.createElement("span");
+        paidMonthsCaption.textContent = coverageCurrency + " · " + monthsPaid + "/6 months with payments";
+        var paidMonthsTrack = document.createElement("span");
+        paidMonthsTrack.className = "allocation-track";
+        var paidMonthsFill = document.createElement("span");
+        paidMonthsFill.className = "allocation-fill";
+        paidMonthsFill.style.width = Math.round(monthsPaid * 100 / 6) + "%";
+        paidMonthsTrack.appendChild(paidMonthsFill);
+        paidMonthsBar.appendChild(paidMonthsCaption);
+        paidMonthsBar.appendChild(paidMonthsTrack);
+        list.appendChild(paidMonthsBar);
+      }
     }
     var observed = info.observed_monthly_average || {};
     var observedCurrencies = Object.keys(observed);
@@ -573,6 +603,17 @@
     var conflicts = typeof info.conflicting_time_slots === "number" && info.conflicting_time_slots > 0 ?
       " · " + info.conflicting_time_slots + " overlapping time slots" : "";
     text("agenda-summary", info.upcoming_count + " upcoming events" + todayCount + tomorrowCount + weekCount + busyDays + conflicts + busiestLabel + freeLabel + nextLabel);
+    if (typeof info.conflicting_time_slots === "number" &&
+        isFinite(info.conflicting_time_slots) && info.conflicting_time_slots > 0 &&
+        typeof info.conflicting_event_count === "number" &&
+        isFinite(info.conflicting_event_count) && info.conflicting_event_count >= 2) {
+      var conflictRow = document.createElement("div");
+      conflictRow.className = "repo-row";
+      conflictRow.textContent = "Review overlapping schedule · " +
+        info.conflicting_time_slots + " shared time slots, " +
+        info.conflicting_event_count + " events";
+      list.appendChild(conflictRow);
+    }
     if (info.next_event && typeof info.next_event.title === "string") {
       var nextRow = document.createElement("div");
       nextRow.className = "repo-row";
@@ -666,6 +707,23 @@
       (typeof info.rest_days === "number" ? info.rest_days + " rest days · " : "") +
       info.period_start + " to " + info.period_end;
     list.appendChild(total);
+    if (typeof info.active_day_percent === "number" &&
+        isFinite(info.active_day_percent) &&
+        info.active_day_percent >= 0 && info.active_day_percent <= 100) {
+      var activeCoverageRow = document.createElement("div");
+      activeCoverageRow.className = "allocation-row";
+      var activeCoverageCaption = document.createElement("span");
+      activeCoverageCaption.textContent = "Active days (last 7) · " + info.active_day_percent + "%";
+      var activeCoverageTrack = document.createElement("span");
+      activeCoverageTrack.className = "allocation-track";
+      var activeCoverageFill = document.createElement("span");
+      activeCoverageFill.className = "allocation-fill";
+      activeCoverageFill.style.width = info.active_day_percent + "%";
+      activeCoverageTrack.appendChild(activeCoverageFill);
+      activeCoverageRow.appendChild(activeCoverageCaption);
+      activeCoverageRow.appendChild(activeCoverageTrack);
+      list.appendChild(activeCoverageRow);
+    }
     if (info.longest_session && typeof info.longest_session.duration_minutes === "number") {
       var longestRow = document.createElement("div");
       longestRow.className = "repo-row";
