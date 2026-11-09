@@ -38,7 +38,8 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
     months = []
     for offset in range(5, -1, -1):
         index = reference.year * 12 + (reference.month - 1) - offset
-        months.append(f"{(index // 12):04d}-{(index % 12) + 1:02d}")
+        if index >= 12:  # Calendar years begin at 0001, never 0000.
+            months.append(f"{(index // 12):04d}-{(index % 12) + 1:02d}")
     history = {month_key: {} for month_key in months}
     recent = []
     by_symbol = {}
@@ -81,8 +82,10 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         for currency, amount in history[previous_month].items():
             complete_month_totals[currency] = complete_month_totals.get(currency, Decimal("0")) + amount
     completed_change = {}
-    latest_month, earlier_month = months[-2], months[-3]
-    comparison_currencies = set(history[latest_month]) | set(history[earlier_month])
+    latest_month = months[-2] if len(months) >= 2 else None
+    earlier_month = months[-3] if len(months) >= 3 else None
+    comparison_currencies = (set(history[latest_month]) | set(history[earlier_month])
+                             if earlier_month is not None else set())
     for currency in sorted(comparison_currencies):
         latest_amount = history[latest_month].get(currency, Decimal("0"))
         earlier_amount = history[earlier_month].get(currency, Decimal("0"))
@@ -99,9 +102,9 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
                 best_completed_months[currency] = {"month": completed, "amount_decimal": amount}
     best_completed_months = {currency: {"month": item["month"], "amount": str(item["amount_decimal"])}
                              for currency, item in sorted(best_completed_months.items())}
-    complete_month_average = {currency: str((amount / Decimal(5)).quantize(
+    complete_month_average = {currency: str((amount / Decimal(max(1, len(months) - 1))).quantize(
         Decimal("0.01"), rounding=ROUND_HALF_UP)) for currency, amount in sorted(complete_month_totals.items())}
-    monthly_average = {currency: str((amount / Decimal(6)).quantize(
+    monthly_average = {currency: str((amount / Decimal(len(months))).quantize(
         Decimal("0.01"), rounding=ROUND_HALF_UP))
         for currency, amount in sorted(history_totals.items())}
     return {"available": True, "configured": True, "source": "manual_confirmed_payments",
