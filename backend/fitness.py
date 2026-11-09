@@ -98,6 +98,11 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
         day_summary["duration_minutes"] = round(day_summary["duration_minutes"], 1)
         day_summary["distance_km"] = round(day_summary["distance_km"], 2)
     weekly.sort(key=lambda item: item["date"], reverse=True)
+    longest_session = None
+    if weekly:
+        longest = max(weekly, key=lambda item: (item["duration_minutes"], item["date"], item["type"]))
+        longest_session = {"date": longest["date"], "type": longest["type"],
+                           "duration_minutes": longest["duration_minutes"]}
     activity_breakdown = [{"type": kind, "sessions": values["sessions"],
                            "duration_minutes": round(values["duration_minutes"], 1),
                            "distance_km": round(values["distance_km"], 2)}
@@ -140,6 +145,7 @@ def load_fitness(path: Path, today: date | None = None) -> dict:
             "rest_days": rest_days,
             "active_day_percent": active_day_percent,
             "peak_active_day": peak_active_day,
+            "longest_session": longest_session,
             "average_active_day_minutes": average_active_day_minutes,
             "average_session_minutes": average_session_minutes,
             "average_active_day_km": average_active_day_km,
