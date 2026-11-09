@@ -34,7 +34,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
         raise ValueError("Invalid dividend reference date")
     reference = date.today() if today is None else today
     totals = {}
-    month = reference.strftime("%Y-%m")
+    month = reference.isoformat()[:7]
     months = []
     for offset in range(5, -1, -1):
         index = reference.year * 12 + (reference.month - 1) - offset
@@ -62,7 +62,7 @@ def load_dividends(path: Path, today: date | None = None) -> dict:
             raise ValueError("Dividend amount exceeds supported range")
         if paid_on > reference:
             raise ValueError("Only recorded past or current payments allowed")
-        paid_month = paid_on.strftime("%Y-%m")
+        paid_month = paid_on.isoformat()[:7]
         if paid_month == month:
             totals[currency] = totals.get(currency, Decimal("0")) + amount
         if paid_month in history:
