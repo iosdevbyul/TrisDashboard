@@ -9,4 +9,6 @@ def test_display_preferences_restore_before_dashboard_initial_poll():
     js = (ROOT / "frontend/static/dashboard.js").read_text(encoding="utf-8")
     assert 'if (!window.trisDashboardRefreshPaused) {' in js
     preferences = (ROOT / "frontend/static/preferences.js").read_text(encoding="utf-8")
-    assert 'buildControls(); restore(); apply();' in preferences
+    # Restore display and favorite order before the first dashboard API poll.
+    assert 'buildControls(); restore(); restorePins(); buildPinButtons(); apply();' in preferences
+    assert preferences.index('restore(); restorePins();') < preferences.index('buildPinButtons(); apply();')
