@@ -165,3 +165,7 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .panel-search button:disabled{opacity:.45}
 .panel-search input:focus,.panel-search button:focus{outline:2px solid #93c5fd;outline-offset:2px}
 #panel-search-count{display:inline-block;color:#9db1cc;font-size:12px}
+
+/* Readable bilingual search hints and keyboard dismissal on narrow iPads. */
+.panel-search input{width:240px;max-width:100%}
+.panel-search input::placeholder{color:#aab8ca}

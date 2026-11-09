@@ -1654,4 +1654,37 @@ assert.equal(byId("panel-weather").hidden,false);
 handlers["quick-view-all:click"]();
 assert.equal(byId("panel-search-count").textContent,"9 panels available");
 
+// Multi-term AND search, Korean labels, keyboard reset, and hidden-match guidance.
+handlers["quick-view-all:click"]();
+byId("panel-search-input").value = "stock price";
+handlers["panel-search-input:input"].call(byId("panel-search-input"));
+assert.equal(byId("panel-search-count").textContent,"1 matching visible panels");
+assert.equal(byId("panel-quotes").hidden,false);
+assert.equal(byId("panel-portfolio").hidden,true);
+byId("panel-search-input").value = "운동";
+handlers["panel-search-input:input"].call(byId("panel-search-input"));
+assert.equal(byId("panel-fitness").hidden,false);
+assert.equal(byId("panel-quotes").hidden,true);
+assert.equal(byId("panel-search-count").textContent,"1 matching visible panels");
+byId("panel-search-input").value = "개발 깃허브";
+handlers["panel-search-input:input"].call(byId("panel-search-input"));
+assert.equal(byId("panel-github").hidden,false);
+assert.equal(byId("panel-trello").hidden,true);
+handlers["quick-view-fitness:click"]();
+assert.equal(byId("panel-search-empty").hidden,false);
+assert.match(byId("panel-search-empty").textContent,/hidden in Display settings/);
+byId("panel-search-input").value = "keywordthatdoesnotexist";
+handlers["panel-search-input:input"].call(byId("panel-search-input"));
+assert.match(byId("panel-search-empty").textContent,/No panel matches/);
+const beforeSearchClearState = state["tris.dashboard.display.v1"];
+let preventedSearchEscape = false;
+handlers["panel-search-input:keydown"]({keyCode:27,preventDefault(){preventedSearchEscape=true;}});
+assert.equal(preventedSearchEscape,true);
+assert.equal(byId("panel-search-input").value,"");
+assert.equal(byId("panel-search-clear").disabled,true);
+assert.equal(byId("panel-weather").hidden,false);
+assert.equal(byId("panel-search-empty").hidden,true);
+assert.equal(state["tris.dashboard.display.v1"],beforeSearchClearState);
+handlers["quick-view-all:click"]();
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
