@@ -47,6 +47,16 @@
     settings.hidden = settings.hidden.filter(function (name) { return !matchesPanelSearch(name); });
     if (settings.hidden.length !== previousLength) { apply(); store(); }
   }
+  // Source health links must reach a panel even when a preset or search hides it.
+  window.trisDashboardRevealPanel = function (name) {
+    if (panelNames.indexOf(name) === -1) { return; }
+    panelSearchQuery = "";
+    var hiddenIndex = settings.hidden.indexOf(name);
+    if (hiddenIndex !== -1) { settings.hidden.splice(hiddenIndex, 1); store(); }
+    apply();
+    var panel = document.getElementById("panel-" + name);
+    if (panel && typeof panel.focus === "function") { panel.focus(); }
+  };
   function clearPanelSearch() {
     if (panelSearchQuery === "") { return; }
     panelSearchQuery = "";

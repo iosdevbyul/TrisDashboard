@@ -171,6 +171,17 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 #panel-search-reveal{border-color:#93c5fd;color:#e8f1fc}
 #panel-search-reveal[hidden]{display:none}
 
+/* Per-panel status is text first: color remains an additional cue. */
+.source-state{display:block;font-size:12px;margin-top:9px;font-weight:600}
+.source-state-ready{color:#83d5ad}
+.source-state-stale{color:#f2c57c}
+.source-state-unavailable{color:#f4a1a6}
+.source-state-unconfigured{color:#acb9cb}
+.source-health-links{margin:-4px 0 12px;line-height:2}
+.source-health-link{display:inline-block;margin:3px 8px 3px 0;padding:3px 9px;border:1px solid #5e718b;border-radius:6px;color:#cfe4ff;font-size:13px}
+.source-health-link:focus{outline:2px solid #93c5fd;outline-offset:2px}
+.source-health-links[hidden]{display:none}
+
 /* Readable bilingual search hints and keyboard dismissal on narrow iPads. */
 .panel-search input{width:240px;max-width:100%}
 .panel-search input::placeholder{color:#aab8ca}

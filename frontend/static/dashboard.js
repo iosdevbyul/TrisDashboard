@@ -124,33 +124,80 @@
         info.updated_at.replace("T", " ").slice(0, 16) + " UTC" : "recently");
   }
 
+  var sourceMarkers = {};
   function showSummary(payload) {
     var names = ["weather", "github", "trello", "portfolio", "fitness", "dividends", "agenda", "quotes"];
     var active = 0;
     var unavailable = 0;
     var stale = 0;
+    var unconfigured = 0;
     var sourceIssues = [];
+    var issues = document.getElementById("source-health-links");
+    while (issues.firstChild) { issues.removeChild(issues.firstChild); }
     for (var i = 0; i < names.length; i++) {
-      var info = payload[names[i]];
+      var name = names[i];
+      var info = payload[name];
+      var state = "unavailable";
+      var label = "Unavailable";
       if (info && info.available) {
         active++;
+        state = "ready";
+        label = "Ready";
         if (info.stale || (info.quality && info.quality.outdated)) {
           stale++;
+          state = "stale";
+          label = "Stale";
           var age = info.cache_age_seconds;
-          sourceIssues.push(names[i] + " stale" +
-            (typeof age === "number" && isFinite(age) && age >= 0 ?
-              " (" + Math.floor(age / 60) + " min old)" : ""));
+          if (typeof age === "number" && isFinite(age) && age >= 0) {
+            label += " · " + Math.floor(age / 60) + " min old";
+          }
         }
-      } else if (info && info.configured !== false) {
+      } else if (info && info.configured === false) {
+        unconfigured++;
+        state = "unconfigured";
+        label = "Not configured";
+      } else {
         unavailable++;
-        sourceIssues.push(names[i] + " unavailable");
+      }
+      var card = document.getElementById("panel-" + name);
+      var marker = sourceMarkers[name];
+      if (!marker) {
+        marker = document.createElement("small");
+        marker.id = "source-state-" + name;
+        card.appendChild(marker);
+        sourceMarkers[name] = marker;
+      }
+      marker.className = "source-state source-state-" + state;
+      marker.textContent = "Source: " + label;
+      if (state === "stale" || state === "unavailable") {
+        var staleAge = info && info.cache_age_seconds;
+        sourceIssues.push(name + (state === "stale" ? " stale" +
+          (typeof staleAge === "number" && isFinite(staleAge) && staleAge >= 0 ?
+            " (" + Math.floor(staleAge / 60) + " min old)" : "") : " unavailable"));
+        (function (panelName, statusLabel) {
+          var link = document.createElement("a");
+          link.id = "source-health-link-" + panelName;
+          link.href = "#panel-" + panelName;
+          link.className = "source-health-link";
+          link.textContent = panelName + " · " + statusLabel;
+          link.addEventListener("click", function () {
+            if (typeof window.trisDashboardRevealPanel === "function") {
+              window.trisDashboardRevealPanel(panelName);
+            }
+          });
+          issues.appendChild(link);
+        }(name, label));
       }
     }
-    text("source-health-details", sourceIssues.length ? "Needs attention: " + sourceIssues.join(" · ") :
+    issues.hidden = sourceIssues.length === 0;
+    text("source-health-details", sourceIssues.length ?
+      "Needs attention: " + sourceIssues.length + " sources · " + sourceIssues.join(" · ") +
+      " · Select a source below to inspect it." :
       "No stale or unavailable configured sources.");
     text("glance-sources", active + "/" + names.length + " ready" +
       (stale ? " · " + stale + " stale" : "") +
-      (unavailable ? " · " + unavailable + " unavailable" : ""));
+      (unavailable ? " · " + unavailable + " unavailable" : "") +
+      (unconfigured ? " · " + unconfigured + " not configured" : ""));
     var now = new Date();
     text("glance-updated", pad(now.getHours()) + ":" + pad(now.getMinutes()));
   }
