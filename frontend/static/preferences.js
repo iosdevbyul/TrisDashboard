@@ -6,8 +6,28 @@
 
   var savedViewKey = "tris.dashboard.my-view.v1";
   var savedVisible = null;
-  var lastVisible = null;
-  var renderedVisible = null;
+  var viewHistory = [];
+  var viewHistoryIndex = -1;
+  var replayingViewHistory = false;
+  var viewHistoryLimit = 10;
+  function updateViewHistory() {
+    document.getElementById("quick-previous-view").disabled = viewHistoryIndex <= 0;
+    document.getElementById("quick-next-view").disabled =
+      viewHistoryIndex >= viewHistory.length - 1;
+    document.getElementById("clear-view-history").disabled = viewHistory.length <= 1;
+    document.getElementById("view-history-status").textContent =
+      "View history: " + (viewHistoryIndex + 1) + " of " + viewHistory.length;
+  }
+  function navigateViewHistory(index) {
+    if (index < 0 || index >= viewHistory.length || index === viewHistoryIndex) { return; }
+    viewHistoryIndex = index;
+    replayingViewHistory = true;
+    try {
+      applyVisibilityPreset(viewHistory[index], "History view");
+    } finally {
+      replayingViewHistory = false;
+    }
+  }
   function readSavedView() {
     try {
       var value = JSON.parse(window.localStorage.getItem(savedViewKey));
@@ -122,11 +142,18 @@
 
   function apply() {
     var visibleNow = currentVisible();
-    if (renderedVisible !== null && !sameVisible(visibleNow, renderedVisible)) {
-      lastVisible = renderedVisible.slice(0);
+    if (viewHistoryIndex === -1) {
+      viewHistory.push(visibleNow.slice(0));
+      viewHistoryIndex = 0;
+    } else if (!replayingViewHistory &&
+               !sameVisible(visibleNow, viewHistory[viewHistoryIndex])) {
+      // Visiting a new view after Back discards forward-only history.
+      viewHistory = viewHistory.slice(0, viewHistoryIndex + 1);
+      viewHistory.push(visibleNow.slice(0));
+      if (viewHistory.length > viewHistoryLimit) { viewHistory.shift(); }
+      viewHistoryIndex = viewHistory.length - 1;
     }
-    renderedVisible = visibleNow.slice(0);
-    document.getElementById("quick-previous-view").disabled = lastVisible === null;
+    updateViewHistory();
     document.body.className = (settings.compact ? "compact" : "") + (settings.dim ? " dimmed" : "") + (settings.glance ? " glance" : "") + (settings.largeText ? " large-text" : "") + (settings.highContrast ? " high-contrast" : "");
     document.getElementById("setting-compact").checked = settings.compact;
     document.getElementById("setting-dim").checked = settings.dim;
@@ -368,8 +395,15 @@
   document.getElementById("save-my-view").addEventListener("click", saveCurrentView);
   document.getElementById("quick-save-my-view").addEventListener("click", saveCurrentView);
   document.getElementById("quick-previous-view").addEventListener("click", function () {
-    if (!lastVisible) { return; }
-    applyVisibilityPreset(lastVisible, "Previous view");
+    navigateViewHistory(viewHistoryIndex - 1);
+  });
+  document.getElementById("quick-next-view").addEventListener("click", function () {
+    navigateViewHistory(viewHistoryIndex + 1);
+  });
+  document.getElementById("clear-view-history").addEventListener("click", function () {
+    viewHistory = [currentVisible().slice(0)];
+    viewHistoryIndex = 0;
+    updateViewHistory();
   });
   document.getElementById("clear-my-view").addEventListener("click", function () {
     if (!savedVisible) { return; }
