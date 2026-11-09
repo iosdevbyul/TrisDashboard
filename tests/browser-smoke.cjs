@@ -177,7 +177,10 @@ assert.equal(byId("panel-weather").hidden, false);
 assert.equal(byId("panel-agenda").hidden, false);
 assert.equal(byId("panel-server").hidden, false);
 assert.equal(byId("panel-portfolio").hidden, true);
+handlers["hide-all-panels:click"]();
+assert.equal(byId("empty-panels").hidden, false);
 handlers["show-all-panels:click"]();
+assert.equal(byId("empty-panels").hidden, true);
 assert.equal(byId("panel-weather").hidden, false);
 assert.equal(byId("panel-portfolio").hidden, false);
 
