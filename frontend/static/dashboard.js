@@ -212,7 +212,19 @@
       text("portfolio-updated", info && info.configured ? "Check MacBook snapshot" : "Configure on MacBook");
       return;
     }
-    var positions = info.positions || [];
+    var originalPositions = Object.prototype.toString.call(info.positions) === "[object Array]" ?
+      info.positions : [];
+    var positions = originalPositions.filter(function (position) {
+      return position && typeof position === "object" &&
+        typeof position.symbol === "string";
+    });
+    if (positions.length !== originalPositions.length) {
+      var invalidHolding = document.createElement("div");
+      invalidHolding.className = "repo-row";
+      invalidHolding.textContent = "Skipped " + (originalPositions.length - positions.length) +
+        " invalid holding entries.";
+      list.appendChild(invalidHolding);
+    }
     text("portfolio-summary", positions.length + " holdings");
     if (!positions.length) {
       var noPositions = document.createElement("div");
@@ -552,7 +564,21 @@
         list.appendChild(symbolRow);
       }
     }
-    var history = info.history || [];
+    var originalHistory = Object.prototype.toString.call(info.history) === "[object Array]" ?
+      info.history : [];
+    var history = originalHistory.filter(function (month) {
+      return month && typeof month === "object" &&
+        typeof month.month === "string" && month.totals &&
+        typeof month.totals === "object" &&
+        Object.prototype.toString.call(month.totals) !== "[object Array]";
+    });
+    if (history.length !== originalHistory.length) {
+      var invalidMonth = document.createElement("div");
+      invalidMonth.className = "repo-row";
+      invalidMonth.textContent = "Skipped " + (originalHistory.length - history.length) +
+        " invalid dividend history entries.";
+      list.appendChild(invalidMonth);
+    }
     var maxByCurrency = {};
     for (var h = 0; h < history.length; h++) {
       var monthValues = history[h].totals || {};
@@ -699,7 +725,18 @@
       }
     }
     var validEvents = Object.prototype.toString.call(info.events) === "[object Array]";
-    var events = validEvents ? info.events : [];
+    var originalEvents = validEvents ? info.events : [];
+    var events = originalEvents.filter(function (entry) {
+      return entry && typeof entry === "object" &&
+        typeof entry.date === "string" && typeof entry.title === "string";
+    });
+    if (events.length !== originalEvents.length) {
+      var invalidEvent = document.createElement("div");
+      invalidEvent.className = "repo-row";
+      invalidEvent.textContent = "Skipped " + (originalEvents.length - events.length) +
+        " invalid calendar events.";
+      list.appendChild(invalidEvent);
+    }
     if (!validEvents) {
       var invalidEvents = document.createElement("div");
       invalidEvents.className = "repo-row";
@@ -872,7 +909,20 @@
           " · " + activities[a].time_share_percent + "% of workout time" : "");
       list.appendChild(activityLine);
     }
-    var daily = info.daily || [];
+    var originalDaily = Object.prototype.toString.call(info.daily) === "[object Array]" ?
+      info.daily : [];
+    var daily = originalDaily.filter(function (entry) {
+      return entry && typeof entry === "object" && typeof entry.date === "string" &&
+        typeof entry.duration_minutes === "number" && isFinite(entry.duration_minutes) &&
+        entry.duration_minutes >= 0;
+    });
+    if (daily.length !== originalDaily.length) {
+      var invalidDay = document.createElement("div");
+      invalidDay.className = "repo-row";
+      invalidDay.textContent = "Skipped " + (originalDaily.length - daily.length) +
+        " invalid daily workout entries.";
+      list.appendChild(invalidDay);
+    }
     var peakMinutes = 0;
     for (var peak = 0; peak < daily.length; peak++) {
       if (typeof daily[peak].duration_minutes === "number" &&
