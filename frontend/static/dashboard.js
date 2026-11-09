@@ -871,6 +871,10 @@
       (lastSuccessfulOverview ? "Last successful update at " + lastSuccessfulOverview + "." :
        "No successful update yet."));
     clearOverviewRetry();
+    if (document.hidden) {
+      text("data-refresh-state", "Data refresh failed. Tab hidden; refresh resumes on return.");
+      return;
+    }
     if (window.trisDashboardRefreshPaused) {
       text("data-refresh-state", "Data refresh failed. Automatic retry paused; use Refresh now.");
       return;
