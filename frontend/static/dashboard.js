@@ -170,7 +170,10 @@
       marker.className = "source-state source-state-" + state;
       marker.textContent = "Source: " + label;
       if (state === "stale" || state === "unavailable") {
-        sourceIssues.push(name + " " + label.toLowerCase());
+        var staleAge = info && info.cache_age_seconds;
+        sourceIssues.push(name + (state === "stale" ? " stale" +
+          (typeof staleAge === "number" && isFinite(staleAge) && staleAge >= 0 ?
+            " (" + Math.floor(staleAge / 60) + " min old)" : "") : " unavailable"));
         (function (panelName, statusLabel) {
           var link = document.createElement("a");
           link.id = "source-health-link-" + panelName;
@@ -188,7 +191,8 @@
     }
     issues.hidden = sourceIssues.length === 0;
     text("source-health-details", sourceIssues.length ?
-      "Needs attention: " + sourceIssues.length + " sources · Select a source below to inspect it." :
+      "Needs attention: " + sourceIssues.length + " sources · " + sourceIssues.join(" · ") +
+      " · Select a source below to inspect it." :
       "No stale or unavailable configured sources.");
     text("glance-sources", active + "/" + names.length + " ready" +
       (stale ? " · " + stale + " stale" : "") +
