@@ -180,7 +180,8 @@
       var row = document.createElement("div");
       row.className = "repo-row";
       row.textContent = item.symbol + " · " + item.quantity + " shares" +
-        (item.market_value !== null ? " · " + item.market_value + " " + item.currency : " · price unavailable");
+        (item.market_value !== null && typeof item.market_value !== "undefined" ?
+          " · " + item.market_value + " " + item.currency : " · price unavailable");
       list.appendChild(row);
     }
     var totals = info.totals || {};
@@ -269,7 +270,8 @@
       quotePanel.textContent = "Quote-based valuation unavailable (manual snapshot unchanged)";
     }
     var quality = info.quality || {};
-    text("portfolio-updated", "Manual prices · Snapshot " + info.as_of.replace("T", " ").slice(0, 16) +
+    text("portfolio-updated", "Manual prices · Snapshot " +
+      (typeof info.as_of === "string" ? info.as_of.replace("T", " ").slice(0, 16) : "time unavailable") +
       (quality.outdated ? " · OUTDATED (older than " + quality.threshold_hours + "h)" : ""));
   }
 
