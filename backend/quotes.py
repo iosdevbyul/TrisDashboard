@@ -52,7 +52,8 @@ def parse_quote(data: dict, expected_symbol: str, now: datetime | None = None) -
                     last_quote_at = observed.isoformat()
             except (ValueError, OverflowError, OSError):
                 pass
-    if not value.is_finite() or value <= 0 or age_seconds < -600 or age_seconds > 365 * 86400:
+    if (not value.is_finite() or value <= 0 or value.adjusted() > 1000
+            or value.adjusted() < -1000 or age_seconds < -600 or age_seconds > 365 * 86400):
         raise ValueError("Invalid quote price or timestamp")
     return {
         "symbol": symbol.upper(),
@@ -87,7 +88,8 @@ def refresh_quote_freshness(payload: dict, now: datetime | None = None) -> dict:
         item = dict(quote)
         try:
             value = Decimal(str(item.get("price")))
-            valid_price = not isinstance(item.get("price"), bool) and value.is_finite() and value > 0
+            valid_price = (not isinstance(item.get("price"), bool) and value.is_finite()
+                           and value > 0 and -1000 <= value.adjusted() <= 1000)
         except (ValueError, TypeError, InvalidOperation):
             valid_price = False
         valid_identity = (isinstance(item.get("symbol"), str) and
