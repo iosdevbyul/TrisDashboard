@@ -664,4 +664,34 @@ assert.match(byId("trello-summary").textContent,/^3 cards · 2 Next · 1 In Prog
 assert.match(byId("quotes-summary").textContent,/^2\/2 quotes reported/);
 assert.match(byId("server-updated").textContent,/Server clock: 2026-11-09 03:02 UTC/);
 
+// A malformed entry in one provider must not reject the entire overview response.
+response.weather = {available:true,temperature_c:22,location:"Test City",updated_at:123};
+response.github = {available:true,repositories:[null,
+  {available:true,repository:"owner/good",open_pr_count:2,open_prs:[]}]};
+response.trello = {available:true,lists:[null,{name:"Next",count:3,cards:[]}]};
+response.quotes = {available:true,quotes:[null,{symbol:"JEPQ",currency:"USD",
+  price:"50",reported_at_utc:"2026-11-09T03:00:00Z"}]};
+handlers["document:visibilitychange"]();
+assert.match(byId("weather-updated").textContent,/Updated recently/);
+assert.match(byId("github-summary").textContent,/2 open PRs/);
+assert.ok(byId("github-list").children.some(row =>
+  /Repository entry unavailable/.test(row.textContent)));
+assert.match(byId("trello-summary").textContent,/3 cards · 3 Next/);
+assert.ok(byId("trello-list").children.some(row =>
+  /Trello list entry unavailable/.test(row.textContent)));
+assert.match(byId("quotes-summary").textContent,/1\/2 quotes reported/);
+assert.ok(byId("quotes-list").children.some(row =>
+  /Quote entry unavailable/.test(row.textContent)));
+assert.match(byId("data-refresh-state").textContent,/Last overview refresh succeeded/);
+// Recovery on next overview must clear invalid-entry notices.
+response.weather.updated_at = "2026-11-09T03:00:00Z";
+response.github.repositories.shift();
+response.trello.lists.shift();
+response.quotes.quotes.shift();
+handlers["document:visibilitychange"]();
+assert.ok(!byId("github-list").children.some(row => /Repository entry unavailable/.test(row.textContent)));
+assert.ok(!byId("trello-list").children.some(row => /Trello list entry unavailable/.test(row.textContent)));
+assert.ok(!byId("quotes-list").children.some(row => /Quote entry unavailable/.test(row.textContent)));
+assert.match(byId("weather-updated").textContent,/Updated 2026-11-09 03:00 UTC/);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
