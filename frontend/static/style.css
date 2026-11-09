@@ -166,6 +166,11 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 .panel-search input:focus,.panel-search button:focus{outline:2px solid #93c5fd;outline-offset:2px}
 #panel-search-count{display:inline-block;color:#9db1cc;font-size:12px}
 
+/* Search navigation and matching hidden-panel recovery, Safari 9-safe. */
+.panel-search-help{display:inline-block;font-size:12px;color:#aab8ca;margin-left:4px}
+#panel-search-reveal{border-color:#93c5fd;color:#e8f1fc}
+#panel-search-reveal[hidden]{display:none}
+
 /* Readable bilingual search hints and keyboard dismissal on narrow iPads. */
 .panel-search input{width:240px;max-width:100%}
 .panel-search input::placeholder{color:#aab8ca}
