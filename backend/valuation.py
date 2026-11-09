@@ -65,7 +65,11 @@ def quote_valuation(portfolio: dict, quotes: dict) -> dict:
             value = qty * price
         except (InvalidOperation, Overflow, OverflowError):
             continue
-        totals[currency] = totals.get(currency, Decimal("0")) + value
+        try:
+            combined = totals.get(currency, Decimal("0")) + value
+        except (InvalidOperation, Overflow, OverflowError):
+            continue
+        totals[currency] = combined
         matched.append({"symbol": symbol, "currency": currency, "value": str(value),
                         "quote_time_utc": quote["reported_at_utc"]})
     return {
