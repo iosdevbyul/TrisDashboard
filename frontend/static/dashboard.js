@@ -904,6 +904,7 @@
   }
 
   function loadOverview(force) {
+    if (!force && overviewRequest && overviewRequest.readyState !== 4) { return; }
     var now = new Date().getTime();
     if (!force && now - lastDataStarted < 30000) { return; }
     lastDataStarted = now;
