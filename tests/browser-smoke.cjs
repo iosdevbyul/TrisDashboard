@@ -185,7 +185,9 @@ assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, befo
 handlers["refresh-button:click"]();
 assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforePaused + 1);
 byId("setting-pause-refresh").checked = false;
+const beforeResume = paths.filter((url) => url.startsWith("/api/overview")).length;
 handlers["setting-pause-refresh:change"].call(byId("setting-pause-refresh"));
+assert.equal(paths.filter((url) => url.startsWith("/api/overview")).length, beforeResume + 1);
 assert.equal(window.trisDashboardRefreshPaused, false);
 assert.match(byId("refresh-cadence").textContent, /every 3 minutes/);
 

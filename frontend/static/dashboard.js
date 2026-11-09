@@ -859,6 +859,10 @@
     }
   }
 
+  window.trisDashboardResumeRefresh = function () {
+    if (!document.hidden) { loadOverview(true); }
+  };
+
   window.trisDashboardCancelPendingRetry = function () {
     clearOverviewRetry();
     text("data-refresh-state", "Automatic refresh paused · Manual refresh available.");
