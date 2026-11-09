@@ -170,6 +170,12 @@
       }
       list.appendChild(line);
     }
+    if (rows.length && successful === 0) {
+      var noReportedPrices = document.createElement("div");
+      noReportedPrices.className = "repo-row";
+      noReportedPrices.textContent = "No usable price with a provider timestamp. Valuation stays unavailable.";
+      list.appendChild(noReportedPrices);
+    }
     text("quotes-summary", successful + "/" + rows.length + " quotes reported" +
       (outdated ? " · " + outdated + " outdated" : "") +
       (oldestHours !== null ? " · Oldest reading " + oldestHours + "h ago" : ""));
@@ -361,6 +367,12 @@
       label.push(currencies[i] + " " + totals[currencies[i]]);
     }
     text("dividend-summary", label.length ? label.join(" / ") : "No recorded payments this month");
+    if (info.record_count === 0) {
+      var noPayments = document.createElement("div");
+      noPayments.className = "repo-row";
+      noPayments.textContent = "No confirmed dividend payments recorded. Add a local payment history file.";
+      list.appendChild(noPayments);
+    }
     var paymentCounts = info.monthly_payment_counts || {};
     var countCurrencies = Object.keys(paymentCounts);
     for (var pc = 0; pc < countCurrencies.length; pc++) {
@@ -954,6 +966,12 @@
       return;
     }
     var repos = info.repositories || [];
+    if (!repos.length) {
+      var noRepos = document.createElement("div");
+      noRepos.className = "repo-row";
+      noRepos.textContent = "No GitHub repositories returned by the configured provider.";
+      list.appendChild(noRepos);
+    }
     var total = 0;
     var truncated = false;
     for (var i = 0; i < repos.length; i++) {
@@ -1017,6 +1035,12 @@
       return;
     }
     var columns = info.lists || [];
+    if (!columns.length) {
+      var noLists = document.createElement("div");
+      noLists.className = "repo-row";
+      noLists.textContent = "No Trello lists returned for the configured board.";
+      list.appendChild(noLists);
+    }
     var total = 0;
     var nextCount = 0;
     var progressCount = 0;
