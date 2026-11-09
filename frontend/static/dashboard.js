@@ -325,7 +325,28 @@
     var allocations = info.currency_allocations || {};
     var allocationCurrencies = Object.keys(allocations);
     for (var c = 0; c < allocationCurrencies.length; c++) {
-      var shares = allocations[allocationCurrencies[c]];
+      var rawShares = allocations[allocationCurrencies[c]];
+      if (Object.prototype.toString.call(rawShares) !== "[object Array]") {
+        var invalidAllocation = document.createElement("div");
+        invalidAllocation.className = "repo-row";
+        invalidAllocation.textContent = "Allocation unavailable · " + allocationCurrencies[c];
+        list.appendChild(invalidAllocation);
+        continue;
+      }
+      var shares = rawShares.filter(function (share) {
+        return share && typeof share === "object" &&
+          typeof share.symbol === "string" &&
+          share.percent !== null && share.percent !== "" &&
+          isFinite(Number(share.percent)) &&
+          Number(share.percent) >= 0 && Number(share.percent) <= 100;
+      });
+      if (shares.length !== rawShares.length) {
+        var skippedShares = document.createElement("div");
+        skippedShares.className = "repo-row";
+        skippedShares.textContent = "Skipped " + (rawShares.length - shares.length) +
+          " invalid allocation entries · " + allocationCurrencies[c];
+        list.appendChild(skippedShares);
+      }
       var allocationLine = document.createElement("div");
       allocationLine.className = "repo-row";
       var breakdown = [];
@@ -660,7 +681,20 @@
         (monthlyAmounts.length ? monthlyAmounts.join(" / ") : "No recorded payments");
       list.appendChild(monthlyRow);
     }
-    var payments = info.recent || [];
+    var originalPayments = Object.prototype.toString.call(info.recent) === "[object Array]" ?
+      info.recent : [];
+    var payments = originalPayments.filter(function (payment) {
+      return payment && typeof payment === "object" &&
+        typeof payment.paid_on === "string" && typeof payment.symbol === "string" &&
+        typeof payment.amount === "string" && typeof payment.currency === "string";
+    });
+    if (payments.length !== originalPayments.length) {
+      var skippedPayments = document.createElement("div");
+      skippedPayments.className = "repo-row";
+      skippedPayments.textContent = "Skipped " + (originalPayments.length - payments.length) +
+        " invalid recent dividend entries.";
+      list.appendChild(skippedPayments);
+    }
     for (var j = 0; j < payments.length; j++) {
       var row = document.createElement("div");
       row.className = "repo-row";
@@ -1003,7 +1037,21 @@
         daily[d].distance_km + " km";
       list.appendChild(dayLine);
     }
-    var recent = info.recent || [];
+    var originalRecent = Object.prototype.toString.call(info.recent) === "[object Array]" ?
+      info.recent : [];
+    var recent = originalRecent.filter(function (workout) {
+      return workout && typeof workout === "object" &&
+        validCalendarDate(workout.date) && typeof workout.type === "string" &&
+        typeof workout.duration_minutes === "number" &&
+        isFinite(workout.duration_minutes) && workout.duration_minutes >= 0;
+    });
+    if (recent.length !== originalRecent.length) {
+      var skippedRecent = document.createElement("div");
+      skippedRecent.className = "repo-row";
+      skippedRecent.textContent = "Skipped " + (originalRecent.length - recent.length) +
+        " invalid recent workout entries.";
+      list.appendChild(skippedRecent);
+    }
     for (var i = 0; i < recent.length; i++) {
       var row = document.createElement("div");
       row.className = "repo-row";
@@ -1148,9 +1196,18 @@
         repositoryLink.textContent = "Open repository · " + repoName;
         list.appendChild(repositoryLink);
       }
-      var previews = repos[i].open_prs || [];
+      var rawPreviews = repos[i].open_prs;
+      var previews = Object.prototype.toString.call(rawPreviews) === "[object Array]" ?
+        rawPreviews : [];
+      if (rawPreviews && Object.prototype.toString.call(rawPreviews) !== "[object Array]") {
+        var invalidPreviews = document.createElement("div");
+        invalidPreviews.className = "repo-row";
+        invalidPreviews.textContent = "PR preview unavailable · " + repoName;
+        list.appendChild(invalidPreviews);
+      }
       for (var k = 0; k < previews.length; k++) {
-        if (typeof repoName === "string" &&
+        if (previews[k] && typeof previews[k] === "object" &&
+            typeof repoName === "string" &&
             /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(repoName) &&
             typeof previews[k].number === "number" && isFinite(previews[k].number) &&
             previews[k].number > 0 && Math.floor(previews[k].number) === previews[k].number) {
