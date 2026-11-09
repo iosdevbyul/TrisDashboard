@@ -1250,4 +1250,34 @@ for (const panel of ["portfolio","dividends","github","fitness"]) {
 assert.equal(byId("portfolio-quote-values").hidden,false);
 assert.equal(byId("fitness-list").hidden,false);
 
+// Four additional detail disclosures must keep headline values and freshness visible.
+const extraDetails = [
+  ["quotes","quotes-list","quotes-summary","quotes-updated"],
+  ["trello","trello-list","trello-summary","trello-updated"],
+  ["weather","weather-details","weather-temp","weather-updated"],
+  ["server","server-info","server-uptime","server-updated"]
+];
+for (const [panel,detail,summary,updated] of extraDetails) {
+  const headline = byId(summary).textContent;
+  const freshness = byId(updated).textContent;
+  assert.equal(byId(panel + "-detail-toggle").attributes["aria-expanded"],"true");
+  handlers[panel + "-detail-toggle:click"]();
+  assert.equal(byId(detail).hidden,true);
+  assert.equal(byId(panel + "-detail-toggle").attributes["aria-expanded"],"false");
+  assert.equal(byId(panel + "-detail-toggle").textContent,"Show details");
+  assert.equal(state["tris.dashboard.details." + panel],"collapsed");
+  assert.equal(byId(summary).textContent,headline);
+  assert.equal(byId(updated).textContent,freshness);
+}
+handlers["refresh-button:click"]();
+for (const [panel,detail] of extraDetails) {
+  assert.equal(byId(detail).hidden,true);
+  handlers[panel + "-detail-toggle:click"]();
+  assert.equal(byId(detail).hidden,false);
+  assert.equal(byId(panel + "-detail-toggle").attributes["aria-expanded"],"true");
+  assert.equal(state["tris.dashboard.details." + panel],"expanded");
+}
+assert.equal(byId("portfolio-list").hidden,false);
+assert.equal(byId("fitness-list").hidden,false);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");

@@ -74,6 +74,7 @@
     <article class="card" data-panel="quotes">
       <h2>Market quotes · Provider reported</h2>
       <p id="quotes-summary">Not configured</p>
+      <button type="button" class="detail-toggle" id="quotes-detail-toggle" aria-expanded="true" aria-controls="quotes-list">Hide details</button>
       <div id="quotes-list" class="details">Optional Twelve Data source</div>
       <small id="quotes-updated">Source time and data freshness shown; not guaranteed live</small>
     </article>
@@ -101,6 +102,7 @@
     <article class="card" data-panel="weather">
       <h2>Weather</h2>
       <p id="weather-temp">Loading</p>
+      <button type="button" class="detail-toggle" id="weather-detail-toggle" aria-expanded="true" aria-controls="weather-details">Hide details</button>
       <button type="button" id="weather-unit-button" aria-label="Switch temperature units">Switch to °F</button>
       <div id="weather-details" class="details">Current weather</div>
       <small id="weather-updated">Live data via MacBook</small>
@@ -108,12 +110,14 @@
     <article class="card" data-panel="trello">
       <h2>Trello workflow</h2>
       <p id="trello-summary">Not configured</p>
+      <button type="button" class="detail-toggle" id="trello-detail-toggle" aria-expanded="true" aria-controls="trello-list">Hide details</button>
       <div id="trello-list" class="details">Next · In Progress · Done</div>
       <small id="trello-updated">Optional private board connection</small>
     </article>
     <article class="card" data-panel="server">
       <h2>MacBook server</h2>
       <p id="server-uptime">Loading</p>
+      <button type="button" class="detail-toggle" id="server-detail-toggle" aria-expanded="true" aria-controls="server-info">Hide details</button>
       <div id="server-info" class="details">Checking service uptime</div>
       <small id="server-updated">Local diagnostics</small>
     </article>
