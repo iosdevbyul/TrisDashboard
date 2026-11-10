@@ -821,6 +821,72 @@
     }
     return JSON.stringify(selected);
   }
+  function updateRestoreScopeSummary() {
+    var names = ["display", "pins", "My view"];
+    var selected = [];
+    for (var i = 0; i < restoreScopeIds.length; i++) {
+      if (document.getElementById(restoreScopeIds[i]).checked) {
+        selected.push(names[i]);
+      }
+    }
+    document.getElementById("restore-scope-summary").textContent =
+      selected.length + " of 3 sections selected" +
+      (selected.length ? ": " + selected.join(", ") + "." : ". Choose a section before preview.");
+    document.getElementById("restore-scope-all").disabled = selected.length === 3;
+    document.getElementById("restore-scope-none").disabled = selected.length === 0;
+  }
+  function changedPanelNames(before, after) {
+    var added = [], removed = [];
+    for (var i = 0; i < panelNames.length; i++) {
+      var name = panelNames[i];
+      if (before.indexOf(name) === -1 && after.indexOf(name) !== -1) { added.push(name); }
+      if (before.indexOf(name) !== -1 && after.indexOf(name) === -1) { removed.push(name); }
+    }
+    return {added: added, removed: removed};
+  }
+  function describeRestoreChanges(backup) {
+    var before = snapshotLayout();
+    var summary = [];
+    if (JSON.stringify(before.display) !== JSON.stringify(backup.display)) {
+      var visibility = changedPanelNames(backup.display.hidden, before.display.hidden);
+      var settingsChanged = [];
+      var displayKeys = ["compact", "dim", "glance", "largeText", "highContrast", "pauseRefresh", "refreshMinutes"];
+      for (var i = 0; i < displayKeys.length; i++) {
+        if (before.display[displayKeys[i]] !== backup.display[displayKeys[i]]) {
+          settingsChanged.push(displayKeys[i]);
+        }
+      }
+      var parts = [];
+      if (visibility.added.length) { parts.push("show " + visibility.added.join(", ")); }
+      if (visibility.removed.length) { parts.push("hide " + visibility.removed.join(", ")); }
+      if (JSON.stringify(before.display.order) !== JSON.stringify(backup.display.order)) {
+        parts.push("reorder panels");
+      }
+      if (settingsChanged.length) { parts.push("options " + settingsChanged.join(", ")); }
+      summary.push("Display: " + parts.join("; "));
+    }
+    if (JSON.stringify(before.pins) !== JSON.stringify(backup.pins)) {
+      var pinsDiff = changedPanelNames(before.pins, backup.pins);
+      var pinParts = [];
+      if (pinsDiff.added.length) { pinParts.push("add " + pinsDiff.added.join(", ")); }
+      if (pinsDiff.removed.length) { pinParts.push("remove " + pinsDiff.removed.join(", ")); }
+      if (!pinParts.length) { pinParts.push("change favorite order"); }
+      summary.push("Pins: " + pinParts.join("; "));
+    }
+    if (JSON.stringify(before.myView) !== JSON.stringify(backup.myView)) {
+      if (!backup.myView) { summary.push("My view: delete saved view"); }
+      else if (!before.myView) { summary.push("My view: save " + backup.myView.join(", ")); }
+      else {
+        var viewDiff = changedPanelNames(before.myView, backup.myView);
+        var viewParts = [];
+        if (viewDiff.added.length) { viewParts.push("add " + viewDiff.added.join(", ")); }
+        if (viewDiff.removed.length) { viewParts.push("remove " + viewDiff.removed.join(", ")); }
+        if (!viewParts.length) { viewParts.push("change saved view order"); }
+        summary.push("My view: " + viewParts.join("; "));
+      }
+    }
+    return summary.join(" | ") || "No changes to the selected sections.";
+  }
   function backupMatchesCurrent(backup) {
     var current = snapshotLayout();
     return JSON.stringify(current.display) === JSON.stringify(backup.display) &&
@@ -945,6 +1011,8 @@
     stagedBackupText = "";
     stagedCurrentLayoutText = "";
     stagedRestoreScopes = "";
+    document.getElementById("layout-preview-changes").textContent =
+      "Detailed changes appear after preview.";
     document.getElementById("confirm-layout-import").disabled = true;
     document.getElementById("confirm-layout-import").checked = false;
     document.getElementById("import-layout").disabled = true;
@@ -953,10 +1021,30 @@
     document.getElementById(restoreScopeIds[scopeIndex]).checked = true;
     document.getElementById(restoreScopeIds[scopeIndex]).addEventListener("change", function () {
       invalidatePreview();
+      updateRestoreScopeSummary();
       document.getElementById("layout-preview-status").textContent =
         "Restore sections changed. Preview again before confirming.";
     });
   }
+  document.getElementById("restore-scope-all").addEventListener("click", function () {
+    for (var i = 0; i < restoreScopeIds.length; i++) {
+      document.getElementById(restoreScopeIds[i]).checked = true;
+    }
+    invalidatePreview();
+    updateRestoreScopeSummary();
+    document.getElementById("layout-preview-status").textContent =
+      "All restore sections selected. Preview again before confirming.";
+  });
+  document.getElementById("restore-scope-none").addEventListener("click", function () {
+    for (var i = 0; i < restoreScopeIds.length; i++) {
+      document.getElementById(restoreScopeIds[i]).checked = false;
+    }
+    invalidatePreview();
+    updateRestoreScopeSummary();
+    document.getElementById("layout-preview-status").textContent =
+      "No restore sections selected. Choose a section before preview.";
+  });
+  updateRestoreScopeSummary();
   document.getElementById("layout-backup-json").addEventListener("input", function () {
     invalidatePreview();
     updateBackupEditor();
@@ -999,6 +1087,8 @@
         "Preview: backup matches current display, pins and My view. Nothing to restore.";
       return;
     }
+    document.getElementById("layout-preview-changes").textContent =
+      describeRestoreChanges(backup);
     stagedBackup = backup;
     stagedBackupText = input;
     stagedCurrentLayoutText = JSON.stringify(snapshotLayout());
