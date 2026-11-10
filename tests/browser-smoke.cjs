@@ -2060,6 +2060,40 @@ assert.equal(byId("clear-layout-json").disabled,true);
 assert.equal(byId("layout-editor-count").textContent,"0 / 16,000 characters");
 assert.equal(byId("import-layout").disabled,true);
 assert.equal(state["tris.dashboard.display.v1"],beforeRestoreSettings);
+// Strict schema: unknown root and display fields are not accepted.
+const safeBackup = {version:1,display:JSON.parse(state["tris.dashboard.display.v1"]),
+  pins:JSON.parse(state["tris.dashboard.pins.v1"]),
+  myView:state["tris.dashboard.my-view.v1"] ? JSON.parse(state["tris.dashboard.my-view.v1"]) : null};
+for (const bad of [Object.assign({},safeBackup,{unexpected:"extra"}),
+  Object.assign({},safeBackup,{display:Object.assign({},safeBackup.display,{apiKey:"extra"})})]) {
+  byId("layout-backup-json").value=JSON.stringify(bad);
+  handlers["layout-backup-json:input"]();
+  handlers["preview-layout:click"]();
+  assert.match(byId("layout-preview-status").textContent,/Unexpected or missing backup fields/);
+  assert.equal(byId("confirm-layout-import").disabled,true);
+  assert.equal(state["tris.dashboard.display.v1"],beforeRestoreSettings);
+}
+// Exact backup of the current layout cannot create a no-op restore.
+byId("layout-backup-json").value=JSON.stringify(safeBackup);
+handlers["layout-backup-json:input"]();
+handlers["preview-layout:click"]();
+assert.match(byId("layout-preview-status").textContent,/Nothing to restore/);
+assert.equal(byId("import-layout").disabled,true);
+assert.equal(byId("confirm-layout-import").disabled,true);
+// Altering the current layout after preview must invalidate restore consent.
+byId("layout-backup-json").value=JSON.stringify(exportedLayout);
+handlers["layout-backup-json:input"]();
+handlers["preview-layout:click"]();
+assert.equal(byId("confirm-layout-import").disabled,false);
+byId("confirm-layout-import").checked=true;
+handlers["confirm-layout-import:change"].call(byId("confirm-layout-import"));
+handlers["quick-view-fitness:click"]();
+const changedAfterPreview = state["tris.dashboard.display.v1"];
+handlers["import-layout:click"]();
+assert.match(byId("layout-backup-status").textContent,/settings changed after preview/);
+assert.equal(state["tris.dashboard.display.v1"],changedAfterPreview);
+assert.equal(byId("import-layout").disabled,true);
+assert.equal(byId("confirm-layout-import").disabled,true);
 handlers["quick-view-all:click"]();
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
