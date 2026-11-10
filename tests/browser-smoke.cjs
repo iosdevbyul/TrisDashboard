@@ -26,7 +26,7 @@ class TestDate extends Date {
 function element(id = "") {
   const children = [];
   const result = {
-    id, checked: false, hidden: false, textContent: "", className: "", style: {},
+    id, value: "", checked: false, hidden: false, textContent: "", className: "", style: {},
     children, attributes: {}, href: "",
     get firstChild() { return children.length ? children[0] : null; },
     appendChild(child) { const old = children.indexOf(child); if (old >= 0) children.splice(old, 1); children.push(child); child.parentNode = this; if (child.id) elements.set(child.id, child); return child; },
@@ -37,7 +37,8 @@ function element(id = "") {
     },
     addEventListener(name, callback) { handlers[this.id + ":" + name] = callback; },
     setAttribute(name, value) { this.attributes[name] = value; },
-    focus() { this.focused = true; }
+    focus() { this.focused = true; },
+    select() { this.selected = true; }
   };
   return result;
 }
@@ -1989,6 +1990,12 @@ assert.equal(JSON.stringify(exportedLayout.display),expectedExportState);
 assert.deepEqual(exportedLayout.pins,JSON.parse(expectedExportPins));
 assert.deepEqual(exportedLayout.myView,JSON.parse(expectedExportMyView));
 assert.equal(byId("layout-backup-json").value.includes("api_key"),false);
+assert.equal(byId("clear-layout-json").disabled,false);
+assert.equal(byId("select-layout-json").disabled,false);
+assert.match(byId("layout-editor-count").textContent,/ \/ 16,000 characters/);
+handlers["select-layout-json:click"]();
+assert.equal(byId("layout-backup-json").selected,true);
+
 handlers["reset-settings:click"]();
 handlers["clear-all-pins:click"]();
 handlers["clear-my-view:click"]();
@@ -1998,6 +2005,8 @@ const beforeRestoreView = state["tris.dashboard.my-view.v1"];
 assert.equal(byId("import-layout").disabled,true);
 handlers["preview-layout:click"]();
 assert.match(byId("layout-preview-status").textContent,/Preview: 2 visible panels; 1 pins/);
+assert.match(byId("layout-preview-status").textContent,/Changes: display; pins; My view;/);
+
 assert.equal(byId("import-layout").disabled,true);
 assert.equal(byId("confirm-layout-import").disabled,false);
 byId("confirm-layout-import").checked=true;
@@ -2043,6 +2052,13 @@ handlers["layout-backup-json:input"]();
 assert.equal(byId("import-layout").disabled,true);
 handlers["import-layout:click"]();
 assert.match(byId("layout-backup-status").textContent,/preview and confirmation required/);
+assert.equal(state["tris.dashboard.display.v1"],beforeRestoreSettings);
+handlers["clear-layout-json:click"]();
+assert.equal(byId("layout-backup-json").value,"");
+assert.equal(byId("select-layout-json").disabled,true);
+assert.equal(byId("clear-layout-json").disabled,true);
+assert.equal(byId("layout-editor-count").textContent,"0 / 16,000 characters");
+assert.equal(byId("import-layout").disabled,true);
 assert.equal(state["tris.dashboard.display.v1"],beforeRestoreSettings);
 handlers["quick-view-all:click"]();
 
