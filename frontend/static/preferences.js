@@ -24,6 +24,38 @@
   var panelSearchQuery = "";
   var sourceFilter = "all";
   var sourceStates = null;
+  var focusedPanelName = null;
+  var navigablePanelNames = [];
+  function updatePanelNavigation() {
+    var ordered = displayOrder();
+    navigablePanelNames = [];
+    for (var i = 0; i < ordered.length; i++) {
+      var panel = document.getElementById("panel-" + ordered[i]);
+      if (panel && !panel.hidden) { navigablePanelNames.push(ordered[i]); }
+    }
+    if (navigablePanelNames.indexOf(focusedPanelName) === -1) {
+      focusedPanelName = null;
+    }
+    var position = navigablePanelNames.indexOf(focusedPanelName);
+    document.getElementById("navigate-previous-panel").disabled = position <= 0;
+    document.getElementById("navigate-next-panel").disabled =
+      navigablePanelNames.length === 0 || position === navigablePanelNames.length - 1;
+    document.getElementById("panel-navigation-status").textContent =
+      focusedPanelName ?
+      focusedPanelName + " · " + (position + 1) + " of " + navigablePanelNames.length + " visible panels" :
+      "No panel selected · " + navigablePanelNames.length + " visible panels";
+  }
+  function navigateVisiblePanel(direction) {
+    var index = navigablePanelNames.indexOf(focusedPanelName);
+    var next = direction > 0 ? index + 1 :
+      (index < 0 ? -1 : index - 1);
+    if (next < 0 || next >= navigablePanelNames.length) { return false; }
+    focusedPanelName = navigablePanelNames[next];
+    updatePanelNavigation();
+    var panel = document.getElementById("panel-" + focusedPanelName);
+    if (panel && typeof panel.focus === "function") { panel.focus(); }
+    return true;
+  }
   function matchesSourceFilter(name) {
     if (sourceFilter === "all") { return true; }
     if (!sourceStates) { return false; }
@@ -478,6 +510,7 @@
       pinned.length ? "Pinned panels are hidden by the current search or source status. Clear the filters or show all panels." :
       "No pinned panels. Pin a panel to create your favorites.";
     updateActiveView();
+    updatePanelNavigation();
   }
 
   function movePanel(name, direction) {
@@ -532,6 +565,12 @@
     });
   });
 
+  document.getElementById("navigate-next-panel").addEventListener("click", function () {
+    navigateVisiblePanel(1);
+  });
+  document.getElementById("navigate-previous-panel").addEventListener("click", function () {
+    navigateVisiblePanel(-1);
+  });
   document.getElementById("clear-temporary-filters").addEventListener("click", clearTemporaryFilters);
   document.getElementById("panel-search-input").addEventListener("input", function () {
     panelSearchQuery = String(this.value || "").toLowerCase().replace(/^\s+|\s+$/g, "");
@@ -580,6 +619,19 @@
     }
   });
   document.addEventListener("keydown", function (event) {
+    var navTarget = event.target || document.activeElement;
+    var navEditing = navTarget && (navTarget.tagName === "INPUT" ||
+      navTarget.tagName === "TEXTAREA" || navTarget.tagName === "SELECT" ||
+      navTarget.isContentEditable === true);
+    if (event.altKey && !event.ctrlKey && !event.metaKey && !navEditing &&
+        (event.keyCode === 37 || event.keyCode === 39 ||
+         event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      if (navigateVisiblePanel(event.keyCode === 37 || event.key === "ArrowLeft" ? -1 : 1) &&
+          typeof event.preventDefault === "function") {
+        event.preventDefault();
+      }
+      return;
+    }
     if (((event.keyCode === 191 || event.key === "/") && !event.ctrlKey && !event.metaKey && !event.altKey) ||
         ((event.keyCode === 75 || event.key === "k") && (event.ctrlKey || event.metaKey))) {
       var target = event.target || document.activeElement;
