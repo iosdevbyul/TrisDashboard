@@ -2096,4 +2096,46 @@ assert.equal(byId("import-layout").disabled,true);
 assert.equal(byId("confirm-layout-import").disabled,true);
 handlers["quick-view-all:click"]();
 
+// Selective restore: each section can be imported independently and undone.
+const restoreScopeIds=["restore-scope-display","restore-scope-pins","restore-scope-my-view"];
+const restoreStorageKeys=["tris.dashboard.display.v1","tris.dashboard.pins.v1","tris.dashboard.my-view.v1"];
+for (let section=0;section<restoreScopeIds.length;section++) {
+  const before=restoreStorageKeys.map(key=>state[key]);
+  byId("layout-backup-json").value=JSON.stringify(exportedLayout);
+  handlers["layout-backup-json:input"]();
+  for (let i=0;i<restoreScopeIds.length;i++) {
+    byId(restoreScopeIds[i]).checked=(i===section);
+    handlers[restoreScopeIds[i]+":change"]();
+  }
+  handlers["preview-layout:click"]();
+  assert.equal(byId("confirm-layout-import").disabled,false);
+  byId("confirm-layout-import").checked=true;
+  handlers["confirm-layout-import:change"].call(byId("confirm-layout-import"));
+  handlers["import-layout:click"]();
+  for (let i=0;i<restoreStorageKeys.length;i++) {
+    assert.equal(state[restoreStorageKeys[i]],i===section ?
+      [expectedExportState,expectedExportPins,expectedExportMyView][i] : before[i]);
+  }
+  assert.equal(byId("undo-layout-import").disabled,false);
+  handlers["undo-layout-import:click"]();
+  restoreStorageKeys.forEach((key,i)=>assert.equal(state[key],before[i]));
+}
+// No scope selected cannot stage a restore.
+for (const id of restoreScopeIds) { byId(id).checked=false; handlers[id+":change"](); }
+handlers["preview-layout:click"]();
+assert.match(byId("layout-preview-status").textContent,/Select at least one section/);
+assert.equal(byId("import-layout").disabled,true);
+// Changing scopes after consent blocks stale approval, even without an input event.
+byId(restoreScopeIds[0]).checked=true;
+handlers[restoreScopeIds[0]+":change"]();
+handlers["preview-layout:click"]();
+assert.equal(byId("confirm-layout-import").disabled,false);
+byId("confirm-layout-import").checked=true;
+handlers["confirm-layout-import:change"].call(byId("confirm-layout-import"));
+byId(restoreScopeIds[1]).checked=true;
+handlers["import-layout:click"]();
+assert.match(byId("layout-backup-status").textContent,/preview and confirmation required/);
+assert.equal(byId("import-layout").disabled,true);
+for (const id of restoreScopeIds) { byId(id).checked=true; handlers[id+":change"](); }
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");

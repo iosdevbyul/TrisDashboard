@@ -10,6 +10,7 @@
   var stagedBackup = null;
   var stagedBackupText = "";
   var stagedCurrentLayoutText = "";
+  var stagedRestoreScopes = "";
   var lastLayoutImport = null;
   var maxLayoutBackupBytes = 16000;
   var viewHistory = [];
@@ -803,6 +804,23 @@
     }
     return true;
   }
+  var restoreScopeIds = ["restore-scope-display", "restore-scope-pins", "restore-scope-my-view"];
+  function selectedRestoreBackup(backup) {
+    var current = snapshotLayout();
+    return {
+      version: 1,
+      display: document.getElementById(restoreScopeIds[0]).checked ? backup.display : current.display,
+      pins: document.getElementById(restoreScopeIds[1]).checked ? backup.pins : current.pins,
+      myView: document.getElementById(restoreScopeIds[2]).checked ? backup.myView : current.myView
+    };
+  }
+  function restoreScopeSnapshot() {
+    var selected = [];
+    for (var i = 0; i < restoreScopeIds.length; i++) {
+      selected.push(document.getElementById(restoreScopeIds[i]).checked);
+    }
+    return JSON.stringify(selected);
+  }
   function backupMatchesCurrent(backup) {
     var current = snapshotLayout();
     return JSON.stringify(current.display) === JSON.stringify(backup.display) &&
@@ -926,9 +944,18 @@
     stagedBackup = null;
     stagedBackupText = "";
     stagedCurrentLayoutText = "";
+    stagedRestoreScopes = "";
     document.getElementById("confirm-layout-import").disabled = true;
     document.getElementById("confirm-layout-import").checked = false;
     document.getElementById("import-layout").disabled = true;
+  }
+  for (var scopeIndex = 0; scopeIndex < restoreScopeIds.length; scopeIndex++) {
+    document.getElementById(restoreScopeIds[scopeIndex]).checked = true;
+    document.getElementById(restoreScopeIds[scopeIndex]).addEventListener("change", function () {
+      invalidatePreview();
+      document.getElementById("layout-preview-status").textContent =
+        "Restore sections changed. Preview again before confirming.";
+    });
   }
   document.getElementById("layout-backup-json").addEventListener("input", function () {
     invalidatePreview();
@@ -957,6 +984,16 @@
         "Backup rejected: " + validationError + ". Existing settings unchanged.";
       return;
     }
+    var selectedCount = 0;
+    for (var j = 0; j < restoreScopeIds.length; j++) {
+      if (document.getElementById(restoreScopeIds[j]).checked) { selectedCount++; }
+    }
+    if (!selectedCount) {
+      document.getElementById("layout-preview-status").textContent =
+        "Select at least one section to restore. Existing settings unchanged.";
+      return;
+    }
+    backup = selectedRestoreBackup(backup);
     if (backupMatchesCurrent(backup)) {
       document.getElementById("layout-preview-status").textContent =
         "Preview: backup matches current display, pins and My view. Nothing to restore.";
@@ -965,6 +1002,7 @@
     stagedBackup = backup;
     stagedBackupText = input;
     stagedCurrentLayoutText = JSON.stringify(snapshotLayout());
+    stagedRestoreScopes = restoreScopeSnapshot();
     document.getElementById("confirm-layout-import").disabled = false;
     document.getElementById("layout-preview-status").textContent =
       "Preview: " + (panelNames.length - backup.display.hidden.length) +
@@ -990,7 +1028,8 @@
   });
   document.getElementById("import-layout").addEventListener("click", function () {
     if (!stagedBackup || !document.getElementById("confirm-layout-import").checked ||
-        document.getElementById("layout-backup-json").value !== stagedBackupText) {
+        document.getElementById("layout-backup-json").value !== stagedBackupText ||
+        restoreScopeSnapshot() !== stagedRestoreScopes) {
       invalidatePreview();
       document.getElementById("layout-backup-status").textContent =
         "Restore rejected: preview and confirmation required. Existing settings unchanged.";
@@ -1012,7 +1051,7 @@
     invalidatePreview();
     syncRestoredRefresh(wasPaused);
     document.getElementById("layout-backup-status").textContent =
-      "Layout restored: " + (panelNames.length - settings.hidden.length) +
+      "Selected backup sections restored: " + (panelNames.length - settings.hidden.length) +
       " visible panels, " + pinned.length +
       " pins. You can undo this restore during this session.";
   });
