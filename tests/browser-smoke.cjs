@@ -2215,4 +2215,53 @@ assert.equal(byId("preview-layout").disabled,true);
 assert.match(byId("layout-editor-count").textContent,/exceeds restore limit/);
 assert.equal(state["tris.dashboard.display.v1"],beforeRestoreSettings);
 
+// Visible-panel navigation respects display order, filters, favorites and keyboard input.
+handlers["clear-temporary-filters:click"]();
+handlers["quick-view-all:click"]();
+assert.equal(byId("navigate-previous-panel").disabled,true);
+assert.equal(byId("navigate-next-panel").disabled,false);
+assert.match(byId("panel-navigation-status").textContent,/9 visible panels/);
+handlers["navigate-next-panel:click"]();
+assert.equal(byId("panel-portfolio").focused,true);
+assert.match(byId("panel-navigation-status").textContent,/portfolio .* 1 of 9/);
+handlers["navigate-next-panel:click"]();
+assert.equal(byId("panel-quotes").focused,true);
+handlers["navigate-previous-panel:click"]();
+assert.match(byId("panel-navigation-status").textContent,/portfolio .* 1 of 9/);
+assert.equal(byId("navigate-previous-panel").disabled,true);
+// Only the filtered matching card is navigable; no hidden panels are focused.
+byId("panel-search-input").value="fitness";
+handlers["panel-search-input:input"].call(byId("panel-search-input"));
+assert.match(byId("panel-navigation-status").textContent,/No panel selected .* 1 visible panels/);
+assert.equal(byId("navigate-previous-panel").disabled,true);
+handlers["navigate-next-panel:click"]();
+assert.equal(byId("panel-fitness").focused,true);
+assert.equal(byId("navigate-next-panel").disabled,true);
+assert.match(byId("panel-navigation-status").textContent,/fitness .* 1 of 1/);
+// Alt+Left/Right navigation leaves editable elements and defaults untouched.
+handlers["panel-search-clear:click"]();
+let preventedPanelNav=false;
+handlers["document:keydown"]({keyCode:39,altKey:true,target:{tagName:"INPUT"},preventDefault(){preventedPanelNav=true;}});
+assert.equal(preventedPanelNav,false);
+handlers["document:keydown"]({keyCode:37,altKey:true,target:{tagName:"DIV"},preventDefault(){preventedPanelNav=true;}});
+assert.equal(preventedPanelNav,true);
+assert.match(byId("panel-navigation-status").textContent,/server .* 8 of 9/);
+preventedPanelNav=false;
+handlers["document:keydown"]({keyCode:39,altKey:true,target:{tagName:"DIV"},preventDefault(){preventedPanelNav=true;}});
+assert.equal(preventedPanelNav,true);
+assert.match(byId("panel-navigation-status").textContent,/fitness .* 9 of 9/);
+// Favorites float to front and invalidating filters never changes saved layout.
+const originalPanelStorage=state["tris.dashboard.display.v1"];
+handlers["pin-weather:click"]();
+assert.match(byId("panel-navigation-status").textContent,/fitness .* 9 of 9/);
+byId("panel-search-input").value="weather";
+handlers["panel-search-input:input"].call(byId("panel-search-input"));
+assert.match(byId("panel-navigation-status").textContent,/1 visible panels/);
+handlers["navigate-next-panel:click"]();
+assert.match(byId("panel-navigation-status").textContent,/weather .* 1 of 1/);
+handlers["panel-search-clear:click"]();
+assert.match(byId("panel-navigation-status").textContent,/weather .* 1 of 9/);
+assert.equal(state["tris.dashboard.display.v1"],originalPanelStorage);
+handlers["pin-weather:click"]();
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
