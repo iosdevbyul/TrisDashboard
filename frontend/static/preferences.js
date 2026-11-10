@@ -13,6 +13,7 @@
   var stagedRestoreScopes = "";
   var lastLayoutImport = null;
   var maxLayoutBackupBytes = 16000;
+  var pendingExportOverwriteText = null;
   var viewHistory = [];
   var viewHistoryIndex = -1;
   var replayingViewHistory = false;
@@ -920,6 +921,11 @@
     }
     return null;
   }
+  function clearExportOverwrite() {
+    pendingExportOverwriteText = null;
+    document.getElementById("cancel-backup-overwrite").disabled = true;
+    document.getElementById("export-layout").textContent = "Create backup JSON";
+  }
   function updateBackupEditor() {
     var input = document.getElementById("layout-backup-json");
     var length = input.value.length;
@@ -928,6 +934,8 @@
       (length > maxLayoutBackupBytes ? " — exceeds restore limit" : "");
     document.getElementById("select-layout-json").disabled = length === 0;
     document.getElementById("clear-layout-json").disabled = length === 0;
+    document.getElementById("preview-layout").disabled = length === 0 ||
+      length > maxLayoutBackupBytes;
   }
   document.getElementById("select-layout-json").addEventListener("click", function () {
     var input = document.getElementById("layout-backup-json");
@@ -938,6 +946,7 @@
   });
   document.getElementById("clear-layout-json").addEventListener("click", function () {
     document.getElementById("layout-backup-json").value = "";
+    clearExportOverwrite();
     invalidatePreview();
     updateBackupEditor();
     document.getElementById("layout-preview-status").textContent =
@@ -945,7 +954,22 @@
     document.getElementById("layout-backup-status").textContent =
       "Backup text cleared; no layout was restored.";
   });
+  document.getElementById("cancel-backup-overwrite").addEventListener("click", function () {
+    clearExportOverwrite();
+    document.getElementById("layout-backup-status").textContent =
+      "Existing backup text kept. Dashboard settings unchanged.";
+  });
   document.getElementById("export-layout").addEventListener("click", function () {
+    var input = document.getElementById("layout-backup-json");
+    if (input.value.length && pendingExportOverwriteText !== input.value) {
+      pendingExportOverwriteText = input.value;
+      document.getElementById("cancel-backup-overwrite").disabled = false;
+      document.getElementById("export-layout").textContent = "Replace existing JSON";
+      document.getElementById("layout-backup-status").textContent =
+        "Existing JSON will be replaced. Copy it first, or click Replace existing JSON again to confirm.";
+      return;
+    }
+    clearExportOverwrite();
     var backup = {
       version: 1,
       display: settings,
@@ -1007,6 +1031,7 @@
     }
   }
   function invalidatePreview() {
+    document.getElementById("cancel-layout-preview").disabled = true;
     stagedBackup = null;
     stagedBackupText = "";
     stagedCurrentLayoutText = "";
@@ -1045,7 +1070,13 @@
       "No restore sections selected. Choose a section before preview.";
   });
   updateRestoreScopeSummary();
+  document.getElementById("cancel-layout-preview").addEventListener("click", function () {
+    invalidatePreview();
+    document.getElementById("layout-preview-status").textContent =
+      "Restore preview cancelled. Backup JSON and current settings were kept.";
+  });
   document.getElementById("layout-backup-json").addEventListener("input", function () {
+    clearExportOverwrite();
     invalidatePreview();
     updateBackupEditor();
     document.getElementById("layout-preview-status").textContent =
@@ -1054,6 +1085,11 @@
   document.getElementById("preview-layout").addEventListener("click", function () {
     invalidatePreview();
     var input = document.getElementById("layout-backup-json").value;
+    if (!input.length) {
+      document.getElementById("layout-preview-status").textContent =
+        "Paste or create backup JSON before previewing. Existing settings unchanged.";
+      return;
+    }
     if (input.length > maxLayoutBackupBytes) {
       document.getElementById("layout-preview-status").textContent =
         "Backup rejected: exceeds the 16,000 character limit.";
@@ -1090,6 +1126,7 @@
     document.getElementById("layout-preview-changes").textContent =
       describeRestoreChanges(backup);
     stagedBackup = backup;
+    document.getElementById("cancel-layout-preview").disabled = false;
     stagedBackupText = input;
     stagedCurrentLayoutText = JSON.stringify(snapshotLayout());
     stagedRestoreScopes = restoreScopeSnapshot();
