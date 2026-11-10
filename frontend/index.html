@@ -142,6 +142,12 @@
     <p id="layout-editor-count" class="settings-label" role="status" aria-live="polite">0 / 16,000 characters</p>
     <button type="button" id="select-layout-json">Select backup JSON</button>
     <button type="button" id="clear-layout-json" disabled>Clear backup JSON</button>
+    <fieldset id="layout-restore-scopes">
+      <legend>Restore only the selected sections</legend>
+      <label><input type="checkbox" id="restore-scope-display" checked> Display settings and panel layout</label>
+      <label><input type="checkbox" id="restore-scope-pins" checked> Pinned favorites</label>
+      <label><input type="checkbox" id="restore-scope-my-view" checked> My view</label>
+    </fieldset>
     <button type="button" id="preview-layout">Preview backup</button>
     <p id="layout-preview-status" class="settings-label" role="status" aria-live="polite">Preview a backup before restoring.</p>
     <label><input type="checkbox" id="confirm-layout-import" disabled> I reviewed this backup and want to replace my layout</label>
