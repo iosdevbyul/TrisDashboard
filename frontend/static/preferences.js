@@ -7,6 +7,10 @@
   var savedViewKey = "tris.dashboard.my-view.v1";
   var savedVisible = null;
   var lastResetSettings = null;
+  var stagedBackup = null;
+  var stagedBackupText = "";
+  var lastLayoutImport = null;
+  var maxLayoutBackupBytes = 16000;
   var viewHistory = [];
   var viewHistoryIndex = -1;
   var replayingViewHistory = false;
@@ -818,46 +822,29 @@
       myView: savedVisible ? savedVisible.slice(0) : null
     };
     document.getElementById("layout-backup-json").value = JSON.stringify(backup, null, 2);
+    invalidatePreview();
     document.getElementById("layout-backup-status").textContent =
       "Backup ready: display preferences, " + pinned.length +
       " pins and " + (savedVisible ? savedVisible.length : 0) +
       " saved view panels. Copy the JSON to keep it.";
   });
-  document.getElementById("import-layout").addEventListener("click", function () {
-    var input = document.getElementById("layout-backup-json").value;
-    var backup;
-    try { backup = JSON.parse(input); }
-    catch (error) {
-      document.getElementById("layout-backup-status").textContent =
-        "Restore rejected: invalid JSON. Existing settings unchanged.";
-      return;
-    }
-    var validationError = validateBackup(backup);
-    if (validationError) {
-      document.getElementById("layout-backup-status").textContent =
-        "Restore rejected: " + validationError + ". Existing settings unchanged.";
-      return;
-    }
-    // Validation is complete before any user preference is modified.
-    var wasPaused = settings.pauseRefresh;
+  function setLayoutBackup(data) {
     settings = {
-      compact: backup.display.compact,
-      dim: backup.display.dim,
-      glance: backup.display.glance,
-      largeText: backup.display.largeText,
-      highContrast: backup.display.highContrast,
-      refreshMinutes: backup.display.refreshMinutes,
-      pauseRefresh: backup.display.pauseRefresh,
-      hidden: backup.display.hidden.slice(0),
-      order: backup.display.order.slice(0)
+      compact: data.display.compact,
+      dim: data.display.dim,
+      glance: data.display.glance,
+      largeText: data.display.largeText,
+      highContrast: data.display.highContrast,
+      refreshMinutes: data.display.refreshMinutes,
+      pauseRefresh: data.display.pauseRefresh,
+      hidden: data.display.hidden.slice(0),
+      order: data.display.order.slice(0)
     };
-    pinned = backup.pins.slice(0);
+    pinned = data.pins.slice(0);
+    savedVisible = data.myView ? data.myView.slice(0) : null;
     pinnedOnly = false;
-    savedVisible = backup.myView ? backup.myView.slice(0) : null;
     sourceFilter = "all";
     panelSearchQuery = "";
-    lastResetSettings = null;
-    document.getElementById("undo-display-reset").disabled = true;
     apply(); store(); storePins();
     try {
       if (savedVisible) {
@@ -867,10 +854,18 @@
       }
     } catch (error) {
       document.getElementById("layout-backup-status").textContent =
-        "Layout restored, but saved view could not be stored in this browser.";
-      return;
+        "Layout applied, but browser storage is unavailable.";
     }
     updateSavedView();
+  }
+  function snapshotLayout() {
+    return {
+      display: JSON.parse(JSON.stringify(settings)),
+      pins: pinned.slice(0),
+      myView: savedVisible ? savedVisible.slice(0) : null
+    };
+  }
+  function syncRestoredRefresh(wasPaused) {
     if (wasPaused && !settings.pauseRefresh &&
         typeof window.trisDashboardResumeRefresh === "function") {
       window.trisDashboardResumeRefresh();
@@ -878,9 +873,83 @@
                typeof window.trisDashboardCancelPendingRetry === "function") {
       window.trisDashboardCancelPendingRetry();
     }
+  }
+  function invalidatePreview() {
+    stagedBackup = null;
+    stagedBackupText = "";
+    document.getElementById("confirm-layout-import").disabled = true;
+    document.getElementById("confirm-layout-import").checked = false;
+    document.getElementById("import-layout").disabled = true;
+  }
+  document.getElementById("layout-backup-json").addEventListener("input", function () {
+    invalidatePreview();
+    document.getElementById("layout-preview-status").textContent =
+      "Backup changed. Preview again before restoring.";
+  });
+  document.getElementById("preview-layout").addEventListener("click", function () {
+    invalidatePreview();
+    var input = document.getElementById("layout-backup-json").value;
+    if (input.length > maxLayoutBackupBytes) {
+      document.getElementById("layout-preview-status").textContent =
+        "Backup rejected: exceeds the 16,000 character limit.";
+      return;
+    }
+    var backup;
+    try { backup = JSON.parse(input); }
+    catch (error) {
+      document.getElementById("layout-preview-status").textContent =
+        "Backup rejected: invalid JSON. Existing settings unchanged.";
+      return;
+    }
+    var validationError = validateBackup(backup);
+    if (validationError) {
+      document.getElementById("layout-preview-status").textContent =
+        "Backup rejected: " + validationError + ". Existing settings unchanged.";
+      return;
+    }
+    stagedBackup = backup;
+    stagedBackupText = input;
+    document.getElementById("confirm-layout-import").disabled = false;
+    document.getElementById("layout-preview-status").textContent =
+      "Preview: " + (panelNames.length - backup.display.hidden.length) +
+      " visible panels; " + backup.pins.length + " pins; " +
+      (backup.myView ? backup.myView.length : 0) +
+      " saved view panels. Confirm to replace the current layout.";
+  });
+  document.getElementById("confirm-layout-import").addEventListener("change", function () {
+    document.getElementById("import-layout").disabled =
+      !stagedBackup || !this.checked;
+  });
+  document.getElementById("import-layout").addEventListener("click", function () {
+    if (!stagedBackup || !document.getElementById("confirm-layout-import").checked ||
+        document.getElementById("layout-backup-json").value !== stagedBackupText) {
+      invalidatePreview();
+      document.getElementById("layout-backup-status").textContent =
+        "Restore rejected: preview and confirmation required. Existing settings unchanged.";
+      return;
+    }
+    var wasPaused = settings.pauseRefresh;
+    lastLayoutImport = snapshotLayout();
+    setLayoutBackup(stagedBackup);
+    lastResetSettings = null;
+    document.getElementById("undo-display-reset").disabled = true;
+    document.getElementById("undo-layout-import").disabled = false;
+    invalidatePreview();
+    syncRestoredRefresh(wasPaused);
     document.getElementById("layout-backup-status").textContent =
       "Layout restored: " + (panelNames.length - settings.hidden.length) +
-      " visible panels, " + pinned.length + " pins. Account data and API keys were not imported.";
+      " visible panels, " + pinned.length +
+      " pins. You can undo this restore during this session.";
+  });
+  document.getElementById("undo-layout-import").addEventListener("click", function () {
+    if (!lastLayoutImport) { return; }
+    var wasPaused = settings.pauseRefresh;
+    setLayoutBackup(lastLayoutImport);
+    lastLayoutImport = null;
+    document.getElementById("undo-layout-import").disabled = true;
+    syncRestoredRefresh(wasPaused);
+    document.getElementById("layout-backup-status").textContent =
+      "Previous display settings, pins and My view restored.";
   });
 
   buildControls(); restore(); restorePins(); buildPinButtons(); apply();
