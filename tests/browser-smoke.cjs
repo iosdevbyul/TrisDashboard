@@ -1971,4 +1971,50 @@ assert.match(byId("display-reset-status").textContent,/Previous display preferen
 handlers["clear-all-pins:click"]();
 handlers["reset-settings:click"]();
 
+// Offline JSON backup/restore: layout, pinned favorites and saved My view only.
+handlers["quick-view-fitness:click"]();
+handlers["pin-weather:click"]();
+handlers["quick-save-my-view:click"]();
+byId("setting-large-text").checked=true;
+handlers["setting-large-text:change"].call(byId("setting-large-text"));
+byId("setting-refresh-minutes").value="10";
+handlers["setting-refresh-minutes:change"].call(byId("setting-refresh-minutes"));
+const expectedExportState = state["tris.dashboard.display.v1"];
+const expectedExportPins = state["tris.dashboard.pins.v1"];
+const expectedExportMyView = state["tris.dashboard.my-view.v1"];
+handlers["export-layout:click"]();
+const exportedLayout = JSON.parse(byId("layout-backup-json").value);
+assert.equal(exportedLayout.version,1);
+assert.equal(JSON.stringify(exportedLayout.display),expectedExportState);
+assert.deepEqual(exportedLayout.pins,JSON.parse(expectedExportPins));
+assert.deepEqual(exportedLayout.myView,JSON.parse(expectedExportMyView));
+assert.equal(byId("layout-backup-json").value.includes("api_key"),false);
+handlers["reset-settings:click"]();
+handlers["clear-all-pins:click"]();
+handlers["clear-my-view:click"]();
+assert.equal(byId("setting-large-text").checked,false);
+handlers["import-layout:click"]();
+assert.equal(state["tris.dashboard.display.v1"],expectedExportState);
+assert.equal(state["tris.dashboard.pins.v1"],expectedExportPins);
+assert.equal(state["tris.dashboard.my-view.v1"],expectedExportMyView);
+assert.equal(byId("setting-large-text").checked,true);
+assert.equal(byId("setting-refresh-minutes").value,"10");
+assert.equal(byId("panel-portfolio").hidden,true);
+assert.equal(byId("panel-fitness").hidden,false);
+assert.equal(byId("pin-weather").attributes["aria-pressed"],"true");
+assert.match(byId("layout-backup-status").textContent,/Layout restored/);
+// Invalid and unsupported JSON must leave all current preferences untouched.
+for (const invalid of ["{broken",JSON.stringify({version:2,display:exportedLayout.display,pins:[],myView:null}),
+  JSON.stringify({version:1,display:exportedLayout.display,pins:["unknown"],myView:null})]) {
+  byId("layout-backup-json").value=invalid;
+  handlers["import-layout:click"]();
+  assert.match(byId("layout-backup-status").textContent,/Restore rejected/);
+  assert.equal(state["tris.dashboard.display.v1"],expectedExportState);
+  assert.equal(state["tris.dashboard.pins.v1"],expectedExportPins);
+  assert.equal(state["tris.dashboard.my-view.v1"],expectedExportMyView);
+}
+handlers["clear-all-pins:click"]();
+handlers["quick-view-all:click"]();
+handlers["reset-settings:click"]();
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
