@@ -139,7 +139,11 @@
     <button type="button" id="export-layout">Create backup JSON</button>
     <label for="layout-backup-json">Backup JSON (copy to save, paste to restore)</label>
     <textarea id="layout-backup-json" rows="5" spellcheck="false" aria-label="Dashboard layout backup JSON"></textarea>
-    <button type="button" id="import-layout">Restore from JSON</button>
+    <button type="button" id="preview-layout">Preview backup</button>
+    <p id="layout-preview-status" class="settings-label" role="status" aria-live="polite">Preview a backup before restoring.</p>
+    <label><input type="checkbox" id="confirm-layout-import" disabled> I reviewed this backup and want to replace my layout</label>
+    <button type="button" id="import-layout" disabled>Restore from JSON</button>
+    <button type="button" id="undo-layout-import" disabled>Undo last restore</button>
     <p id="layout-backup-status" class="settings-label" role="status" aria-live="polite">No backup created</p>
   </div>
   <div class="offline-banner" id="offline-banner" aria-live="polite" hidden>
