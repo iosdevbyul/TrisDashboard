@@ -135,6 +135,12 @@
     <button type="button" id="reset-settings">Reset display</button>
     <button type="button" id="undo-display-reset" disabled>Undo display reset</button>
     <p id="display-reset-status" class="settings-label" role="status" aria-live="polite">Reset affects display preferences; pinned favorites and My view are kept.</p>
+    <div class="settings-label">Configuration backup · layout only, no account data or API keys</div>
+    <button type="button" id="export-layout">Create backup JSON</button>
+    <label for="layout-backup-json">Backup JSON (copy to save, paste to restore)</label>
+    <textarea id="layout-backup-json" rows="5" spellcheck="false" aria-label="Dashboard layout backup JSON"></textarea>
+    <button type="button" id="import-layout">Restore from JSON</button>
+    <p id="layout-backup-status" class="settings-label" role="status" aria-live="polite">No backup created</p>
   </div>
   <div class="offline-banner" id="offline-banner" aria-live="polite" hidden>
     MacBook server is unreachable. Showing the last loaded dashboard.
