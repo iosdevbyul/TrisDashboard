@@ -2153,7 +2153,7 @@ assert.match(byId("restore-scope-summary").textContent,/3 of 3 sections selected
 byId("layout-backup-json").value=JSON.stringify(exportedLayout);
 handlers["layout-backup-json:input"]();
 handlers["preview-layout:click"]();
-assert.match(byId("layout-preview-changes").textContent,/Display: show/);
+assert.match(byId("layout-preview-changes").textContent,/Display: hide portfolio, quotes/);
 assert.match(byId("layout-preview-changes").textContent,/Pins: add weather/);
 assert.match(byId("layout-preview-changes").textContent,/My view: save/);
 byId("confirm-layout-import").checked=true;
