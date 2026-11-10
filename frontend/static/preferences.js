@@ -814,6 +814,31 @@
     }
     return null;
   }
+  function updateBackupEditor() {
+    var input = document.getElementById("layout-backup-json");
+    var length = input.value.length;
+    var count = document.getElementById("layout-editor-count");
+    count.textContent = length + " / 16,000 characters" +
+      (length > maxLayoutBackupBytes ? " — exceeds restore limit" : "");
+    document.getElementById("select-layout-json").disabled = length === 0;
+    document.getElementById("clear-layout-json").disabled = length === 0;
+  }
+  document.getElementById("select-layout-json").addEventListener("click", function () {
+    var input = document.getElementById("layout-backup-json");
+    input.focus();
+    input.select();
+    document.getElementById("layout-backup-status").textContent =
+      "Backup JSON selected. Use Copy to save it outside this browser.";
+  });
+  document.getElementById("clear-layout-json").addEventListener("click", function () {
+    document.getElementById("layout-backup-json").value = "";
+    invalidatePreview();
+    updateBackupEditor();
+    document.getElementById("layout-preview-status").textContent =
+      "Backup editor cleared. Existing dashboard settings are unchanged.";
+    document.getElementById("layout-backup-status").textContent =
+      "Backup text cleared; no layout was restored.";
+  });
   document.getElementById("export-layout").addEventListener("click", function () {
     var backup = {
       version: 1,
@@ -823,6 +848,7 @@
     };
     document.getElementById("layout-backup-json").value = JSON.stringify(backup, null, 2);
     invalidatePreview();
+    updateBackupEditor();
     document.getElementById("layout-backup-status").textContent =
       "Backup ready: display preferences, " + pinned.length +
       " pins and " + (savedVisible ? savedVisible.length : 0) +
@@ -883,6 +909,7 @@
   }
   document.getElementById("layout-backup-json").addEventListener("input", function () {
     invalidatePreview();
+    updateBackupEditor();
     document.getElementById("layout-preview-status").textContent =
       "Backup changed. Preview again before restoring.";
   });
@@ -914,7 +941,19 @@
       "Preview: " + (panelNames.length - backup.display.hidden.length) +
       " visible panels; " + backup.pins.length + " pins; " +
       (backup.myView ? backup.myView.length : 0) +
-      " saved view panels. Confirm to replace the current layout.";
+      " saved view panels. Changes: " +
+      (settings.hidden.length !== backup.display.hidden.length ||
+       JSON.stringify(settings.order) !== JSON.stringify(backup.display.order) ||
+       settings.compact !== backup.display.compact ||
+       settings.dim !== backup.display.dim ||
+       settings.glance !== backup.display.glance ||
+       settings.largeText !== backup.display.largeText ||
+       settings.highContrast !== backup.display.highContrast ||
+       settings.pauseRefresh !== backup.display.pauseRefresh ||
+       settings.refreshMinutes !== backup.display.refreshMinutes ? "display; " : "") +
+      (JSON.stringify(pinned) !== JSON.stringify(backup.pins) ? "pins; " : "") +
+      (JSON.stringify(savedVisible) !== JSON.stringify(backup.myView) ? "My view; " : "") +
+      "review before confirming.";
   });
   document.getElementById("confirm-layout-import").addEventListener("change", function () {
     document.getElementById("import-layout").disabled =
@@ -952,6 +991,7 @@
       "Previous display settings, pins and My view restored.";
   });
 
+  updateBackupEditor();
   buildControls(); restore(); restorePins(); buildPinButtons(); apply();
   savedVisible = readSavedView(); updateSavedView();
 }());
