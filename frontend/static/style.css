@@ -227,3 +227,8 @@ footer{clear:both;padding-top:24px;color:#7f91a8;font-size:12px}
 #layout-backup-json{display:block;width:100%;max-width:100%;box-sizing:border-box;min-height:105px;margin:7px 0 10px;padding:9px;border:1px solid #455b75;border-radius:6px;background:#111822;color:#e8f1fc;font:12px/1.45 monospace;overflow-wrap:break-word}
 #layout-backup-json:focus,#import-layout:focus,#export-layout:focus{outline:2px solid #93c5fd;outline-offset:2px}
 #layout-backup-status{overflow-wrap:break-word;word-wrap:break-word}
+
+/* Preview and explicit approval protect imported layouts in older Safari. */
+#preview-layout:focus,#undo-layout-import:focus,#confirm-layout-import:focus{outline:2px solid #93c5fd;outline-offset:2px}
+#import-layout:disabled,#undo-layout-import:disabled{opacity:.45;cursor:default}
+#layout-preview-status{overflow-wrap:break-word;word-wrap:break-word}

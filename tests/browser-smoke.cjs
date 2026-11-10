@@ -1971,7 +1971,7 @@ assert.match(byId("display-reset-status").textContent,/Previous display preferen
 handlers["clear-all-pins:click"]();
 handlers["reset-settings:click"]();
 
-// Offline JSON backup/restore: layout, pinned favorites and saved My view only.
+// Offline JSON backup preview, explicit consent, bounded input and undo.
 handlers["quick-view-fitness:click"]();
 handlers["pin-weather:click"]();
 handlers["quick-save-my-view:click"]();
@@ -1992,7 +1992,17 @@ assert.equal(byId("layout-backup-json").value.includes("api_key"),false);
 handlers["reset-settings:click"]();
 handlers["clear-all-pins:click"]();
 handlers["clear-my-view:click"]();
-assert.equal(byId("setting-large-text").checked,false);
+const beforeRestoreSettings = state["tris.dashboard.display.v1"];
+const beforeRestorePins = state["tris.dashboard.pins.v1"];
+const beforeRestoreView = state["tris.dashboard.my-view.v1"];
+assert.equal(byId("import-layout").disabled,true);
+handlers["preview-layout:click"]();
+assert.match(byId("layout-preview-status").textContent,/Preview: 2 visible panels; 1 pins/);
+assert.equal(byId("import-layout").disabled,true);
+assert.equal(byId("confirm-layout-import").disabled,false);
+byId("confirm-layout-import").checked=true;
+handlers["confirm-layout-import:change"].call(byId("confirm-layout-import"));
+assert.equal(byId("import-layout").disabled,false);
 handlers["import-layout:click"]();
 assert.equal(state["tris.dashboard.display.v1"],expectedExportState);
 assert.equal(state["tris.dashboard.pins.v1"],expectedExportPins);
@@ -2002,19 +2012,38 @@ assert.equal(byId("setting-refresh-minutes").value,"10");
 assert.equal(byId("panel-portfolio").hidden,true);
 assert.equal(byId("panel-fitness").hidden,false);
 assert.equal(byId("pin-weather").attributes["aria-pressed"],"true");
-assert.match(byId("layout-backup-status").textContent,/Layout restored/);
-// Invalid and unsupported JSON must leave all current preferences untouched.
-for (const invalid of ["{broken",JSON.stringify({version:2,display:exportedLayout.display,pins:[],myView:null}),
+assert.equal(byId("import-layout").disabled,true);
+assert.equal(byId("undo-layout-import").disabled,false);
+handlers["undo-layout-import:click"]();
+assert.equal(state["tris.dashboard.display.v1"],beforeRestoreSettings);
+assert.equal(state["tris.dashboard.pins.v1"],beforeRestorePins);
+assert.equal(state["tris.dashboard.my-view.v1"],beforeRestoreView);
+assert.equal(byId("undo-layout-import").disabled,true);
+assert.match(byId("layout-backup-status").textContent,/Previous display settings/);
+// Invalid, huge and unsupported inputs are rejected without mutation.
+for (const invalid of ["{broken","x".repeat(16001),
+  JSON.stringify({version:2,display:exportedLayout.display,pins:[],myView:null}),
   JSON.stringify({version:1,display:exportedLayout.display,pins:["unknown"],myView:null})]) {
   byId("layout-backup-json").value=invalid;
-  handlers["import-layout:click"]();
-  assert.match(byId("layout-backup-status").textContent,/Restore rejected/);
-  assert.equal(state["tris.dashboard.display.v1"],expectedExportState);
-  assert.equal(state["tris.dashboard.pins.v1"],expectedExportPins);
-  assert.equal(state["tris.dashboard.my-view.v1"],expectedExportMyView);
+  handlers["layout-backup-json:input"]();
+  handlers["preview-layout:click"]();
+  assert.match(byId("layout-preview-status").textContent,/Backup rejected/);
+  assert.equal(byId("import-layout").disabled,true);
+  assert.equal(state["tris.dashboard.display.v1"],beforeRestoreSettings);
+  assert.equal(state["tris.dashboard.pins.v1"],beforeRestorePins);
 }
-handlers["clear-all-pins:click"]();
+// Editing a validated preview invalidates consent and prevents stale imports.
+byId("layout-backup-json").value=JSON.stringify(exportedLayout);
+handlers["layout-backup-json:input"]();
+handlers["preview-layout:click"]();
+byId("confirm-layout-import").checked=true;
+handlers["confirm-layout-import:change"].call(byId("confirm-layout-import"));
+byId("layout-backup-json").value="{}";
+handlers["layout-backup-json:input"]();
+assert.equal(byId("import-layout").disabled,true);
+handlers["import-layout:click"]();
+assert.match(byId("layout-backup-status").textContent,/preview and confirmation required/);
+assert.equal(state["tris.dashboard.display.v1"],beforeRestoreSettings);
 handlers["quick-view-all:click"]();
-handlers["reset-settings:click"]();
 
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
