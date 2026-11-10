@@ -942,7 +942,7 @@
       " visible panels; " + backup.pins.length + " pins; " +
       (backup.myView ? backup.myView.length : 0) +
       " saved view panels. Changes: " +
-      (settings.hidden.length !== backup.display.hidden.length ||
+      (JSON.stringify(settings.hidden) !== JSON.stringify(backup.display.hidden) ||
        JSON.stringify(settings.order) !== JSON.stringify(backup.display.order) ||
        settings.compact !== backup.display.compact ||
        settings.dim !== backup.display.dim ||
