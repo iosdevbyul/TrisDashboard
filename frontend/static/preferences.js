@@ -9,6 +9,7 @@
   var lastResetSettings = null;
   var stagedBackup = null;
   var stagedBackupText = "";
+  var stagedCurrentLayoutText = "";
   var lastLayoutImport = null;
   var maxLayoutBackupBytes = 16000;
   var viewHistory = [];
@@ -792,11 +793,32 @@
     }
     return true;
   }
+  function hasExactKeys(value, allowed) {
+    if (!value || typeof value !== "object" ||
+        Object.prototype.toString.call(value) === "[object Array]") { return false; }
+    var keys = Object.keys(value);
+    if (keys.length !== allowed.length) { return false; }
+    for (var i = 0; i < keys.length; i++) {
+      if (allowed.indexOf(keys[i]) === -1) { return false; }
+    }
+    return true;
+  }
+  function backupMatchesCurrent(backup) {
+    var current = snapshotLayout();
+    return JSON.stringify(current.display) === JSON.stringify(backup.display) &&
+      JSON.stringify(current.pins) === JSON.stringify(backup.pins) &&
+      JSON.stringify(current.myView) === JSON.stringify(backup.myView);
+  }
   function validateBackup(value) {
     if (!value || typeof value !== "object" ||
         Object.prototype.toString.call(value) === "[object Array]" ||
         value.version !== 1 || !value.display || typeof value.display !== "object") {
       return "Unsupported backup format";
+    }
+    if (!hasExactKeys(value, ["version", "display", "pins", "myView"]) ||
+        !hasExactKeys(value.display, ["compact", "dim", "glance", "largeText",
+          "highContrast", "pauseRefresh", "refreshMinutes", "hidden", "order"])) {
+      return "Unexpected or missing backup fields";
     }
     var display = value.display;
     var flags = ["compact", "dim", "glance", "largeText", "highContrast", "pauseRefresh"];
@@ -903,6 +925,7 @@
   function invalidatePreview() {
     stagedBackup = null;
     stagedBackupText = "";
+    stagedCurrentLayoutText = "";
     document.getElementById("confirm-layout-import").disabled = true;
     document.getElementById("confirm-layout-import").checked = false;
     document.getElementById("import-layout").disabled = true;
@@ -934,8 +957,14 @@
         "Backup rejected: " + validationError + ". Existing settings unchanged.";
       return;
     }
+    if (backupMatchesCurrent(backup)) {
+      document.getElementById("layout-preview-status").textContent =
+        "Preview: backup matches current display, pins and My view. Nothing to restore.";
+      return;
+    }
     stagedBackup = backup;
     stagedBackupText = input;
+    stagedCurrentLayoutText = JSON.stringify(snapshotLayout());
     document.getElementById("confirm-layout-import").disabled = false;
     document.getElementById("layout-preview-status").textContent =
       "Preview: " + (panelNames.length - backup.display.hidden.length) +
@@ -965,6 +994,13 @@
       invalidatePreview();
       document.getElementById("layout-backup-status").textContent =
         "Restore rejected: preview and confirmation required. Existing settings unchanged.";
+      return;
+    }
+    if (JSON.stringify(snapshotLayout()) !== stagedCurrentLayoutText ||
+        validateBackup(stagedBackup)) {
+      invalidatePreview();
+      document.getElementById("layout-backup-status").textContent =
+        "Restore rejected: dashboard settings changed after preview, or backup is invalid. Preview again.";
       return;
     }
     var wasPaused = settings.pauseRefresh;
