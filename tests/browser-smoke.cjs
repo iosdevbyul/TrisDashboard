@@ -2138,4 +2138,37 @@ assert.match(byId("layout-backup-status").textContent,/preview and confirmation 
 assert.equal(byId("import-layout").disabled,true);
 for (const id of restoreScopeIds) { byId(id).checked=true; handlers[id+":change"](); }
 
+// Restore scope shortcuts are live, guard confirmation, and show exact changes.
+handlers["restore-scope-none:click"]();
+assert.equal(byId("restore-scope-none").disabled,true);
+assert.equal(byId("restore-scope-all").disabled,false);
+assert.match(byId("restore-scope-summary").textContent,/0 of 3 sections selected/);
+assert.equal(byId("confirm-layout-import").disabled,true);
+handlers["preview-layout:click"]();
+assert.match(byId("layout-preview-status").textContent,/Select at least one section/);
+handlers["restore-scope-all:click"]();
+assert.equal(byId("restore-scope-all").disabled,true);
+assert.equal(byId("restore-scope-none").disabled,false);
+assert.match(byId("restore-scope-summary").textContent,/3 of 3 sections selected/);
+byId("layout-backup-json").value=JSON.stringify(exportedLayout);
+handlers["layout-backup-json:input"]();
+handlers["preview-layout:click"]();
+assert.match(byId("layout-preview-changes").textContent,/Display: hide portfolio, quotes/);
+assert.match(byId("layout-preview-changes").textContent,/Pins: add weather/);
+assert.match(byId("layout-preview-changes").textContent,/My view: save/);
+byId("confirm-layout-import").checked=true;
+handlers["confirm-layout-import:change"].call(byId("confirm-layout-import"));
+assert.equal(byId("import-layout").disabled,false);
+handlers["restore-scope-none:click"]();
+assert.equal(byId("import-layout").disabled,true);
+assert.equal(byId("layout-preview-changes").textContent,"Detailed changes appear after preview.");
+assert.equal(state["tris.dashboard.pins.v1"],beforeRestorePins);
+byId("restore-scope-pins").checked=true;
+handlers["restore-scope-pins:change"]();
+assert.match(byId("restore-scope-summary").textContent,/1 of 3 sections selected: pins/);
+handlers["preview-layout:click"]();
+assert.equal(byId("layout-preview-changes").textContent,"Pins: add weather");
+handlers["restore-scope-all:click"]();
+assert.equal(byId("confirm-layout-import").disabled,true);
+
 console.log("Frontend success, retry, quote display and invalid-data smoke tests passed.");
