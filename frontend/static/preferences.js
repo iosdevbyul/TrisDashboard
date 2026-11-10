@@ -775,6 +775,114 @@
     }
   });
 
+  function isNameList(value, allowEmpty, requireAll) {
+    if (Object.prototype.toString.call(value) !== "[object Array]" ||
+        (!allowEmpty && value.length === 0) || value.length > panelNames.length ||
+        (requireAll && value.length !== panelNames.length)) { return false; }
+    var seen = [];
+    for (var i = 0; i < value.length; i++) {
+      if (typeof value[i] !== "string" ||
+          panelNames.indexOf(value[i]) === -1 ||
+          seen.indexOf(value[i]) !== -1) { return false; }
+      seen.push(value[i]);
+    }
+    return true;
+  }
+  function validateBackup(value) {
+    if (!value || typeof value !== "object" ||
+        Object.prototype.toString.call(value) === "[object Array]" ||
+        value.version !== 1 || !value.display || typeof value.display !== "object") {
+      return "Unsupported backup format";
+    }
+    var display = value.display;
+    var flags = ["compact", "dim", "glance", "largeText", "highContrast", "pauseRefresh"];
+    for (var i = 0; i < flags.length; i++) {
+      if (typeof display[flags[i]] !== "boolean") { return "Invalid display option: " + flags[i]; }
+    }
+    if ([3, 5, 10].indexOf(display.refreshMinutes) === -1 ||
+        !isNameList(display.order, false, true) ||
+        !isNameList(display.hidden, true, false)) {
+      return "Invalid refresh interval or panel layout";
+    }
+    if (!isNameList(value.pins, true, false) ||
+        (value.myView !== null && !isNameList(value.myView, false, false))) {
+      return "Invalid pinned panels or saved view";
+    }
+    return null;
+  }
+  document.getElementById("export-layout").addEventListener("click", function () {
+    var backup = {
+      version: 1,
+      display: settings,
+      pins: pinned.slice(0),
+      myView: savedVisible ? savedVisible.slice(0) : null
+    };
+    document.getElementById("layout-backup-json").value = JSON.stringify(backup, null, 2);
+    document.getElementById("layout-backup-status").textContent =
+      "Backup ready: display preferences, " + pinned.length +
+      " pins and " + (savedVisible ? savedVisible.length : 0) +
+      " saved view panels. Copy the JSON to keep it.";
+  });
+  document.getElementById("import-layout").addEventListener("click", function () {
+    var input = document.getElementById("layout-backup-json").value;
+    var backup;
+    try { backup = JSON.parse(input); }
+    catch (error) {
+      document.getElementById("layout-backup-status").textContent =
+        "Restore rejected: invalid JSON. Existing settings unchanged.";
+      return;
+    }
+    var validationError = validateBackup(backup);
+    if (validationError) {
+      document.getElementById("layout-backup-status").textContent =
+        "Restore rejected: " + validationError + ". Existing settings unchanged.";
+      return;
+    }
+    // Validation is complete before any user preference is modified.
+    var wasPaused = settings.pauseRefresh;
+    settings = {
+      compact: backup.display.compact,
+      dim: backup.display.dim,
+      glance: backup.display.glance,
+      largeText: backup.display.largeText,
+      highContrast: backup.display.highContrast,
+      refreshMinutes: backup.display.refreshMinutes,
+      pauseRefresh: backup.display.pauseRefresh,
+      hidden: backup.display.hidden.slice(0),
+      order: backup.display.order.slice(0)
+    };
+    pinned = backup.pins.slice(0);
+    pinnedOnly = false;
+    savedVisible = backup.myView ? backup.myView.slice(0) : null;
+    sourceFilter = "all";
+    panelSearchQuery = "";
+    lastResetSettings = null;
+    document.getElementById("undo-display-reset").disabled = true;
+    apply(); store(); storePins();
+    try {
+      if (savedVisible) {
+        window.localStorage.setItem(savedViewKey, JSON.stringify(savedVisible));
+      } else {
+        window.localStorage.removeItem(savedViewKey);
+      }
+    } catch (error) {
+      document.getElementById("layout-backup-status").textContent =
+        "Layout restored, but saved view could not be stored in this browser.";
+      return;
+    }
+    updateSavedView();
+    if (wasPaused && !settings.pauseRefresh &&
+        typeof window.trisDashboardResumeRefresh === "function") {
+      window.trisDashboardResumeRefresh();
+    } else if (settings.pauseRefresh &&
+               typeof window.trisDashboardCancelPendingRetry === "function") {
+      window.trisDashboardCancelPendingRetry();
+    }
+    document.getElementById("layout-backup-status").textContent =
+      "Layout restored: " + (panelNames.length - settings.hidden.length) +
+      " visible panels, " + pinned.length + " pins. Account data and API keys were not imported.";
+  });
+
   buildControls(); restore(); restorePins(); buildPinButtons(); apply();
   savedVisible = readSavedView(); updateSavedView();
 }());
