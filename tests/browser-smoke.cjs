@@ -26,7 +26,7 @@ class TestDate extends Date {
 function element(id = "") {
   const children = [];
   const result = {
-    id, checked: false, hidden: false, textContent: "", className: "", style: {},
+    id, value: "", checked: false, hidden: false, textContent: "", className: "", style: {},
     children, attributes: {}, href: "",
     get firstChild() { return children.length ? children[0] : null; },
     appendChild(child) { const old = children.indexOf(child); if (old >= 0) children.splice(old, 1); children.push(child); child.parentNode = this; if (child.id) elements.set(child.id, child); return child; },
