@@ -79,6 +79,12 @@
     <span id="panel-search-count" role="status" aria-live="polite">9 panels available</span>
   </div>
   <p id="panel-search-empty" class="empty-panels" role="status" hidden>No matching visible panels. Clear search or change the display settings.</p>
+  <nav class="panel-navigation" aria-label="Navigate visible dashboard panels">
+    <button type="button" id="navigate-previous-panel" disabled>Previous panel</button>
+    <button type="button" id="navigate-next-panel" disabled>Next panel</button>
+    <span id="panel-navigation-status" role="status" aria-live="polite">No visible panel selected</span>
+    <span class="panel-navigation-help">Alt + Left / Right moves between visible panels</span>
+  </nav>
   <nav class="priority-jumps" id="priority-jumps" tabindex="-1" aria-label="Jump to priority panels">
     <span class="priority-jumps-label">QUICK JUMP</span>
     <a id="jump-link-portfolio" href="#panel-portfolio">Portfolio</a>
